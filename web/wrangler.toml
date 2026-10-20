@@ -1,0 +1,31 @@
+# EdgeCraft-StrikeCity on Cloudflare Pages (project edgecraft-strikecity, https://edgecraft-strikecity.pages.dev): the static web (dist) + Pages Functions (functions/, code in server/) + D1.
+# Deploy: npm run build:cf && npx wrangler pages deploy (see docs/08). Secrets: PUSH_SECRET, SESSION_SECRET.
+name = "edgecraft-strikecity"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-04-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "smartflow-city"
+database_id = "a978ba35-2349-4d16-83f9-1b4a863890f1"
+
+# Production = mainnet, real trading open to everyone (2026-10-20). Setting LIVE_ALLOW (a Pages secret: comma-separated
+# wallet addresses) would make it invite-only again; removing these vars turns it off.
+[vars]
+BUILDER_CODE = "SmartFlowAgent-EdgeCraft"
+BUILDER_FEE_BPS = "20"
+
+# Preview deployments (any branch but main, e.g. --branch qa -> https://qa.edgecraft-strikecity.pages.dev) use their own
+# database, so end-to-end tests can push test snapshots and create test agents without touching production.
+[env.preview]
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "smartflow-city-qa"
+database_id = "3fdcbce8-abfd-4b9d-bf9d-aaa52b083531"
+
+# The QA site is the testnet world: Preprod wallets + Strike testnet + the Smart Flow builder code on testnet, so the
+# whole builder connect can be tried with test money. Production sets none of these (mainnet, real trading off).
+[env.preview.vars]
+LIVE_ENV = "testnet"
+BUILDER_CODE = "SmartFlowAgent-EdgeCraft"
+BUILDER_FEE_BPS = "20"

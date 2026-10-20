@@ -1,0 +1,33 @@
+# Smart Flow Agent — example configuration. Copy to config/agent.toml and edit.
+# Safe defaults: analysis mode (no orders), testnet, no builder fee, autonomy disabled.
+
+name = "smartflow-4h"
+mode = "analysis"          # analysis | simulation (paper) | confirmation (asks before each order) | autonomous
+env = "testnet"            # testnet | mainnet
+tf = "240"                 # 4h: the only timeframe with a statistically significant measured edge (see docs/05)
+
+# Strike market -> Binance spot signal feed
+markets = [
+  { strike = "BTC-USD", signal = "BTCUSDT" },
+  { strike = "ETH-USD", signal = "ETHUSDT" },
+]
+
+builder_code = ""          # from app.strikefinance.org/builder-codes once registered
+builder_fee_bps = 0        # Smart Flow fee: 20 (docs/03); above ~20 the 4h edge stops being significant
+paper_equity = 10000.0
+max_entry_slippage_bps = 20.0
+
+allow_autonomous = false   # also requires env SMARTFLOW_LIVE_ACK="I ACCEPT REAL ORDERS"
+allow_mainnet = false
+
+[params]                   # reference = the indicator's defaults; any change is an experiment
+# chan_n = 10
+
+[risk]
+risk_per_trade = 0.005     # 0.5 % of equity lost if the stop fills exactly
+max_leverage = 5.0
+max_open_positions = 3
+max_daily_loss = 0.02
+max_weekly_loss = 0.05
+max_spread_bps = 10.0
+max_impact_bps = 15.0

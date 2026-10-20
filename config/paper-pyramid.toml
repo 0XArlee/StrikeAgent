@@ -1,0 +1,26 @@
+# Paper trading (no real orders): Smart Flow PYRAMID, the second strategy users can pick (Edgar, 2026-10-20): the same
+# signals, up to 3 trades stacked in one direction per market, each with its own stop and exit (backtest 2022-2026,
+# BTC/ETH/SOL: +0.40 R/trade, CAGR 25 %, DD 27 % at 0.5 % risk; smartflow.backtest.volume_study).
+name = "paper-pyramid"
+mode = "simulation"
+env = "mainnet"
+tf = "240"
+markets = [
+  { strike = "BTC-USD", signal = "BTCUSDT" }, { strike = "ETH-USD", signal = "ETHUSDT" },
+  { strike = "SOL-USD", signal = "SOLUSDT" }, { strike = "XRP-USD", signal = "XRPUSDT" },
+  { strike = "BNB-USD", signal = "BNBUSDT" }, { strike = "ADA-USD", signal = "ADAUSDT" },
+  { strike = "NEAR-USD", signal = "NEARUSDT" }, { strike = "ZEC-USD", signal = "ZECUSDT" },
+]
+builder_fee_bps = 20   # the Smart Flow fee (Edgar, 2026-10-19)
+paper_equity = 10000.0
+policy = "pyramid"
+max_stack = 3
+
+[params]
+# the official Smart Flow configuration (core.config.OFFICIAL, docs/10)
+range_filter = true
+chand_atr = 4.0
+
+[risk]
+risk_per_trade = 0.005
+max_open_positions = 24   # 8 markets x 3 stacked trades; total leverage still capped by the risk engine

@@ -1,0 +1,25 @@
+# External watchdog: every 30 minutes, from GitHub's machines, checks that the production site still receives the
+# agents' data (GET /api/info "pushedAt" < 15 min, some agent online). It catches what the host's own watchdog cannot
+# report: the whole host, its power or its internet down. A failure (exit 1) makes GitHub email the repo
+# owner; with the repository secret SMARTFLOW_ALERT_WEBHOOK it also goes to the phone (smartflow.notify formats).
+# GitHub pauses scheduled workflows after 60 days without commits: re-enable it in the Actions tab if that happens.
+name: watchdog
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: src
+      - name: Production gets the agents' data
+        env:
+          PYTHONPATH: src
+          SMARTFLOW_ALERT_WEBHOOK: ${{ secrets.SMARTFLOW_ALERT_WEBHOOK }}
+        run: python3 -m smartflow.cli site-check --url https://edgecraft-strikecity.pages.dev

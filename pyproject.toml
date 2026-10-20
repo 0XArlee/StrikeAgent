@@ -1,0 +1,26 @@
+[project]
+name = "smartflow-agent"
+version = "0.1.0"
+description = "Smart Flow Agent: independent engine of the Smart Flow Signals [EdgeCraft] indicator, backtester and Strike Finance adapter. Proprietary."
+requires-python = ">=3.11"
+license = { text = "Proprietary - (c) EdgeCraft. All rights reserved." }
+dependencies = [
+    "cryptography>=43",  # Ed25519 request signing (same library as Strike's official Python example)
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+smartflow = "smartflow.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/smartflow"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

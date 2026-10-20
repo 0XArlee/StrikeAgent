@@ -1,0 +1,18 @@
+# Keeps the local Binance store current so a restart warms up from complete history.
+[Unit]
+Description=Smart Flow Agent - market data sync (Binance spot 2h/4h/1D)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=smartflow
+Group=smartflow
+WorkingDirectory=/opt/smartflow/app
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/smartflow/app/.venv/bin/smartflow data --symbols BTCUSDT,ETHUSDT,SOLUSDT,XRPUSDT,BNBUSDT,ADAUSDT,NEARUSDT,ZECUSDT --tfs 120,240,D --start 2020-09-01
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/smartflow/app/data

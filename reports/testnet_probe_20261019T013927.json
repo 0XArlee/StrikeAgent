@@ -1,0 +1,331 @@
+{
+ "base": "https://api-v2-testnet.strikefinance.org",
+ "started": "2026-10-19T01:39:14Z",
+ "steps": [
+  {
+   "step": "set leverage 2x",
+   "ok": true,
+   "result": {
+    "leverage": 2,
+    "maxNotionalValue": "10000000",
+    "symbol": "SOL-USD",
+    "request_id": "01a151d0-1990-77d1-acf0-5d38c6252f89"
+   },
+   "ms": 396
+  },
+  {
+   "step": "create resting post-only limit (A)",
+   "ok": true,
+   "result": {
+    "client_order_id": "sfprobe-f953a098-a",
+    "account_id": "01a151c7-a405-72ea-a9f3-d667640684a0",
+    "symbol": "SOL-USD",
+    "status": "pending",
+    "sequence_id": 93333106,
+    "message_id": "1792373955369-0"
+   },
+   "ms": 152
+  },
+  {
+   "step": "lookup A by client_order_id",
+   "ok": true,
+   "result": {
+    "id": 243140333,
+    "cid": "sfprobe-f953a098-a",
+    "type": "limit",
+    "side": "sell",
+    "status": "open",
+    "size": 0.15,
+    "filled": 0.0,
+    "price": 107.73,
+    "stop": 0.0,
+    "reduce_only": false,
+    "strategy": null,
+    "builder": null,
+    "builder_bps": null
+   },
+   "ms": 140
+  },
+  {
+   "step": "create DUPLICATE client_order_id (A again)",
+   "ok": true,
+   "result": {
+    "client_order_id": "sfprobe-f953a098-a",
+    "account_id": "01a151c7-a405-72ea-a9f3-d667640684a0",
+    "symbol": "SOL-USD",
+    "status": "pending",
+    "sequence_id": 93333109,
+    "message_id": "1792373957173-0"
+   },
+   "ms": 159
+  },
+  {
+   "step": "open orders after duplicate",
+   "ok": true,
+   "result": [
+    {
+     "id": 243140334,
+     "cid": "sfprobe-f953a098-a",
+     "type": "limit",
+     "side": "sell",
+     "status": "open",
+     "size": 0.15,
+     "filled": 0.0,
+     "price": 107.73,
+     "stop": 0.0,
+     "reduce_only": false,
+     "strategy": null,
+     "builder": null,
+     "builder_bps": null
+    },
+    {
+     "id": 243140333,
+     "cid": "sfprobe-f953a098-a",
+     "type": "limit",
+     "side": "sell",
+     "status": "open",
+     "size": 0.15,
+     "filled": 0.0,
+     "price": 107.73,
+     "stop": 0.0,
+     "reduce_only": false,
+     "strategy": null,
+     "builder": null,
+     "builder_bps": null
+    }
+   ],
+   "ms": 127
+  },
+  {
+   "step": "cancel A id=243140334",
+   "ok": true,
+   "result": {
+    "order_id": 243140334,
+    "symbol": "SOL-USD",
+    "sequence_id": 93333114,
+    "message_id": "1792373959184-0"
+   },
+   "ms": 246
+  },
+  {
+   "step": "cancel A id=243140333",
+   "ok": true,
+   "result": {
+    "order_id": 243140333,
+    "symbol": "SOL-USD",
+    "sequence_id": 93333117,
+    "message_id": "1792373959360-0"
+   },
+   "ms": 174
+  },
+  {
+   "step": "lookup A after cancel",
+   "ok": true,
+   "result": {
+    "id": 243140334,
+    "cid": "sfprobe-f953a098-a",
+    "type": "limit",
+    "side": "sell",
+    "status": "canceled",
+    "size": 0.15,
+    "filled": 0.0,
+    "price": 107.73,
+    "stop": 0.0,
+    "reduce_only": false,
+    "strategy": null,
+    "builder": null,
+    "builder_bps": null
+   },
+   "ms": 143
+  },
+  {
+   "step": "create bracket (tp_order/sl_order objects), resting primary",
+   "ok": true,
+   "result": {
+    "strategy_id": "sfprobe-f953a098",
+    "primary_client_order_id": "sfprobe-f953a098-b",
+    "tp_client_order_id": "sfprobe-f953a098-tp",
+    "sl_client_order_id": "sfprobe-f953a098-sl",
+    "account_id": "01a151c7-a405-72ea-a9f3-d667640684a0",
+    "symbol": "SOL-USD",
+    "sequence_id": 93333120,
+    "message_id": "1792373960660-0"
+   },
+   "ms": 154
+  },
+  {
+   "step": "open orders: primary + legs?",
+   "ok": true,
+   "result": [
+    {
+     "id": 243140335,
+     "cid": "sfprobe-f953a098-b",
+     "type": "limit",
+     "side": "sell",
+     "status": "open",
+     "size": 0.15,
+     "filled": 0.0,
+     "price": 107.73,
+     "stop": 0.0,
+     "reduce_only": false,
+     "strategy": "sfprobe-f953a098",
+     "builder": null,
+     "builder_bps": null
+    },
+    {
+     "id": 243140336,
+     "cid": "sfprobe-f953a098-tp",
+     "type": "take_profit",
+     "side": "buy",
+     "status": "pending",
+     "size": 0.15,
+     "filled": 0.0,
+     "price": 0.0,
+     "stop": 94.12,
+     "reduce_only": true,
+     "strategy": "sfprobe-f953a098",
+     "builder": null,
+     "builder_bps": null
+    },
+    {
+     "id": 243140337,
+     "cid": "sfprobe-f953a098-sl",
+     "type": "stop",
+     "side": "buy",
+     "status": "pending",
+     "size": 0.15,
+     "filled": 0.0,
+     "price": 0.0,
+     "stop": 115.05,
+     "reduce_only": true,
+     "strategy": "sfprobe-f953a098",
+     "builder": null,
+     "builder_bps": null
+    }
+   ],
+   "ms": 127
+  },
+  {
+   "step": "lookup SL leg by client id",
+   "ok": true,
+   "result": {
+    "id": 243140337,
+    "cid": "sfprobe-f953a098-sl",
+    "type": "stop",
+    "side": "buy",
+    "status": "pending",
+    "size": 0.15,
+    "filled": 0.0,
+    "price": 0.0,
+    "stop": 115.05,
+    "reduce_only": true,
+    "strategy": "sfprobe-f953a098",
+    "builder": null,
+    "builder_bps": null
+   },
+   "ms": 143
+  },
+  {
+   "step": "cancel bracket primary id=243140335",
+   "ok": true,
+   "result": {
+    "order_id": 243140335,
+    "symbol": "SOL-USD",
+    "sequence_id": 93333125,
+    "message_id": "1792373962733-0"
+   },
+   "ms": 158
+  },
+  {
+   "step": "open orders after cancelling primary",
+   "ok": true,
+   "result": [],
+   "ms": 174
+  },
+  {
+   "step": "lookup SL leg after cancel",
+   "ok": true,
+   "result": {
+    "id": 243140337,
+    "cid": "sfprobe-f953a098-sl",
+    "type": "stop",
+    "side": "buy",
+    "status": "expired",
+    "size": 0.15,
+    "filled": 0.0,
+    "price": 0.0,
+    "stop": 115.05,
+    "reduce_only": true,
+    "strategy": "sfprobe-f953a098",
+    "builder": null,
+    "builder_bps": null
+   },
+   "ms": 158
+  },
+  {
+   "step": "order with X-Builder-Fee-Bps=10 from a non-builder wallet",
+   "ok": true,
+   "result": {
+    "client_order_id": "sfprobe-f953a098-c",
+    "account_id": "01a151c7-a405-72ea-a9f3-d667640684a0",
+    "symbol": "SOL-USD",
+    "status": "pending",
+    "sequence_id": 93333130,
+    "message_id": "1792373964728-0"
+   },
+   "ms": 182
+  },
+  {
+   "step": "lookup C (builder attribution field)",
+   "ok": true,
+   "result": {
+    "id": 243140338,
+    "cid": "sfprobe-f953a098-c",
+    "type": "limit",
+    "side": "sell",
+    "status": "open",
+    "size": 0.15,
+    "filled": 0.0,
+    "price": 107.73,
+    "stop": 0.0,
+    "reduce_only": false,
+    "strategy": null,
+    "builder": null,
+    "builder_bps": null
+   },
+   "ms": 144
+  },
+  {
+   "step": "cleanup: cancel-all on probe symbol",
+   "ok": true,
+   "result": {
+    "account_id": "01a151c7-a405-72ea-a9f3-d667640684a0",
+    "symbol": "SOL-USD",
+    "canceled_count": -1,
+    "sequence_id": 93333133,
+    "message_id": "1792373966040-0"
+   },
+   "ms": 146
+  },
+  {
+   "step": "final open orders",
+   "ok": true,
+   "result": [],
+   "ms": 140
+  },
+  {
+   "step": "final positions",
+   "ok": true,
+   "result": [],
+   "ms": 156
+  }
+ ],
+ "context": {
+  "symbol": "SOL-USD",
+  "mark": 104.58693605,
+  "best_bid": 82.55,
+  "probe_price": "107.73",
+  "size": "0.15"
+ },
+ "finished": "2026-10-19T01:39:27Z"
+}

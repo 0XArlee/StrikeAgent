@@ -1,0 +1,1647 @@
+{
+ "E1": {
+  "title": "Del modelo de referencia a la ejecución realista en Strike",
+  "hypothesis": "Las cifras del script (entrada al cierre, stop exacto, operaciones solapadas) sobrestiman lo que una cuenta de Strike (posición neta por mercado) puede capturar.",
+  "rows": [
+   {
+    "config": "60 A referencia (solape, fill al cierre, taker 5bp)",
+    "n": 2617,
+    "R/op": "+0.153",
+    "IC95": "[+0.05, +0.26]",
+    "t": "2.9",
+    "win": "29%",
+    "PF": "1.22",
+    "R total": "+401",
+    "maxDD R": "98"
+   },
+   {
+    "config": "60 B + una posición por mercado (netting)",
+    "n": 1566,
+    "R/op": "+0.183",
+    "IC95": "[+0.05, +0.33]",
+    "t": "2.6",
+    "win": "29%",
+    "PF": "1.27",
+    "R total": "+286",
+    "maxDD R": "57"
+   },
+   {
+    "config": "60 C + entrada/salidas a la apertura siguiente",
+    "n": 1566,
+    "R/op": "+0.182",
+    "IC95": "[+0.05, +0.32]",
+    "t": "2.6",
+    "win": "29%",
+    "PF": "1.26",
+    "R total": "+284",
+    "maxDD R": "57"
+   },
+   {
+    "config": "60 D + stops con gap",
+    "n": 1566,
+    "R/op": "+0.182",
+    "IC95": "[+0.05, +0.32]",
+    "t": "2.6",
+    "win": "29%",
+    "PF": "1.26",
+    "R total": "+284",
+    "maxDD R": "57"
+   },
+   {
+    "config": "60 E + slippage 2bp mercado / 5bp stop",
+    "n": 1566,
+    "R/op": "+0.129",
+    "IC95": "[-0.00, +0.27]",
+    "t": "1.9",
+    "win": "29%",
+    "PF": "1.18",
+    "R total": "+202",
+    "maxDD R": "64"
+   },
+   {
+    "config": "60 F + funding (proxy perp Binance)",
+    "n": 1566,
+    "R/op": "+0.121",
+    "IC95": "[-0.01, +0.26]",
+    "t": "1.8",
+    "win": "29%",
+    "PF": "1.17",
+    "R total": "+190",
+    "maxDD R": "66"
+   },
+   {
+    "config": "240 A referencia (solape, fill al cierre, taker 5bp)",
+    "n": 635,
+    "R/op": "+0.664",
+    "IC95": "[+0.40, +0.96]",
+    "t": "4.6",
+    "win": "31%",
+    "PF": "2.01",
+    "R total": "+422",
+    "maxDD R": "50"
+   },
+   {
+    "config": "240 B + una posición por mercado (netting)",
+    "n": 350,
+    "R/op": "+0.605",
+    "IC95": "[+0.24, +1.03]",
+    "t": "3.0",
+    "win": "29%",
+    "PF": "1.91",
+    "R total": "+212",
+    "maxDD R": "28"
+   },
+   {
+    "config": "240 C + entrada/salidas a la apertura siguiente",
+    "n": 350,
+    "R/op": "+0.605",
+    "IC95": "[+0.23, +1.01]",
+    "t": "3.0",
+    "win": "29%",
+    "PF": "1.91",
+    "R total": "+212",
+    "maxDD R": "28"
+   },
+   {
+    "config": "240 D + stops con gap",
+    "n": 350,
+    "R/op": "+0.605",
+    "IC95": "[+0.23, +1.01]",
+    "t": "3.0",
+    "win": "29%",
+    "PF": "1.91",
+    "R total": "+212",
+    "maxDD R": "28"
+   },
+   {
+    "config": "240 E + slippage 2bp mercado / 5bp stop",
+    "n": 350,
+    "R/op": "+0.573",
+    "IC95": "[+0.21, +0.98]",
+    "t": "2.9",
+    "win": "29%",
+    "PF": "1.84",
+    "R total": "+201",
+    "maxDD R": "29"
+   },
+   {
+    "config": "240 F + funding (proxy perp Binance)",
+    "n": 350,
+    "R/op": "+0.539",
+    "IC95": "[+0.17, +0.94]",
+    "t": "2.8",
+    "win": "29%",
+    "PF": "1.79",
+    "R total": "+188",
+    "maxDD R": "29"
+   }
+  ],
+  "verdict": "Ver tablas: el modelo F es la base de todas las comparaciones siguientes."
+ },
+ "E2": {
+  "title": "Builder fee: punto de equilibrio",
+  "hypothesis": "Una builder fee por fill (entrada y salida) del 1 % (100 bps) destruye la ventaja; existe un nivel compatible con una expectativa neta positiva para el usuario.",
+  "rows": [
+   {
+    "config": "60 0 bp",
+    "n": 1566,
+    "R/op neto": "+0.121",
+    "IC95": "[-0.01, +0.26]",
+    "coste builder R/op": "0.000",
+    "CAGR (0,5% riesgo/op)": "18.4%",
+    "maxDD equity": "28.4%"
+   },
+   {
+    "config": "60 1 bp",
+    "n": 1566,
+    "R/op neto": "+0.105",
+    "IC95": "[-0.03, +0.24]",
+    "coste builder R/op": "0.017",
+    "CAGR (0,5% riesgo/op)": "15.2%",
+    "maxDD equity": "29.5%"
+   },
+   {
+    "config": "60 2 bp",
+    "n": 1566,
+    "R/op neto": "+0.088",
+    "IC95": "[-0.04, +0.23]",
+    "coste builder R/op": "0.033",
+    "CAGR (0,5% riesgo/op)": "12.1%",
+    "maxDD equity": "30.5%"
+   },
+   {
+    "config": "60 5 bp",
+    "n": 1566,
+    "R/op neto": "+0.038",
+    "IC95": "[-0.09, +0.18]",
+    "coste builder R/op": "0.083",
+    "CAGR (0,5% riesgo/op)": "3.3%",
+    "maxDD equity": "33.5%"
+   },
+   {
+    "config": "60 10 bp",
+    "n": 1566,
+    "R/op neto": "-0.045",
+    "IC95": "[-0.18, +0.09]",
+    "coste builder R/op": "0.167",
+    "CAGR (0,5% riesgo/op)": "-9.8%",
+    "maxDD equity": "55.7%"
+   },
+   {
+    "config": "60 15 bp",
+    "n": 1566,
+    "R/op neto": "-0.129",
+    "IC95": "[-0.26, +0.01]",
+    "coste builder R/op": "0.250",
+    "CAGR (0,5% riesgo/op)": "-21.3%",
+    "maxDD equity": "74.7%"
+   },
+   {
+    "config": "60 20 bp",
+    "n": 1566,
+    "R/op neto": "-0.212",
+    "IC95": "[-0.34, -0.07]",
+    "coste builder R/op": "0.333",
+    "CAGR (0,5% riesgo/op)": "-31.3%",
+    "maxDD equity": "86.3%"
+   },
+   {
+    "config": "60 30 bp",
+    "n": 1566,
+    "R/op neto": "-0.378",
+    "IC95": "[-0.51, -0.23]",
+    "coste builder R/op": "0.500",
+    "CAGR (0,5% riesgo/op)": "-47.7%",
+    "maxDD equity": "96.1%"
+   },
+   {
+    "config": "60 50 bp",
+    "n": 1566,
+    "R/op neto": "-0.712",
+    "IC95": "[-0.84, -0.57]",
+    "coste builder R/op": "0.833",
+    "CAGR (0,5% riesgo/op)": "-69.7%",
+    "maxDD equity": "99.7%"
+   },
+   {
+    "config": "60 75 bp",
+    "n": 1566,
+    "R/op neto": "-1.128",
+    "IC95": "[-1.26, -0.98]",
+    "coste builder R/op": "1.249",
+    "CAGR (0,5% riesgo/op)": "-84.7%",
+    "maxDD equity": "100.0%"
+   },
+   {
+    "config": "60 100 bp",
+    "n": 1566,
+    "R/op neto": "-1.544",
+    "IC95": "[-1.68, -1.39]",
+    "coste builder R/op": "1.666",
+    "CAGR (0,5% riesgo/op)": "-92.3%",
+    "maxDD equity": "100.0%"
+   },
+   {
+    "config": "240 0 bp",
+    "n": 350,
+    "R/op neto": "+0.539",
+    "IC95": "[+0.17, +0.94]",
+    "coste builder R/op": "0.000",
+    "CAGR (0,5% riesgo/op)": "20.3%",
+    "maxDD equity": "13.6%"
+   },
+   {
+    "config": "240 1 bp",
+    "n": 350,
+    "R/op neto": "+0.531",
+    "IC95": "[+0.17, +0.93]",
+    "coste builder R/op": "0.008",
+    "CAGR (0,5% riesgo/op)": "20.0%",
+    "maxDD equity": "13.7%"
+   },
+   {
+    "config": "240 2 bp",
+    "n": 350,
+    "R/op neto": "+0.523",
+    "IC95": "[+0.16, +0.92]",
+    "coste builder R/op": "0.016",
+    "CAGR (0,5% riesgo/op)": "19.6%",
+    "maxDD equity": "13.9%"
+   },
+   {
+    "config": "240 5 bp",
+    "n": 350,
+    "R/op neto": "+0.499",
+    "IC95": "[+0.13, +0.89]",
+    "coste builder R/op": "0.039",
+    "CAGR (0,5% riesgo/op)": "18.6%",
+    "maxDD equity": "14.3%"
+   },
+   {
+    "config": "240 10 bp",
+    "n": 350,
+    "R/op neto": "+0.460",
+    "IC95": "[+0.10, +0.85]",
+    "coste builder R/op": "0.078",
+    "CAGR (0,5% riesgo/op)": "16.9%",
+    "maxDD equity": "15.0%"
+   },
+   {
+    "config": "240 15 bp",
+    "n": 350,
+    "R/op neto": "+0.421",
+    "IC95": "[+0.06, +0.81]",
+    "coste builder R/op": "0.118",
+    "CAGR (0,5% riesgo/op)": "15.3%",
+    "maxDD equity": "15.8%"
+   },
+   {
+    "config": "240 20 bp",
+    "n": 350,
+    "R/op neto": "+0.382",
+    "IC95": "[+0.02, +0.78]",
+    "coste builder R/op": "0.157",
+    "CAGR (0,5% riesgo/op)": "13.7%",
+    "maxDD equity": "16.5%"
+   },
+   {
+    "config": "240 30 bp",
+    "n": 350,
+    "R/op neto": "+0.304",
+    "IC95": "[-0.06, +0.70]",
+    "coste builder R/op": "0.235",
+    "CAGR (0,5% riesgo/op)": "10.5%",
+    "maxDD equity": "17.9%"
+   },
+   {
+    "config": "240 50 bp",
+    "n": 350,
+    "R/op neto": "+0.147",
+    "IC95": "[-0.21, +0.53]",
+    "coste builder R/op": "0.392",
+    "CAGR (0,5% riesgo/op)": "4.3%",
+    "maxDD equity": "23.1%"
+   },
+   {
+    "config": "240 75 bp",
+    "n": 350,
+    "R/op neto": "-0.049",
+    "IC95": "[-0.40, +0.34]",
+    "coste builder R/op": "0.588",
+    "CAGR (0,5% riesgo/op)": "-2.8%",
+    "maxDD equity": "34.8%"
+   },
+   {
+    "config": "240 100 bp",
+    "n": 350,
+    "R/op neto": "-0.245",
+    "IC95": "[-0.60, +0.14]",
+    "coste builder R/op": "0.783",
+    "CAGR (0,5% riesgo/op)": "-9.5%",
+    "maxDD equity": "50.1%"
+   }
+  ],
+  "verdict": "Ver tablas y puntos de equilibrio; interpretación en docs/05_informe_cuantitativo.md."
+ },
+ "E3": {
+  "title": "Estabilidad temporal: desarrollo / validación / test",
+  "hypothesis": "Si la ventaja es real debe ser positiva en los tres tramos fijados de antemano.",
+  "rows": [
+   {
+    "config": "60 dev",
+    "n": 616,
+    "R/op": "+0.059",
+    "IC95": "[-0.13, +0.26]",
+    "t": "0.6",
+    "win": "27%",
+    "PF": "1.08",
+    "R total": "+37",
+    "maxDD R": "48",
+    "por activo": "BTC +0.08 (206)  ETH +0.05 (198)  SOL +0.05 (212)"
+   },
+   {
+    "config": "60 val",
+    "n": 537,
+    "R/op": "+0.089",
+    "IC95": "[-0.11, +0.29]",
+    "t": "0.9",
+    "win": "30%",
+    "PF": "1.13",
+    "R total": "+48",
+    "maxDD R": "66",
+    "por activo": "BTC +0.03 (189)  ETH +0.09 (180)  SOL +0.16 (168)"
+   },
+   {
+    "config": "60 test",
+    "n": 413,
+    "R/op": "+0.255",
+    "IC95": "[-0.04, +0.59]",
+    "t": "1.5",
+    "win": "29%",
+    "PF": "1.35",
+    "R total": "+105",
+    "maxDD R": "41",
+    "por activo": "BTC +0.26 (138)  ETH +0.31 (130)  SOL +0.20 (145)"
+   },
+   {
+    "config": "60 strike",
+    "n": 168,
+    "R/op": "+0.462",
+    "IC95": "[-0.13, +1.23]",
+    "t": "1.3",
+    "win": "30%",
+    "PF": "1.62",
+    "R total": "+78",
+    "maxDD R": "27",
+    "por activo": "BTC +0.40 (56)  ETH +0.52 (52)  SOL +0.47 (60)"
+   },
+   {
+    "config": "240 dev",
+    "n": 141,
+    "R/op": "+0.587",
+    "IC95": "[+0.02, +1.17]",
+    "t": "1.9",
+    "win": "30%",
+    "PF": "1.88",
+    "R total": "+83",
+    "maxDD R": "29",
+    "por activo": "BTC +1.33 (39)  ETH +0.38 (47)  SOL +0.24 (55)"
+   },
+   {
+    "config": "240 val",
+    "n": 113,
+    "R/op": "+0.358",
+    "IC95": "[-0.17, +0.99]",
+    "t": "1.2",
+    "win": "29%",
+    "PF": "1.52",
+    "R total": "+40",
+    "maxDD R": "27",
+    "por activo": "BTC +0.40 (39)  ETH +0.60 (42)  SOL -0.00 (32)"
+   },
+   {
+    "config": "240 test",
+    "n": 96,
+    "R/op": "+0.680",
+    "IC95": "[-0.07, +1.59]",
+    "t": "1.6",
+    "win": "28%",
+    "PF": "1.96",
+    "R total": "+65",
+    "maxDD R": "22",
+    "por activo": "BTC +0.93 (30)  ETH +1.10 (35)  SOL -0.04 (31)"
+   },
+   {
+    "config": "240 strike",
+    "n": 47,
+    "R/op": "+0.784",
+    "IC95": "[-0.53, +2.46]",
+    "t": "1.0",
+    "win": "21%",
+    "PF": "1.97",
+    "R total": "+37",
+    "maxDD R": "18",
+    "por activo": "BTC +1.54 (14)  ETH +1.31 (18)  SOL -0.55 (15)"
+   }
+  ],
+  "verdict": "Ver tabla; interpretación en docs/05_informe_cuantitativo.md."
+ },
+ "E4": {
+  "title": "Por año y por régimen",
+  "hypothesis": "La ventaja no depende de un único año ni de un único régimen de mercado.",
+  "rows": [
+   {
+    "config": "60 2022",
+    "n": 320,
+    "R/op": "-0.101",
+    "IC95": "n/a",
+    "t": "-0.8",
+    "win": "26%",
+    "PF": "0.86",
+    "R total": "-32",
+    "maxDD R": "41"
+   },
+   {
+    "config": "60 2023",
+    "n": 296,
+    "R/op": "+0.233",
+    "IC95": "n/a",
+    "t": "1.4",
+    "win": "29%",
+    "PF": "1.31",
+    "R total": "+69",
+    "maxDD R": "48"
+   },
+   {
+    "config": "60 2024",
+    "n": 375,
+    "R/op": "+0.042",
+    "IC95": "n/a",
+    "t": "0.4",
+    "win": "31%",
+    "PF": "1.06",
+    "R total": "+16",
+    "maxDD R": "47"
+   },
+   {
+    "config": "60 2025",
+    "n": 333,
+    "R/op": "+0.086",
+    "IC95": "n/a",
+    "t": "0.7",
+    "win": "28%",
+    "PF": "1.12",
+    "R total": "+29",
+    "maxDD R": "31"
+   },
+   {
+    "config": "60 2026",
+    "n": 242,
+    "R/op": "+0.450",
+    "IC95": "n/a",
+    "t": "1.7",
+    "win": "30%",
+    "PF": "1.61",
+    "R total": "+109",
+    "maxDD R": "27"
+   },
+   {
+    "config": "60 a favor de la tendencia diaria (SMA200D)",
+    "n": 864,
+    "R/op": "+0.066",
+    "IC95": "n/a",
+    "t": "0.8",
+    "win": "28%",
+    "PF": "1.09",
+    "R total": "+57",
+    "maxDD R": "40"
+   },
+   {
+    "config": "60 contra la tendencia diaria",
+    "n": 702,
+    "R/op": "+0.189",
+    "IC95": "n/a",
+    "t": "1.6",
+    "win": "29%",
+    "PF": "1.27",
+    "R total": "+133",
+    "maxDD R": "45"
+   },
+   {
+    "config": "60 volatilidad baja (ATR% tercio inferior)",
+    "n": 522,
+    "R/op": "+0.359",
+    "IC95": "n/a",
+    "t": "2.2",
+    "win": "29%",
+    "PF": "1.45",
+    "R total": "+187",
+    "maxDD R": "41"
+   },
+   {
+    "config": "60 volatilidad media",
+    "n": 522,
+    "R/op": "+0.051",
+    "IC95": "n/a",
+    "t": "0.5",
+    "win": "29%",
+    "PF": "1.07",
+    "R total": "+27",
+    "maxDD R": "62"
+   },
+   {
+    "config": "60 volatilidad alta",
+    "n": 522,
+    "R/op": "-0.046",
+    "IC95": "n/a",
+    "t": "-0.5",
+    "win": "29%",
+    "PF": "0.93",
+    "R total": "-24",
+    "maxDD R": "54"
+   },
+   {
+    "config": "240 2022",
+    "n": 67,
+    "R/op": "+0.346",
+    "IC95": "n/a",
+    "t": "1.2",
+    "win": "34%",
+    "PF": "1.59",
+    "R total": "+23",
+    "maxDD R": "13"
+   },
+   {
+    "config": "240 2023",
+    "n": 74,
+    "R/op": "+0.805",
+    "IC95": "n/a",
+    "t": "1.6",
+    "win": "26%",
+    "PF": "2.10",
+    "R total": "+60",
+    "maxDD R": "29"
+   },
+   {
+    "config": "240 2024",
+    "n": 70,
+    "R/op": "+0.441",
+    "IC95": "n/a",
+    "t": "1.0",
+    "win": "29%",
+    "PF": "1.62",
+    "R total": "+31",
+    "maxDD R": "27"
+   },
+   {
+    "config": "240 2025",
+    "n": 80,
+    "R/op": "+0.214",
+    "IC95": "n/a",
+    "t": "0.9",
+    "win": "31%",
+    "PF": "1.34",
+    "R total": "+17",
+    "maxDD R": "11"
+   },
+   {
+    "config": "240 2026",
+    "n": 59,
+    "R/op": "+0.978",
+    "IC95": "n/a",
+    "t": "1.5",
+    "win": "25%",
+    "PF": "2.27",
+    "R total": "+58",
+    "maxDD R": "22"
+   },
+   {
+    "config": "240 a favor de la tendencia diaria (SMA200D)",
+    "n": 226,
+    "R/op": "+0.394",
+    "IC95": "n/a",
+    "t": "1.9",
+    "win": "28%",
+    "PF": "1.57",
+    "R total": "+89",
+    "maxDD R": "30"
+   },
+   {
+    "config": "240 contra la tendencia diaria",
+    "n": 124,
+    "R/op": "+0.802",
+    "IC95": "n/a",
+    "t": "2.0",
+    "win": "31%",
+    "PF": "2.20",
+    "R total": "+99",
+    "maxDD R": "23"
+   },
+   {
+    "config": "240 volatilidad baja (ATR% tercio inferior)",
+    "n": 116,
+    "R/op": "+1.111",
+    "IC95": "n/a",
+    "t": "2.3",
+    "win": "29%",
+    "PF": "2.54",
+    "R total": "+129",
+    "maxDD R": "15"
+   },
+   {
+    "config": "240 volatilidad media",
+    "n": 116,
+    "R/op": "+0.622",
+    "IC95": "n/a",
+    "t": "2.1",
+    "win": "29%",
+    "PF": "1.92",
+    "R total": "+72",
+    "maxDD R": "14"
+   },
+   {
+    "config": "240 volatilidad alta",
+    "n": 118,
+    "R/op": "-0.106",
+    "IC95": "n/a",
+    "t": "-0.7",
+    "win": "29%",
+    "PF": "0.84",
+    "R total": "-12",
+    "maxDD R": "21"
+   }
+  ],
+  "verdict": "Ver tablas (los terciles de volatilidad usan la muestra completa: es descriptivo, no una regla)."
+ },
+ "E5": {
+  "title": "Activos fuera de muestra",
+  "hypothesis": "El autor midió BTC/ETH/SOL; si la lógica generaliza, debe funcionar en activos que no se usaron para diseñarla (XRP, BNB, ADA, NEAR, ZEC; todos listados en Strike).",
+  "rows": [
+   {
+    "config": "60 5 activos OOS",
+    "n": 2418,
+    "R/op": "-0.029",
+    "IC95": "[-0.12, +0.07]",
+    "t": "-0.6",
+    "win": "26%",
+    "PF": "0.96",
+    "R total": "-71",
+    "maxDD R": "232",
+    "por activo": "XRP -0.06 (450)  BNB +0.00 (500)  ADA -0.02 (519)  NEAR +0.03 (506)  ZEC -0.11 (443)"
+   },
+   {
+    "config": "240 5 activos OOS",
+    "n": 558,
+    "R/op": "+0.175",
+    "IC95": "[-0.05, +0.41]",
+    "t": "1.4",
+    "win": "26%",
+    "PF": "1.24",
+    "R total": "+98",
+    "maxDD R": "48",
+    "por activo": "XRP +0.21 (105)  BNB +0.17 (116)  ADA +0.09 (125)  NEAR +0.16 (107)  ZEC +0.26 (105)"
+   }
+  ],
+  "verdict": "Ver tabla."
+ },
+ "E6": {
+  "title": "Otros timeframes",
+  "hypothesis": "El script dice que por debajo de 1h las comisiones se comen la ventaja; 2h y 1D deberían comportarse entre 1h y 4h si la lógica es robusta.",
+  "rows": [
+   {
+    "config": "30m",
+    "n": 2953,
+    "R/op": "-0.051",
+    "IC95": "[-0.15, +0.05]",
+    "t": "-1.1",
+    "win": "25%",
+    "PF": "0.94",
+    "R total": "-151",
+    "maxDD R": "236",
+    "comisiones R/op": "0.124"
+   },
+   {
+    "config": "2h",
+    "n": 709,
+    "R/op": "+0.333",
+    "IC95": "[+0.11, +0.60]",
+    "t": "2.6",
+    "win": "30%",
+    "PF": "1.48",
+    "R total": "+236",
+    "maxDD R": "50",
+    "comisiones R/op": "0.060"
+   },
+   {
+    "config": "1h",
+    "n": 1566,
+    "R/op": "+0.121",
+    "IC95": "[-0.01, +0.26]",
+    "t": "1.8",
+    "win": "29%",
+    "PF": "1.17",
+    "R total": "+190",
+    "maxDD R": "66",
+    "comisiones R/op": "0.083"
+   },
+   {
+    "config": "4h",
+    "n": 350,
+    "R/op": "+0.539",
+    "IC95": "[+0.17, +0.94]",
+    "t": "2.8",
+    "win": "29%",
+    "PF": "1.79",
+    "R total": "+188",
+    "maxDD R": "29",
+    "comisiones R/op": "0.039"
+   },
+   {
+    "config": "1D",
+    "n": 48,
+    "R/op": "+0.600",
+    "IC95": "[-0.27, +2.06]",
+    "t": "1.0",
+    "win": "35%",
+    "PF": "2.04",
+    "R total": "+29",
+    "maxDD R": "12",
+    "comisiones R/op": "0.015"
+   }
+  ],
+  "verdict": "Ver tabla."
+ },
+ "E7": {
+  "title": "Sensibilidad de parámetros (uno a uno alrededor de los valores por defecto)",
+  "hypothesis": "Una ventaja robusta forma una meseta: valores vecinos dan resultados parecidos. Un pico aislado en el valor por defecto sería señal de sobreajuste.",
+  "rows": [
+   {
+    "config": "60 look_n=10",
+    "n": 1826,
+    "R/op total": "+0.110",
+    "R total": "+202",
+    "R/op dev": "+0.074",
+    "R/op test": "+0.200"
+   },
+   {
+    "config": "60 look_n=15",
+    "n": 1696,
+    "R/op total": "+0.102",
+    "R total": "+173",
+    "R/op dev": "+0.060",
+    "R/op test": "+0.222"
+   },
+   {
+    "config": "60 look_n=20 (def)",
+    "n": 1566,
+    "R/op total": "+0.121",
+    "R total": "+190",
+    "R/op dev": "+0.059",
+    "R/op test": "+0.255"
+   },
+   {
+    "config": "60 look_n=30",
+    "n": 1356,
+    "R/op total": "+0.158",
+    "R total": "+214",
+    "R/op dev": "+0.111",
+    "R/op test": "+0.267"
+   },
+   {
+    "config": "60 look_n=40",
+    "n": 1271,
+    "R/op total": "+0.155",
+    "R total": "+197",
+    "R/op dev": "+0.148",
+    "R/op test": "+0.234"
+   },
+   {
+    "config": "60 range_min=0.7",
+    "n": 1579,
+    "R/op total": "+0.114",
+    "R total": "+181",
+    "R/op dev": "+0.056",
+    "R/op test": "+0.241"
+   },
+   {
+    "config": "60 range_min=0.85",
+    "n": 1574,
+    "R/op total": "+0.117",
+    "R total": "+184",
+    "R/op dev": "+0.057",
+    "R/op test": "+0.244"
+   },
+   {
+    "config": "60 range_min=1.0 (def)",
+    "n": 1566,
+    "R/op total": "+0.121",
+    "R total": "+190",
+    "R/op dev": "+0.059",
+    "R/op test": "+0.255"
+   },
+   {
+    "config": "60 range_min=1.2",
+    "n": 1531,
+    "R/op total": "+0.129",
+    "R total": "+197",
+    "R/op dev": "+0.058",
+    "R/op test": "+0.280"
+   },
+   {
+    "config": "60 range_min=1.5",
+    "n": 1419,
+    "R/op total": "+0.133",
+    "R total": "+189",
+    "R/op dev": "+0.072",
+    "R/op test": "+0.228"
+   },
+   {
+    "config": "60 body_min=0.5",
+    "n": 1782,
+    "R/op total": "+0.085",
+    "R total": "+152",
+    "R/op dev": "+0.025",
+    "R/op test": "+0.150"
+   },
+   {
+    "config": "60 body_min=0.6 (def)",
+    "n": 1566,
+    "R/op total": "+0.121",
+    "R total": "+190",
+    "R/op dev": "+0.059",
+    "R/op test": "+0.255"
+   },
+   {
+    "config": "60 body_min=0.7",
+    "n": 1240,
+    "R/op total": "+0.139",
+    "R total": "+173",
+    "R/op dev": "+0.044",
+    "R/op test": "+0.314"
+   },
+   {
+    "config": "60 vol_min=0.0",
+    "n": 1812,
+    "R/op total": "+0.083",
+    "R total": "+150",
+    "R/op dev": "+0.037",
+    "R/op test": "+0.214"
+   },
+   {
+    "config": "60 vol_min=1.0",
+    "n": 1761,
+    "R/op total": "+0.085",
+    "R total": "+149",
+    "R/op dev": "+0.049",
+    "R/op test": "+0.215"
+   },
+   {
+    "config": "60 vol_min=1.5 (def)",
+    "n": 1566,
+    "R/op total": "+0.121",
+    "R total": "+190",
+    "R/op dev": "+0.059",
+    "R/op test": "+0.255"
+   },
+   {
+    "config": "60 vol_min=2.0",
+    "n": 1294,
+    "R/op total": "+0.160",
+    "R total": "+207",
+    "R/op dev": "+0.095",
+    "R/op test": "+0.262"
+   },
+   {
+    "config": "60 vol_min=2.5",
+    "n": 993,
+    "R/op total": "+0.205",
+    "R total": "+204",
+    "R/op dev": "+0.156",
+    "R/op test": "+0.314"
+   },
+   {
+    "config": "60 stop_atr=1.0",
+    "n": 1714,
+    "R/op total": "+0.092",
+    "R total": "+158",
+    "R/op dev": "+0.033",
+    "R/op test": "+0.168"
+   },
+   {
+    "config": "60 stop_atr=1.25",
+    "n": 1623,
+    "R/op total": "+0.133",
+    "R total": "+216",
+    "R/op dev": "+0.059",
+    "R/op test": "+0.262"
+   },
+   {
+    "config": "60 stop_atr=1.5 (def)",
+    "n": 1566,
+    "R/op total": "+0.121",
+    "R total": "+190",
+    "R/op dev": "+0.059",
+    "R/op test": "+0.255"
+   },
+   {
+    "config": "60 stop_atr=2.0",
+    "n": 1485,
+    "R/op total": "+0.101",
+    "R total": "+149",
+    "R/op dev": "+0.049",
+    "R/op test": "+0.171"
+   },
+   {
+    "config": "60 stop_atr=2.5",
+    "n": 1444,
+    "R/op total": "+0.084",
+    "R total": "+121",
+    "R/op dev": "+0.041",
+    "R/op test": "+0.141"
+   },
+   {
+    "config": "60 chan_n=5",
+    "n": 1704,
+    "R/op total": "+0.062",
+    "R total": "+105",
+    "R/op dev": "-0.027",
+    "R/op test": "+0.187"
+   },
+   {
+    "config": "60 chan_n=7",
+    "n": 1627,
+    "R/op total": "+0.103",
+    "R total": "+168",
+    "R/op dev": "+0.035",
+    "R/op test": "+0.277"
+   },
+   {
+    "config": "60 chan_n=10 (def)",
+    "n": 1566,
+    "R/op total": "+0.121",
+    "R total": "+190",
+    "R/op dev": "+0.059",
+    "R/op test": "+0.255"
+   },
+   {
+    "config": "60 chan_n=15",
+    "n": 1480,
+    "R/op total": "+0.110",
+    "R total": "+163",
+    "R/op dev": "+0.082",
+    "R/op test": "+0.207"
+   },
+   {
+    "config": "60 chan_n=20",
+    "n": 1414,
+    "R/op total": "+0.126",
+    "R total": "+179",
+    "R/op dev": "+0.076",
+    "R/op test": "+0.256"
+   },
+   {
+    "config": "60 chan_n=30",
+    "n": 1316,
+    "R/op total": "+0.125",
+    "R total": "+165",
+    "R/op dev": "+0.098",
+    "R/op test": "+0.272"
+   },
+   {
+    "config": "60 htf_swing=3",
+    "n": 1623,
+    "R/op total": "+0.098",
+    "R total": "+160",
+    "R/op dev": "+0.088",
+    "R/op test": "+0.139"
+   },
+   {
+    "config": "60 htf_swing=5 (def)",
+    "n": 1566,
+    "R/op total": "+0.121",
+    "R total": "+190",
+    "R/op dev": "+0.059",
+    "R/op test": "+0.255"
+   },
+   {
+    "config": "60 htf_swing=8",
+    "n": 1538,
+    "R/op total": "+0.132",
+    "R total": "+203",
+    "R/op dev": "+0.092",
+    "R/op test": "+0.256"
+   },
+   {
+    "config": "240 look_n=10",
+    "n": 429,
+    "R/op total": "+0.467",
+    "R total": "+200",
+    "R/op dev": "+0.422",
+    "R/op test": "+0.596"
+   },
+   {
+    "config": "240 look_n=15",
+    "n": 392,
+    "R/op total": "+0.465",
+    "R total": "+182",
+    "R/op dev": "+0.477",
+    "R/op test": "+0.615"
+   },
+   {
+    "config": "240 look_n=20 (def)",
+    "n": 350,
+    "R/op total": "+0.539",
+    "R total": "+188",
+    "R/op dev": "+0.587",
+    "R/op test": "+0.680"
+   },
+   {
+    "config": "240 look_n=30",
+    "n": 309,
+    "R/op total": "+0.481",
+    "R total": "+149",
+    "R/op dev": "+0.738",
+    "R/op test": "+0.327"
+   },
+   {
+    "config": "240 look_n=40",
+    "n": 291,
+    "R/op total": "+0.455",
+    "R total": "+132",
+    "R/op dev": "+0.789",
+    "R/op test": "+0.307"
+   },
+   {
+    "config": "240 range_min=0.7",
+    "n": 352,
+    "R/op total": "+0.534",
+    "R total": "+188",
+    "R/op dev": "+0.587",
+    "R/op test": "+0.680"
+   },
+   {
+    "config": "240 range_min=0.85",
+    "n": 352,
+    "R/op total": "+0.534",
+    "R total": "+188",
+    "R/op dev": "+0.587",
+    "R/op test": "+0.680"
+   },
+   {
+    "config": "240 range_min=1.0 (def)",
+    "n": 350,
+    "R/op total": "+0.539",
+    "R total": "+188",
+    "R/op dev": "+0.587",
+    "R/op test": "+0.680"
+   },
+   {
+    "config": "240 range_min=1.2",
+    "n": 347,
+    "R/op total": "+0.543",
+    "R total": "+188",
+    "R/op dev": "+0.590",
+    "R/op test": "+0.695"
+   },
+   {
+    "config": "240 range_min=1.5",
+    "n": 316,
+    "R/op total": "+0.637",
+    "R total": "+201",
+    "R/op dev": "+0.671",
+    "R/op test": "+0.858"
+   },
+   {
+    "config": "240 body_min=0.5",
+    "n": 391,
+    "R/op total": "+0.493",
+    "R total": "+193",
+    "R/op dev": "+0.521",
+    "R/op test": "+0.710"
+   },
+   {
+    "config": "240 body_min=0.6 (def)",
+    "n": 350,
+    "R/op total": "+0.539",
+    "R total": "+188",
+    "R/op dev": "+0.587",
+    "R/op test": "+0.680"
+   },
+   {
+    "config": "240 body_min=0.7",
+    "n": 293,
+    "R/op total": "+0.558",
+    "R total": "+163",
+    "R/op dev": "+0.650",
+    "R/op test": "+0.578"
+   },
+   {
+    "config": "240 vol_min=0.0",
+    "n": 424,
+    "R/op total": "+0.390",
+    "R total": "+165",
+    "R/op dev": "+0.434",
+    "R/op test": "+0.457"
+   },
+   {
+    "config": "240 vol_min=1.0",
+    "n": 408,
+    "R/op total": "+0.438",
+    "R total": "+179",
+    "R/op dev": "+0.487",
+    "R/op test": "+0.484"
+   },
+   {
+    "config": "240 vol_min=1.5 (def)",
+    "n": 350,
+    "R/op total": "+0.539",
+    "R total": "+188",
+    "R/op dev": "+0.587",
+    "R/op test": "+0.680"
+   },
+   {
+    "config": "240 vol_min=2.0",
+    "n": 268,
+    "R/op total": "+0.685",
+    "R total": "+183",
+    "R/op dev": "+0.516",
+    "R/op test": "+1.134"
+   },
+   {
+    "config": "240 vol_min=2.5",
+    "n": 189,
+    "R/op total": "+0.625",
+    "R total": "+118",
+    "R/op dev": "+0.536",
+    "R/op test": "+1.174"
+   },
+   {
+    "config": "240 stop_atr=1.0",
+    "n": 368,
+    "R/op total": "+0.847",
+    "R total": "+312",
+    "R/op dev": "+1.006",
+    "R/op test": "+0.846"
+   },
+   {
+    "config": "240 stop_atr=1.25",
+    "n": 354,
+    "R/op total": "+0.718",
+    "R total": "+254",
+    "R/op dev": "+0.739",
+    "R/op test": "+0.897"
+   },
+   {
+    "config": "240 stop_atr=1.5 (def)",
+    "n": 350,
+    "R/op total": "+0.539",
+    "R total": "+188",
+    "R/op dev": "+0.587",
+    "R/op test": "+0.680"
+   },
+   {
+    "config": "240 stop_atr=2.0",
+    "n": 335,
+    "R/op total": "+0.406",
+    "R total": "+136",
+    "R/op dev": "+0.430",
+    "R/op test": "+0.665"
+   },
+   {
+    "config": "240 stop_atr=2.5",
+    "n": 329,
+    "R/op total": "+0.285",
+    "R total": "+94",
+    "R/op dev": "+0.314",
+    "R/op test": "+0.492"
+   },
+   {
+    "config": "240 chan_n=5",
+    "n": 389,
+    "R/op total": "+0.407",
+    "R total": "+158",
+    "R/op dev": "+0.482",
+    "R/op test": "+0.425"
+   },
+   {
+    "config": "240 chan_n=7",
+    "n": 363,
+    "R/op total": "+0.547",
+    "R total": "+199",
+    "R/op dev": "+0.646",
+    "R/op test": "+0.634"
+   },
+   {
+    "config": "240 chan_n=10 (def)",
+    "n": 350,
+    "R/op total": "+0.539",
+    "R total": "+188",
+    "R/op dev": "+0.587",
+    "R/op test": "+0.680"
+   },
+   {
+    "config": "240 chan_n=15",
+    "n": 337,
+    "R/op total": "+0.678",
+    "R total": "+229",
+    "R/op dev": "+0.867",
+    "R/op test": "+0.551"
+   },
+   {
+    "config": "240 chan_n=20",
+    "n": 329,
+    "R/op total": "+0.675",
+    "R total": "+222",
+    "R/op dev": "+0.915",
+    "R/op test": "+0.554"
+   },
+   {
+    "config": "240 chan_n=30",
+    "n": 307,
+    "R/op total": "+0.701",
+    "R total": "+215",
+    "R/op dev": "+0.982",
+    "R/op test": "+0.500"
+   },
+   {
+    "config": "240 htf_swing=3",
+    "n": 367,
+    "R/op total": "+0.474",
+    "R total": "+174",
+    "R/op dev": "+0.628",
+    "R/op test": "+0.519"
+   },
+   {
+    "config": "240 htf_swing=5 (def)",
+    "n": 350,
+    "R/op total": "+0.539",
+    "R total": "+188",
+    "R/op dev": "+0.587",
+    "R/op test": "+0.680"
+   },
+   {
+    "config": "240 htf_swing=8",
+    "n": 348,
+    "R/op total": "+0.255",
+    "R total": "+89",
+    "R/op dev": "+0.409",
+    "R/op test": "+0.266"
+   }
+  ],
+  "verdict": "Ver tablas."
+ },
+ "E8": {
+  "title": "Filtros opcionales, salidas y sesgo (modo experimental vs referencia)",
+  "hypothesis": "Cada opción del script se compara con la referencia en los tres tramos; solo se recomendaría una que mejore en desarrollo Y se mantenga en validación y test.",
+  "rows": [
+   {
+    "config": "60 referencia",
+    "n": 1566,
+    "R/op total": "+0.121",
+    "R total": "+190",
+    "dev": "+0.059",
+    "val": "+0.089",
+    "test": "+0.255"
+   },
+   {
+    "config": "60 filtro rango amplio",
+    "n": 1203,
+    "R/op total": "+0.248",
+    "R total": "+298",
+    "dev": "+0.234",
+    "val": "+0.154",
+    "test": "+0.388"
+   },
+   {
+    "config": "60 filtro nube EMA",
+    "n": 1218,
+    "R/op total": "+0.133",
+    "R total": "+162",
+    "dev": "+0.056",
+    "val": "+0.086",
+    "test": "+0.301"
+   },
+   {
+    "config": "60 filtro money flow",
+    "n": 1520,
+    "R/op total": "+0.130",
+    "R total": "+197",
+    "dev": "+0.060",
+    "val": "+0.100",
+    "test": "+0.271"
+   },
+   {
+    "config": "60 salida money-flow cross",
+    "n": 1562,
+    "R/op total": "+0.092",
+    "R total": "+144",
+    "dev": "+0.033",
+    "val": "+0.046",
+    "test": "+0.239"
+   },
+   {
+    "config": "60 salida lo primero",
+    "n": 1601,
+    "R/op total": "+0.098",
+    "R total": "+156",
+    "dev": "+0.029",
+    "val": "+0.052",
+    "test": "+0.260"
+   },
+   {
+    "config": "60 TP 2R",
+    "n": 2095,
+    "R/op total": "-0.036",
+    "R total": "-76",
+    "dev": "-0.020",
+    "val": "-0.045",
+    "test": "-0.050"
+   },
+   {
+    "config": "60 TP 4R",
+    "n": 1791,
+    "R/op total": "+0.056",
+    "R total": "+100",
+    "dev": "+0.001",
+    "val": "+0.058",
+    "test": "+0.134"
+   },
+   {
+    "config": "60 sesgo EMA lenta",
+    "n": 2250,
+    "R/op total": "+0.105",
+    "R total": "+237",
+    "dev": "+0.023",
+    "val": "+0.094",
+    "test": "+0.243"
+   },
+   {
+    "config": "60 sesgo cualquiera",
+    "n": 2285,
+    "R/op total": "+0.116",
+    "R total": "+265",
+    "dev": "+0.032",
+    "val": "+0.116",
+    "test": "+0.243"
+   },
+   {
+    "config": "60 sin sesgo",
+    "n": 2757,
+    "R/op total": "+0.064",
+    "R total": "+175",
+    "dev": "+0.012",
+    "val": "+0.035",
+    "test": "+0.180"
+   },
+   {
+    "config": "240 referencia",
+    "n": 350,
+    "R/op total": "+0.539",
+    "R total": "+188",
+    "dev": "+0.587",
+    "val": "+0.358",
+    "test": "+0.680"
+   },
+   {
+    "config": "240 filtro rango amplio",
+    "n": 294,
+    "R/op total": "+0.727",
+    "R total": "+214",
+    "dev": "+0.880",
+    "val": "+0.399",
+    "test": "+0.914"
+   },
+   {
+    "config": "240 filtro nube EMA",
+    "n": 298,
+    "R/op total": "+0.551",
+    "R total": "+164",
+    "dev": "+0.500",
+    "val": "+0.422",
+    "test": "+0.789"
+   },
+   {
+    "config": "240 filtro money flow",
+    "n": 341,
+    "R/op total": "+0.520",
+    "R total": "+177",
+    "dev": "+0.569",
+    "val": "+0.268",
+    "test": "+0.755"
+   },
+   {
+    "config": "240 salida money-flow cross",
+    "n": 346,
+    "R/op total": "+0.656",
+    "R total": "+227",
+    "dev": "+0.698",
+    "val": "+0.656",
+    "test": "+0.595"
+   },
+   {
+    "config": "240 salida lo primero",
+    "n": 356,
+    "R/op total": "+0.535",
+    "R total": "+191",
+    "dev": "+0.533",
+    "val": "+0.455",
+    "test": "+0.631"
+   },
+   {
+    "config": "240 TP 2R",
+    "n": 516,
+    "R/op total": "+0.090",
+    "R total": "+47",
+    "dev": "+0.151",
+    "val": "+0.032",
+    "test": "+0.072"
+   },
+   {
+    "config": "240 TP 4R",
+    "n": 428,
+    "R/op total": "+0.258",
+    "R total": "+111",
+    "dev": "+0.306",
+    "val": "+0.178",
+    "test": "+0.286"
+   },
+   {
+    "config": "240 sesgo EMA lenta",
+    "n": 515,
+    "R/op total": "+0.441",
+    "R total": "+227",
+    "dev": "+0.473",
+    "val": "+0.249",
+    "test": "+0.617"
+   },
+   {
+    "config": "240 sesgo cualquiera",
+    "n": 520,
+    "R/op total": "+0.445",
+    "R total": "+231",
+    "dev": "+0.490",
+    "val": "+0.268",
+    "test": "+0.583"
+   },
+   {
+    "config": "240 sin sesgo",
+    "n": 644,
+    "R/op total": "+0.310",
+    "R total": "+199",
+    "dev": "+0.300",
+    "val": "+0.188",
+    "test": "+0.462"
+   }
+  ],
+  "verdict": "Ver tablas."
+ },
+ "E9": {
+  "title": "Walk-forward de la selección de variante",
+  "hypothesis": "Elegir cada 6 meses la mejor variante de los 18 meses anteriores ¿mejora fuera de muestra a quedarse siempre con la referencia? (si no, no se optimiza).",
+  "rows": [
+   {
+    "fold": "60 fold 1",
+    "test desde": "2023-07",
+    "elegida (train 18m)": "filtro rango amplio",
+    "R/op test elegida": "+0.426",
+    "R/op test referencia": "+0.128"
+   },
+   {
+    "fold": "60 fold 2",
+    "test desde": "2023-12",
+    "elegida (train 18m)": "filtro rango amplio",
+    "R/op test elegida": "+0.207",
+    "R/op test referencia": "+0.243"
+   },
+   {
+    "fold": "60 fold 3",
+    "test desde": "2024-06",
+    "elegida (train 18m)": "filtro rango amplio",
+    "R/op test elegida": "-0.042",
+    "R/op test referencia": "-0.144"
+   },
+   {
+    "fold": "60 fold 4",
+    "test desde": "2024-12",
+    "elegida (train 18m)": "filtro rango amplio",
+    "R/op test elegida": "+0.315",
+    "R/op test referencia": "+0.191"
+   },
+   {
+    "fold": "60 fold 5",
+    "test desde": "2025-06",
+    "elegida (train 18m)": "filtro rango amplio",
+    "R/op test elegida": "+0.116",
+    "R/op test referencia": "-0.020"
+   },
+   {
+    "fold": "60 fold 6",
+    "test desde": "2025-12",
+    "elegida (train 18m)": "filtro rango amplio",
+    "R/op test elegida": "+0.270",
+    "R/op test referencia": "+0.362"
+   },
+   {
+    "fold": "60 fold 7",
+    "test desde": "2026-06",
+    "elegida (train 18m)": "filtro rango amplio",
+    "R/op test elegida": "+1.277",
+    "R/op test referencia": "+0.608"
+   },
+   {
+    "config": "60 walk-forward",
+    "n": 854,
+    "R/op": "+0.275",
+    "IC95": "[+0.08, +0.48]",
+    "t": "2.7",
+    "win": "33%",
+    "PF": "1.42",
+    "R total": "+235",
+    "maxDD R": "37"
+   },
+   {
+    "config": "60 referencia fija",
+    "n": 1099,
+    "R/op": "+0.154",
+    "IC95": "[-0.00, +0.33]",
+    "t": "1.8",
+    "win": "29%",
+    "PF": "1.22",
+    "R total": "+170",
+    "maxDD R": "67"
+   },
+   {
+    "fold": "240 fold 1",
+    "test desde": "2023-07",
+    "elegida (train 18m)": "filtro rango amplio",
+    "R/op test elegida": "+1.499",
+    "R/op test referencia": "+1.196"
+   },
+   {
+    "fold": "240 fold 2",
+    "test desde": "2023-12",
+    "elegida (train 18m)": "canal 20",
+    "R/op test elegida": "+1.105",
+    "R/op test referencia": "+0.434"
+   },
+   {
+    "fold": "240 fold 3",
+    "test desde": "2024-06",
+    "elegida (train 18m)": "canal 20",
+    "R/op test elegida": "+0.472",
+    "R/op test referencia": "+0.448"
+   },
+   {
+    "fold": "240 fold 4",
+    "test desde": "2024-12",
+    "elegida (train 18m)": "canal 20",
+    "R/op test elegida": "+0.025",
+    "R/op test referencia": "+0.223"
+   },
+   {
+    "fold": "240 fold 5",
+    "test desde": "2025-06",
+    "elegida (train 18m)": "salida money-flow cross",
+    "R/op test elegida": "+0.153",
+    "R/op test referencia": "+0.204"
+   },
+   {
+    "fold": "240 fold 6",
+    "test desde": "2025-12",
+    "elegida (train 18m)": "filtro rango amplio",
+    "R/op test elegida": "+0.701",
+    "R/op test referencia": "+0.584"
+   },
+   {
+    "fold": "240 fold 7",
+    "test desde": "2026-06",
+    "elegida (train 18m)": "filtro rango amplio",
+    "R/op test elegida": "+2.348",
+    "R/op test referencia": "+1.809"
+   },
+   {
+    "config": "240 walk-forward",
+    "n": 222,
+    "R/op": "+0.734",
+    "IC95": "[+0.20, +1.35]",
+    "t": "2.4",
+    "win": "29%",
+    "PF": "2.02",
+    "R total": "+163",
+    "maxDD R": "26"
+   },
+   {
+    "config": "240 referencia fija",
+    "n": 245,
+    "R/op": "+0.607",
+    "IC95": "[+0.18, +1.10]",
+    "t": "2.5",
+    "win": "30%",
+    "PF": "1.88",
+    "R total": "+149",
+    "maxDD R": "27"
+   }
+  ],
+  "verdict": "Ver tablas."
+ }
+}

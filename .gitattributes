@@ -1,0 +1,5 @@
+# keep LF everywhere: the shell scripts and units run on the Linux host (deploy/), and Windows must not rewrite them
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary

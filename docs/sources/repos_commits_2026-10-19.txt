@@ -1,0 +1,3 @@
+strike-builder-reference c926f7611fc2cbca2b8269cafe1f2d42d9139049 2026-04-24
+strike-finance-skills 614da1a914ca5093aa9b798a08bd3e69121abdda 2026-04-29
+strike-finance-hermes-skill 62d69e663430d6fa05f532c83081b0dd3524bafb 2026-06-20

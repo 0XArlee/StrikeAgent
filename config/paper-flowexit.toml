@@ -1,0 +1,20 @@
+# Paper trading (no real orders): 4h with the money-flow cross exit (E8: +0.70 / +0.66 / +0.60 R/op in dev / val / test).
+name = "paper-flowexit"
+mode = "simulation"
+env = "mainnet"
+tf = "240"
+markets = [
+  { strike = "BTC-USD", signal = "BTCUSDT" }, { strike = "ETH-USD", signal = "ETHUSDT" },
+  { strike = "SOL-USD", signal = "SOLUSDT" }, { strike = "XRP-USD", signal = "XRPUSDT" },
+  { strike = "BNB-USD", signal = "BNBUSDT" }, { strike = "ADA-USD", signal = "ADAUSDT" },
+  { strike = "NEAR-USD", signal = "NEARUSDT" }, { strike = "ZEC-USD", signal = "ZECUSDT" },
+]
+builder_fee_bps = 20   # the Smart Flow fee (Edgar, 2026-10-19)
+paper_equity = 10000.0
+
+[params]
+exit_mode = "Money-flow cross"   # experimental: exit on the money-flow cross instead of the trailing channel
+
+[risk]
+risk_per_trade = 0.005
+max_open_positions = 8

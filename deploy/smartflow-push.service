@@ -1,0 +1,27 @@
+# Smart Flow -> Strike City: pushes the agents' public snapshot to the site (Cloudflare Pages Functions).
+# Outbound HTTPS only, HMAC signed; URL and secret in /etc/smartflow/push.env (root:smartflow 0640). Install: deploy/install_ct.sh
+[Unit]
+Description=Smart Flow push to Strike City (outbound, signed)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=smartflow
+Group=smartflow
+WorkingDirectory=/opt/smartflow/app
+EnvironmentFile=/etc/smartflow/push.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/smartflow/app/.venv/bin/smartflow push --city config/city.toml --live-env mainnet
+Restart=always
+RestartSec=20
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/smartflow/app
+MemoryMax=200M
+
+[Install]
+WantedBy=multi-user.target

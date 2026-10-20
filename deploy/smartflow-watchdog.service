@@ -1,0 +1,26 @@
+# Checks the host every 5 minutes (services, pushes to the site, agents, disk) and alerts the operator
+# (smartflow.notify; webhook in /etc/smartflow/alert.env). Install: deploy/install_ct.sh
+[Unit]
+Description=Smart Flow watchdog (alerts the operator)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=smartflow
+Group=smartflow
+WorkingDirectory=/opt/smartflow/app
+EnvironmentFile=-/etc/smartflow/alert.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONIOENCODING=utf-8
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/smartflow/app/.venv/bin/smartflow watchdog
+# a problem found is not a failed unit: the operator was told
+SuccessExitStatus=1
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/smartflow/app/runs
+MemoryMax=300M
+Nice=10

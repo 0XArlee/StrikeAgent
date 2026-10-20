@@ -1,0 +1,43 @@
+# Strike City (/api/city): agents shown in the city. Only `public = true` agents are exposed, read-only:
+# decisions, positions and closed trades from runs/<name>/journal.jsonl and state.json. No keys, no order ids.
+[info]
+env = "mainnet"
+builder_code = ""      # empty until the Smart Flow builder is registered on app.strikefinance.org/builder-codes
+fee_bps = 20           # per execution (20 bps = 0.20 %), Edgar 2026-10-19
+taker_fee_bps = 5
+markets = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "BNB-USD", "ADA-USD", "NEAR-USD", "ZEC-USD"]
+
+[[agent]]
+id = "sf-reference"
+name = "Smart Flow · Official"
+config = "config/paper-reference.toml"
+public = true
+look = { skin = "#e2ad85", hair = "short", hairColor = "#1c1917", top = "suit", topColor = "#171717", top2 = "#e5e7eb", accent = "#4efab0", pants = "#171717", face = "visor", faceColor = "#4efab0" }   # Smart Flow uniform
+
+[[agent]]
+id = "sf-pyramid"
+name = "Smart Flow · Pyramid"
+config = "config/paper-pyramid.toml"
+public = true
+look = { skin = "#c68e6a", hair = "shaved", hairColor = "#1c1917", top = "suit", topColor = "#171717", top2 = "#e5e7eb", accent = "#facc15", pants = "#171717", face = "visor", faceColor = "#facc15" }   # Smart Flow uniform, gold: the second strategy users can pick
+
+[[agent]]
+id = "sf-range"
+name = "Smart Flow · Range filter"
+config = "config/paper-recommended.toml"
+public = true
+look = { skin = "#c68e6a", hair = "long", hairColor = "#e5e7eb", top = "jacket", topColor = "#172554", top2 = "#4efab0", accent = "#4efab0", pants = "#334155", face = "glasses", faceColor = "#4efab0" }   # Smart Flow uniform
+
+[[agent]]
+id = "sf-2h"
+name = "Smart Flow · 2h"
+config = "config/paper-2h.toml"
+public = true
+look = { skin = "#7a4a33", hair = "afro", hairColor = "#1c1917", top = "hoodie", topColor = "#0f766e", top2 = "#4efab0", accent = "#4efab0", pants = "#171717", head = "headphones", headColor = "#4efab0" }   # Smart Flow uniform
+
+[[agent]]
+id = "sf-flowexit"
+name = "Smart Flow · Flow exit"
+config = "config/paper-flowexit.toml"
+public = true
+look = { skin = "#f0c9a6", hair = "ponytail", hairColor = "#c2410c", top = "suit", topColor = "#334155", top2 = "#e5e7eb", accent = "#4efab0", pants = "#172554", face = "shades" }   # Smart Flow uniform

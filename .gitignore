@@ -1,0 +1,43 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+.dev.vars
+secrets/
+*.key
+*.pem
+*.dpapi
+
+# the proprietary indicator (EdgeCraft): reference on the development PC only, never shipped (deploy/bundle.sh)
+SmartFlowSignals.txt
+
+# market data and run artefacts (re-downloadable / regenerable)
+data/
+runs/
+*.jsonl
+# users' audit reports (wallet addresses, signed messages): only where they are made
+reports/audit/
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# web
+node_modules/
+web/dist*/
+web/.wrangler/
+*.tsbuildinfo
+web/shots/
+web/scripts/out/
+
+# bundles for the agents' host
+smartflow.tgz
+
+# Strike API key files downloaded from the app (contain the private key)
+strike-api-key*.json

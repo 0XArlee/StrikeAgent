@@ -1,0 +1,22 @@
+# Each strategy's real results against its backtest, every hour; sets the safety hold when one is breached
+# (src/smartflow/live/health.py). Install: deploy/install_ct.sh
+[Unit]
+Description=Smart Flow strategy health and safety hold
+
+[Service]
+Type=oneshot
+User=smartflow
+Group=smartflow
+WorkingDirectory=/opt/smartflow/app
+EnvironmentFile=-/etc/smartflow/alert.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONIOENCODING=utf-8
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/smartflow/app/.venv/bin/smartflow health
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/smartflow/app/runs
+MemoryMax=400M
+Nice=10

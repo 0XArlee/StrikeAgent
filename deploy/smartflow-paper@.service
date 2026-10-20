@@ -1,0 +1,31 @@
+# Smart Flow Agent - paper trading instance (%i = reference | recommended -> config/paper-%i.toml)
+# Simulation mode only: no API keys on this host, no real orders. Install: deploy/install_ct.sh
+[Unit]
+Description=Smart Flow Agent paper trading (%i)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=600
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=smartflow
+Group=smartflow
+WorkingDirectory=/opt/smartflow/app
+EnvironmentFile=-/etc/smartflow/alert.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONIOENCODING=utf-8
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/smartflow/app/.venv/bin/smartflow agent run --config config/paper-%i.toml
+Restart=always
+RestartSec=30
+# hardening: the agent only writes its journal/state and the market-data store
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/smartflow/app/runs /opt/smartflow/app/data
+MemoryMax=600M
+
+[Install]
+WantedBy=multi-user.target

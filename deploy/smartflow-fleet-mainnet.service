@@ -1,0 +1,32 @@
+# Smart Flow -> users' agents on MAINNET (real money), connected to Strike with the builder code. Off until Edgar decides:
+# enabled only when /etc/smartflow/fleet-mainnet.env exists (production site URL + its PUSH_SECRET + SMARTFLOW_LIVE_ACK).
+# Pulls the links from the site (outbound HTTPS, HMAC signed) and trades each user's account with its API wallet; the
+# private keys live only here, encrypted in /var/lib/smartflow/keys (master key /etc/smartflow/keys.key).
+# Install: deploy/install_ct.sh (docs/08 "Builder connect": the mainnet switch).
+[Unit]
+Description=Smart Flow users' agents (builder connect, MAINNET)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=smartflow
+Group=smartflow
+WorkingDirectory=/opt/smartflow/app
+EnvironmentFile=-/etc/smartflow/alert.env
+EnvironmentFile=/etc/smartflow/fleet-mainnet.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONIOENCODING=utf-8
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/smartflow/app/.venv/bin/smartflow fleet --env mainnet --allow-mainnet
+Restart=always
+RestartSec=30
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/smartflow/app/runs /opt/smartflow/app/data /var/lib/smartflow/keys
+MemoryMax=800M
+
+[Install]
+WantedBy=multi-user.target

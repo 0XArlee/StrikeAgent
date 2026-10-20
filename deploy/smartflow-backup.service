@@ -1,0 +1,18 @@
+# Daily copy of the audit trail + a check of every chain (deploy/smartflow-backup.sh).
+[Unit]
+Description=Smart Flow audit trail - daily backup and integrity check
+
+[Service]
+Type=oneshot
+User=smartflow
+Group=smartflow
+WorkingDirectory=/opt/smartflow/app
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/bin/bash /opt/smartflow/app/deploy/smartflow-backup.sh
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/backups/smartflow
+Nice=10
+IOSchedulingClass=idle
