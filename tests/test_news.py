@@ -358,3 +358,12 @@ def test_items_left_out_are_asked_again():
     got = hk.classify([{"id": f"h{i}", "title": f"t{i}", "source": "S"} for i in range(5)])
     assert set(got) == {f"h{i}" for i in range(5)} and len(calls) == 2
     assert "return exactly 4 items" in calls[1]["messages"][0]["content"] and not hk.errors
+
+
+def test_outlets_outside_the_list_are_left_out():
+    feed = {"id": "wires", "name": "Google News", "markets": [], "tier": 1, "allow": ["Reuters"]}
+    assert [x.source for x in parse(RSS, feed)] == ["Reuters"]
+    s = Store(":memory:")
+    s.add([Headline("a", "From a local outlet", "https://x/a", "Local Paper", "wires", NOW - H),
+           Headline("b", "From Reuters", "https://x/b", "Reuters", "wires", NOW - H)], NOW, 72 * H)
+    assert s.keep_outlets("wires", ["Reuters"]) == 1 and [r["source"] for r in s.window(NOW - 72 * H)] == ["Reuters"]

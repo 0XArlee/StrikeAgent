@@ -119,6 +119,8 @@ def parse(xml: bytes, feed: dict) -> list[Headline]:
                 title = title[: -len(source) - 3].rstrip()
         if not title or not link.startswith("https://") or len(link) > 2000:
             continue
+        if feed.get("allow") and source not in feed["allow"]:
+            continue   # a search limited to some outlets lets others through (2026-10-21: dozens of local outlets)
         published = _time(e.findtext("pubDate") or e.findtext(f"{ATOM}published") or e.findtext(f"{ATOM}updated"))
         markets = list(dict.fromkeys(feed.get("markets", []) + title_markets(title)))
         summary = clean(e.findtext("description") or e.findtext(f"{ATOM}summary") or "")

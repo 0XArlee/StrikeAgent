@@ -83,7 +83,7 @@ class Store:
         self.db.commit()
         return added
 
-    def unclassified(self, since: int, limit: int, max_tries: int = 3) -> list[sqlite3.Row]:
+    def unclassified(self, since: int, limit: int, max_tries: int = 6) -> list[sqlite3.Row]:
         return self.db.execute("SELECT * FROM items WHERE cls IS NULL AND tries < ? AND t >= ? ORDER BY t DESC LIMIT ?",
                                (max_tries, since, limit)).fetchall()
 
@@ -98,6 +98,14 @@ class Store:
     def retry_unclassified(self) -> None:
         self.db.execute("UPDATE items SET tries = 0 WHERE cls IS NULL")
         self.db.commit()
+
+    def keep_outlets(self, feed: str, allow: list[str]) -> int:
+        """A feed limited to some outlets: what came from others before the limit goes."""
+        marks = ",".join("?" * len(allow))
+        n = self.db.execute(f"DELETE FROM items WHERE feed = ? AND source NOT IN ({marks})", [feed, *allow]).rowcount
+        self.db.commit()
+        self._recent = None
+        return n
 
     def sync_feeds(self, tiers: dict[str, int]) -> int:
         """Only the configured feeds stay (a dropped feed's headlines go), each headline with its feed's tier."""

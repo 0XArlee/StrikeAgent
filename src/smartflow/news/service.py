@@ -74,8 +74,9 @@ class NewsService:
                                        for f in self.sources["feeds"]}
         self.store.retry_unclassified()   # each start gives the headlines the model could not answer another chance
         gone = self.store.sync_feeds({f["id"]: int(f.get("tier", 2)) for f in self.sources["feeds"]})
+        gone += sum(self.store.keep_outlets(f["id"], f["allow"]) for f in self.sources["feeds"] if f.get("allow"))
         if gone:
-            self.log(f"news: {gone} headlines from feeds no longer configured removed")
+            self.log(f"news: {gone} headlines from feeds or outlets no longer configured removed")
         self.classify_error: str | None = None
         self.last_fp = ""
         self.warned_at = 0
