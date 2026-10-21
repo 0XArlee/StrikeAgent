@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import "@fontsource/ibm-plex-mono/600.css";
 import "@fontsource/ibm-plex-mono/700.css";
 import { CityEngine, idleMoment, prepareLayers } from "./engine";
+import { artReady } from "./world";
 import { CityStore } from "./store";
 
 const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -59,7 +60,7 @@ export default function CityPreview({ onStats }: { onStats?: (s: { online: numbe
       for (let q = performance.now() - lastScroll; q < 300; q = performance.now() - lastScroll) await new Promise((r) => setTimeout(r, 300 - q));
       await idleMoment();
     };
-    store.load(() => undefined).then(() => prepareLayers(whenQuiet)).then(() => {
+    store.load(() => undefined).then(() => artReady).then(() => prepareLayers(whenQuiet)).then(() => {
       if (!alive) return;
       store.start();
       engine = new CityEngine(c, {

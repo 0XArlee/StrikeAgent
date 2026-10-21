@@ -14,7 +14,7 @@ import { BOOK_MARKET, CITY_MARKETS, CityStore, type Book } from "./store";
 import { EventSoon, NewsButton, NewsView, contextLine, tapeLine } from "./NewsView";
 import { useNews } from "./news";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
-import { BUILDINGS } from "./world";
+import { ART2, BUILDINGS, artReady } from "./world";
 import { PortfolioView, livePosition } from "./portfolio";
 import { TradingViewChart, warmTradingView } from "./tradingview";
 
@@ -71,7 +71,9 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
 
   useEffect(() => {
     let alive = true;
-    store.load((k) => alive && setProgress(k)).then(() => { if (!alive) return; store.start(); setReady(true); });
+    // the new art (?art=new) is chosen when the page loads: asked for later, the page loads again with it
+    if (/[?&]art=(new|old)/.test(location.hash) && ART2 !== /[?&]art=new/.test(location.hash)) { location.reload(); return; }
+    Promise.all([store.load((k) => alive && setProgress(k)), artReady]).then(() => { if (!alive) return; store.start(); setReady(true); });
     return () => { alive = false; store.stop(); };
   }, [store]);
 

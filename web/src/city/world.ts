@@ -1,4 +1,26 @@
 // Strike City layout (tile = 16 art px) and its static rendering (pre-rendered once to an offscreen canvas).
+//
+// The new art (LimeZu's Modern Exteriors, composed by web/scripts/build_city.py into art/city/base.png + glow.png and
+// city2.json): for now only with ?art=new in the city's address (kept for the tab), to compare it with the city drawn
+// here. Same map, roads, plaza and doors; its buildings are taller (their floors) and its props are where city2.json
+// says.
+import city2 from "./city2.json";
+
+export const ART2 = (() => {
+  try {
+    if (/[?&]art=new\b/.test(location.hash + location.search)) sessionStorage.setItem("sf-art", "new");
+    if (/[?&]art=old\b/.test(location.hash + location.search)) sessionStorage.removeItem("sf-art");
+    return sessionStorage.getItem("sf-art") === "new";
+  } catch { return false; }
+})();
+const art: { base?: HTMLImageElement; glow?: HTMLImageElement } = {};
+/** The new art's pictures, loaded (resolves at once without the new art, or if they cannot be loaded). */
+export const artReady: Promise<void> = !ART2 ? Promise.resolve() : Promise.all((["base", "glow"] as const).map((k) => new Promise<void>((ok) => {
+  const im = new Image();
+  im.onload = () => { art[k] = im; ok(); };
+  im.onerror = () => ok();
+  im.src = `${import.meta.env.BASE_URL ?? "/"}art/city/${k}.png`;
+}))).then(() => undefined);
 export const TILE = 16;
 export const COLS = 96;
 export const ROWS = 64;
@@ -38,6 +60,11 @@ export const BUILDINGS: Building[] = [
   { id: "cafe", kind: "cafe", label: "FUNDING CAFE", x: 41, y: 49, w: 6, d: 4, h: 24, wall: "#2b211a", roof: "#3a2c22", neon: "#fb923c", door: { x: 44, y: 59 } },
   { id: "arena", kind: "arena", label: "RANKS ARENA", sub: "leaderboard", x: 53, y: 46, w: 16, d: 7, h: 40, wall: "#2a1820", roof: "#3a2230", neon: "#fb7185", door: { x: 61, y: 59 } },
 ];
+// the new art's buildings are as tall as their floors: the same place and door, another depth and height
+if (ART2) for (const g of city2.buildings) {
+  const b = BUILDINGS.find((x) => x.id === g.id);
+  if (b) Object.assign(b, { y: g.y, d: g.d, h: g.h });
+}
 
 // plaza (walkable, decorated) in front of the exchange; the fountain sits in the middle
 export const PLAZA = { x: 27, y: 28, w: 44, d: 13 };
@@ -82,6 +109,8 @@ for (let y = 34; y <= 36; y++) for (let x = 47; x <= 50; x++) walk[y * COLS + x]
 // plaza furniture: two kiosks and benches facing the fountain
 export const KIOSKS = [{ x: 33, y: 37, color: "#4efab0" }, { x: 62, y: 37, color: "#fb923c" }];
 for (const k of KIOSKS) for (let y = k.y; y < k.y + 2; y++) for (let x = k.x; x < k.x + 2; x++) walk[y * COLS + x] = 0;
+// the new art: every tile its trees, planters, benches and carts take
+if (ART2) for (const [x, y] of city2.blocked) walk[y * COLS + x] = 0;
 export const BENCHES: { x: number; y: number; v: boolean }[] = [];
 for (const dx of [-5, 5]) for (const dy of [-1, 2]) BENCHES.push({ x: FOUNTAIN.x + dx * TILE, y: FOUNTAIN.y + dy * TILE, v: true });
 for (const dx of [-2, 2]) BENCHES.push({ x: FOUNTAIN.x + dx * TILE * 1.4, y: FOUNTAIN.y + 4 * TILE, v: false });
@@ -108,7 +137,10 @@ function rng(seed: number) {
 }
 
 const TREES: { x: number; y: number; r: number }[] = [];
-{
+if (ART2) {   // the new art's lamps (their foot: the light pool; their head: the glow)
+  LAMPS.length = 0;
+  for (const [x, y] of city2.lamps) LAMPS.push({ x, y: y - 6 });
+} else {
   const R = rng(7);
   for (let i = 0; i < 260; i++) {
     const x = Math.floor(R() * COLS), y = Math.floor(R() * ROWS);
@@ -213,6 +245,7 @@ export function renderStatic(): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = W; c.height = H;
   const g = c.getContext("2d")!;
+  if (ART2 && art.base) { g.drawImage(art.base, 0, 0); return c; }
   const R = rng(42);
   GLOWS.length = 0;   // deterministic repaint (rng 42): never accumulate light sources twice
   // ground
@@ -342,6 +375,15 @@ export function renderGlow(): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = W; c.height = H;
   const g = c.getContext("2d")!;
+  if (ART2 && art.base) {   // the lit windows (build_city.py) and every lamp's head
+    if (art.glow) g.drawImage(art.glow, 0, 0);
+    for (const [x, , y] of city2.lamps) {
+      g.globalAlpha = 0.3; g.fillStyle = "#fff1b8"; g.fillRect(x - 4, y - 3, 8, 7);
+      g.globalAlpha = 1; g.fillRect(x - 2, y - 1, 4, 3);
+    }
+    g.globalAlpha = 1;
+    return c;
+  }
   for (const s of GLOWS) {
     g.globalAlpha = s.a * 0.35;
     g.fillStyle = s.c;
