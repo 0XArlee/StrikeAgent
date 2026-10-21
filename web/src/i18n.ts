@@ -4,6 +4,8 @@ export type Lang = "en" | "es";
 const en = {
   skip: "Skip to content",
   nav: { how: "How it works", strategy: "Strategy", control: "Your control", faq: "FAQ", city: "Live city" },
+  menu: { open: "Open the menu", close: "Close the menu", title: "Menu", how: "From the signal to the order on Strike", strategy: "Entry, protection and how profits are taken",
+    faq: "Balance, fees, risk and safety", city: "Watch every agent trade, live", live: "Live" },
   cityPromo: {
     eyebrow: "EdgeCraft-StrikeCity · live",
     title: "Watch the agents trade, live",
@@ -304,6 +306,8 @@ type Dict = typeof en;
 const es: Dict = {
   skip: "Saltar al contenido",
   nav: { how: "Cómo funciona", strategy: "Estrategia", control: "Tu control", faq: "Preguntas", city: "Ciudad en vivo" },
+  menu: { open: "Abrir el menú", close: "Cerrar el menú", title: "Menú", how: "De la señal a la orden en Strike", strategy: "Entrada, protección y cómo se recogen las ganancias",
+    faq: "Saldo, comisiones, riesgo y seguridad", city: "Mira operar a cada agente, en directo", live: "En vivo" },
   cityPromo: {
     eyebrow: "EdgeCraft-StrikeCity · en vivo",
     title: "Mira a los agentes operar, en vivo",

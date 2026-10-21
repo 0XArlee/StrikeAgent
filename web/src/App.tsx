@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { api, isMock, type AppInfo } from "./api";
 import strategy from "./data/strategy.json";   // engine version shown in the footer
+import { MobileMenu } from "./components/MobileMenu";
 import { ConnectModal, type LinkResult } from "./components/ConnectModal";
 import { sessionWallet } from "./cardano/wallets";
 import { Dashboard } from "./components/Dashboard";
@@ -142,6 +143,7 @@ export function App() {
             <button type="button" className="btn btn-primary connect-desktop" onClick={onConnectClick}>
               {link ? <Icon.wallet /> : null}{connectLabel}
             </button>
+            <MobileMenu t={t} lang={lang} setLang={setLang} connectLabel={link ? t.dashboard : t.connectCardano} onConnect={onConnectClick} />
           </div>
         </div>
       </header>
