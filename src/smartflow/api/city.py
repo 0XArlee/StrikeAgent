@@ -395,7 +395,8 @@ def snapshot(agent: CityAgent, now_ms: int | None = None, full: bool = False) ->
         "trades": (trades if full else [{k: v for k, v in x.items() if k != "params"} for x in trades[-MAX_TRADES:]])[::-1],
         # the counts over every trade, also the ones older than the list above (tests never count)
         "tally": _tally([x for x in trades if not x.get("test")]),
-        "checks": {m: {"time": d["time"], "args": d["args"], "text": d["text"]} for m, d in latest_check.items()},
+        # only the markets it trades now (a market dropped in the settings keeps its old checks in the journal)
+        "checks": {m: {"time": d["time"], "args": d["args"], "text": d["text"]} for m, d in latest_check.items() if m in markets},
         "decisions": decisions,
     }
     if acct:

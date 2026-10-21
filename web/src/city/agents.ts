@@ -24,7 +24,8 @@ export type Code = "no_range" | "no_body" | "low_volume" | "against_trend" | "si
   | "open" | "close" | "pause" | "resume" | "live" | "live_off" | "held" | "settings" | "test" | "test_open" | "test_close" | "account_fill"
   // live journals (smartflow/api/city.py)
   | "check" | "not_traded" | "risk_weekly" | "risk_other" | "risk_min" | "not_filled" | "alert" | "start"
-  | "risk_balance" | "risk_hold" | "test_funds" | "test_busy";
+  | "risk_balance" | "risk_hold" | "test_funds" | "test_busy"
+  | "checks";   // the page's own summary: every market of the agent checked at the last candle close
 
 export interface Position { market: string; side: "long" | "short"; entry: number; stop: number; trail: number; size: number; rOpen: number;
   stopKnown: boolean; upnl: number | null }   // a live account can hold a position the agent did not open (no stop)
@@ -290,11 +291,27 @@ export function nowDecision(a: AgentView): Decision | undefined {
       ? { time: Date.now(), market: p.market, kind: "order", code: "open", args: { side: p.side, price: p.entry, stop: p.stop } }
       : { time: Date.now(), market: p.market, kind: "order", code: "held", args: { side: p.side, price: p.entry } };
   }
-  const c = a.real?.checks[a.focus];
-  if (c && (a.status === "waiting" || a.status === "analyzing")) {
-    return { time: c.time, market: a.focus, kind: "analysis", code: "check", args: c.args, text: c.text };
+  if (a.real && (a.status === "waiting" || a.status === "analyzing")) {
+    // every market it trades is checked at each candle close: say so, not only the one its card happens to show
+    const all = lastChecks(a);
+    if (all.length > 1) {
+      return { time: Math.max(...all.map((c) => c.time)), market: "", kind: "analysis", code: "checks",
+        args: { markets: all.map((c) => c.market).join(","), n: all.length } };
+    }
+    const c = a.real.checks[a.focus];
+    if (c) return { time: c.time, market: a.focus, kind: "analysis", code: "check", args: c.args, text: c.text };
   }
   return a.decisions[0];
+}
+
+/** The agent's checks of its own markets at its latest candle close (one per market, in its order). */
+export function lastChecks(a: AgentView): Decision[] {
+  const checks = a.real?.checks ?? {};
+  const latest = Math.max(0, ...a.markets.map((m) => checks[m]?.time ?? 0));
+  return a.markets.flatMap((m) => {
+    const c = checks[m];
+    return c && latest - c.time < 3600_000 ? [{ time: c.time, market: m, kind: "analysis" as const, code: "check" as const, args: c.args, text: c.text }] : [];
+  });
 }
 
 /** Moves a real agent only when something real happens: its state changed (a candle close sends it to the lab, a

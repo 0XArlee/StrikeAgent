@@ -173,6 +173,7 @@ const en = {
   } as Record<string, string>,
   ev: {
     check: (m: string, parts: string) => `No trade on ${m}: ${parts}.`,
+    checks: (n: number, list: string) => `Checked its ${n} markets (${list}) at the last candle close: none gave a setup.`,
     part: {
       range: (v: string, min: string) => `candle range ${v} ATR (needs ${min})`,
       body: (v: string, min: string) => `body ${v}% of the candle (needs ${min}%)`,
@@ -393,6 +394,7 @@ const es: CityText = {
   },
   ev: {
     check: (m: string, parts: string) => `Sin operación en ${m}: ${parts}.`,
+    checks: (n: number, list: string) => `Revisó sus ${n} mercados (${list}) en el último cierre de vela: ninguno dio señal.`,
     part: {
       range: (v: string, min: string) => `rango de la vela ${v} ATR (necesita ${min})`,
       body: (v: string, min: string) => `cuerpo del ${v}% de la vela (necesita ${min}%)`,
@@ -475,6 +477,11 @@ export function describe(d: Decision, T: CityText, lang: Lang): { text: string; 
   const fix = (k: string, d: number) => Number(a[k] ?? 0).toLocaleString(lang === "es" ? "es-ES" : "en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
   const has = (k: string) => a[k] !== undefined && a[k] !== null && Number.isFinite(Number(a[k]));
   switch (d.code) {
+    case "checks": {
+      const list = String(a.markets ?? "").split(",").filter(Boolean).map(ticker);
+      const joined = list.length > 1 ? `${list.slice(0, -1).join(", ")} ${lang === "es" ? "y" : "and"} ${list[list.length - 1]}` : list.join("");
+      return { text: T.ev.checks(list.length, joined), why: T.ev.why.analysis, next: T.ev.next };
+    }
     case "check": {
       const P = T.ev.part;
       const parts = String(a.r ?? "").split(",").filter(Boolean).map((r) => {

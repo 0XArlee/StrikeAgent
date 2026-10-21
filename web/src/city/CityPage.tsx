@@ -6,7 +6,7 @@ import "@fontsource/ibm-plex-mono/700.css";
 import "./city.css";
 import type { Lang } from "../i18n";
 import { Icon, Mark } from "../components/ui";
-import { nowDecision, stats, type AgentView, type FeedItem, type Status } from "./agents";
+import { lastChecks, nowDecision, stats, type AgentView, type FeedItem, type Status } from "./agents";
 import { CityEngine, SCREEN_BOOK, SCREEN_CHART, STATUS_COLOR, drawIcon, type Sel } from "./engine";
 import type { Look } from "./look";
 import { FEET, FW, HEAD_TOP, frameAt, onSheet, sheetFor } from "./sprites";
@@ -32,7 +32,7 @@ const isSmall = () => window.matchMedia("(max-width: 760px)").matches;
 
 const wantsMe = () => /[?&]me\b/.test(location.hash);
 // the markets the full chart offers (the ones agents can trade)
-const CHART_MARKETS = [...CITY_MARKETS, "NEAR-USD", "ZEC-USD"];
+const CHART_MARKETS = CITY_MARKETS;
 // TradingView's screen chart is laid out at this many CSS px per world px and scaled with the map: zooming only
 // transforms it (no new layout inside the iframe), and its text stays readable from the default zoom
 const TV_K = 2.5;
@@ -457,6 +457,11 @@ function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks,
       <div className="city-card-status"><KindTag T={T} a={a} />{strategyDef(a.strategy ?? "").tag && a.strategy !== DEFAULT_STRATEGY && <span className="city-tag strat">{strategyDef(a.strategy!).tag}</span>}<StatusPill T={T} a={a} /><span className="faint small">{a.real ? `${tfLabel(a.real.tf)} · ` : ""}{marketList(a.markets)}</span></div>
       <p className="city-card-label">{T.card.now}</p>
       <p className="city-card-text">{a.status === "unfunded" ? T.unfundedNow : last ? describe(last, T, lang).text : T.status[a.status]}</p>
+      {last?.code === "checks" && a.status !== "unfunded" && (   // each market it checked, and why it did not trade it
+        <ul className="city-checks">{lastChecks(a).map((c) => (
+          <li key={c.market}><b>{ticker(c.market)}</b> {describe(c, T, lang).text.replace(/^[^:]+:\s*/, "")}</li>
+        ))}</ul>
+      )}
       {p ? (
         <dl className="city-kv">
           <div><dt>{T.card.position}</dt><dd className={p.side === "long" ? "pos" : "neg"}>{p.side === "long" ? "LONG" : "SHORT"} {ticker(p.market)}</dd></div>

@@ -4,7 +4,7 @@
 // population. If the API cannot be reached the city says so instead of inventing agents.
 import { freePost, fromApi, liveTick, mulberry, type AgentView, type ApiAgent, type Decision, type FeedItem, type Prices } from "./agents";
 
-export const CITY_MARKETS = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "BNB-USD", "ADA-USD"];
+export const CITY_MARKETS = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "BNB-USD", "ADA-USD", "NEAR-USD", "ZEC-USD"];   // every market the agents trade
 const STRIKE = "https://api.strikefinance.org/price/v2";
 const BINANCE = "https://fapi.binance.com/fapi/v1";
 const CITY_API = (import.meta.env.VITE_CITY_API as string | undefined) ?? "";   // "" = same origin (/api proxied)
@@ -42,7 +42,7 @@ async function strikePrices(): Promise<Prices> {
 async function binancePrices(): Promise<Prices> {
   const [tick, prem] = (await Promise.all([getJson(`${BINANCE}/ticker/24hr`), getJson(`${BINANCE}/premiumIndex`)])) as [Row[], Row[]];
   const out: Prices = {};
-  for (const m of [...CITY_MARKETS, "NEAR-USD", "ZEC-USD"]) {
+  for (const m of CITY_MARKETS) {
     const t = tick.find((x) => x.symbol === toBinance(m));
     if (!t) continue;
     const p = prem.find((x) => x.symbol === toBinance(m));

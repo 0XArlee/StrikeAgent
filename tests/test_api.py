@@ -189,3 +189,17 @@ def test_city_agent_look_passthrough(tmp_path):
     [a] = load_city(city, tmp_path)
     s = snapshot(a)
     assert s["look"] == {"hair": "afro", "top": "hoodie", "topColor": "#0f766e"}
+
+
+def test_checks_only_of_the_markets_it_trades_now(tmp_path):
+    """An agent whose owner dropped some markets keeps their old checks in its journal: the city shows only the
+    markets it trades now (it looked as if it still checked eight)."""
+    run = tmp_path / "runs" / "y"
+    run.mkdir(parents=True)
+    recs = [{"ts": "2026-10-19T08:00:20+00:00", "kind": "analysis", "market": m, "bar": 1, "sig_dir": 0, "why": ["no setup"], "close": 1.0}
+            for m in ("BTC-USD", "ETH-USD", "NEAR-USD", "ZEC-USD")]
+    (run / "journal.jsonl").write_text("\n".join(json.dumps(r) for r in recs) + "\n")
+    a = CityAgent("y", "Y", _cfg_toml(tmp_path / "y.toml", "y", tf="240", markets=("BTC-USD", "ETH-USD")), run)
+    from smartflow.api.city import _ms
+    s = snapshot(a, _ms("2026-10-19T08:01:00+00:00"))
+    assert sorted(s["checks"]) == ["BTC-USD", "ETH-USD"] and s["markets"] == ["BTC-USD", "ETH-USD"]

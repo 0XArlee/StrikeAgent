@@ -49,7 +49,7 @@ export const BUILDINGS: Building[] = [
   { id: "btc", kind: "tower", label: "BTC TOWER", market: "BTC-USD", x: 29, y: 2, w: 14, d: 8, h: 72, wall: "#2a1d10", roof: "#3b2a16", neon: "#f7931a", door: { x: 36, y: 16 } },
   { id: "eth", kind: "tower", label: "ETH TOWER", market: "ETH-USD", x: 53, y: 2, w: 14, d: 8, h: 72, wall: "#1c1f3b", roof: "#272c55", neon: "#8b9cff", door: { x: 60, y: 16 } },
   { id: "sol", kind: "tower", label: "SOL TOWER", market: "SOL-USD", x: 77, y: 2, w: 10, d: 8, h: 64, wall: "#16263a", roof: "#1d3550", neon: "#14f195", door: { x: 82, y: 16 } },
-  { id: "alts", kind: "shop", label: "ALT ROW", sub: "XRP · BNB · ADA", x: 88, y: 6, w: 7, d: 4, h: 30, wall: "#262033", roof: "#342b47", neon: "#c084fc", door: { x: 91, y: 16 } },
+  { id: "alts", kind: "shop", label: "ALT ROW", sub: "XRP · BNB · ADA · NEAR · ZEC", x: 88, y: 6, w: 7, d: 4, h: 30, wall: "#262033", roof: "#342b47", neon: "#c084fc", door: { x: 91, y: 16 } },
   { id: "risk", kind: "risk", label: "RISK OFFICE", sub: "every order checked", x: 4, y: 22, w: 12, d: 6, h: 36, wall: "#2a2f37", roof: "#363c46", neon: "#f8931a", door: { x: 10, y: 34 } },
   { id: "alley", kind: "alley", label: "LIQUIDATION ALLEY", x: 17, y: 30, w: 5, d: 5, h: 26, wall: "#2a1215", roof: "#3a171c", neon: "#f43f5e", door: { x: 19, y: 40 } },
   { id: "exchange", kind: "exchange", label: "STRIKE EXCHANGE", sub: "order book", x: 32, y: 21, w: 32, d: 6, h: 52, wall: "#0d1f19", roof: "#123026", neon: "#4efab0", door: { x: 48, y: 31 } },

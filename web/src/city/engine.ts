@@ -535,7 +535,10 @@ export class CityEngine {
     } else if (a.real && a.status === "waiting") {
       label = countdown(a.real.nextCheck - Date.now());   // real schedule: next 4h candle close
     } else if (a.real && a.status === "analyzing") {
-      label = a.focus.replace("-USD", "");
+      // it checks every market it trades: the bubble goes through them (one at a time, n of N)
+      const ms = a.markets, n = ms.length;
+      const i = n > 1 && !this.o.reducedMotion ? Math.floor(performance.now() / 1300) % n : Math.max(0, ms.indexOf(a.focus));
+      label = `${(ms[i] ?? a.focus).replace("-USD", "")}${n > 1 ? ` ${i + 1}/${n}` : ""}`;
     }
     const iw = 16 * scale, h = 17 * scale;
     g.font = `700 ${Math.round(10 * scale)}px "IBM Plex Mono", monospace`;
