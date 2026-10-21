@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+# Vite build settings for Cloudflare (public: they end up in the page bundle), needed to build from a clone
+!web/.env.cloudflare
 .dev.vars
 secrets/
 *.key
