@@ -14,7 +14,7 @@ secrets/
 SmartFlowSignals.txt
 
 # market data and run artefacts (re-downloadable / regenerable)
-data/
+/data/
 runs/
 *.jsonl
 # users' audit reports (wallet addresses, signed messages): only where they are made
