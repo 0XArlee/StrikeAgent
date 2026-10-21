@@ -22,5 +22,5 @@ range_filter = true
 chand_atr = 4.0
 
 [risk]
-risk_per_trade = 0.005
+risk_per_trade = 0.01      # the default preset of users (standard, 1 %; live/fleet.py RISK)
 max_open_positions = 24   # 8 markets x 3 stacked trades; total leverage still capped by the risk engine

@@ -168,10 +168,15 @@ class RiskEngine:
             return Decision(False, [f"size {qty} above max market order {m.spec.max_market_qty}"])
         if a.open_notional + notional > c.max_total_leverage * a.equity:
             return Decision(False, [f"total exposure would exceed {c.max_total_leverage:g}x equity"])
-        leverage = max(1.0, math.ceil(notional / a.equity))
+        # the lowest leverage whose initial margin fits in 90 % of the available balance, up to the cap. On Strike's
+        # cross margin the leverage only sets the initial margin (notional / leverage); maintenance margin and so the
+        # liquidation depend on the notional, which the stop already sizes. The lowest one (1x) would leave no room
+        # for a second or third position at 1-2 % risk and skip trades the strategy takes (docs/08 "Niveles de riesgo")
+        low = max(1, math.ceil(notional / a.equity))
+        leverage = next((float(x) for x in range(low, int(lev_cap) + 1) if notional / x <= a.available * 0.9), None)
+        if leverage is None:
+            return Decision(False, [f"margin ${notional / max(low, lev_cap):,.2f} exceeds 90% of available ${a.available:,.2f}"])
         margin = notional / leverage
-        if margin > a.available * 0.9:
-            return Decision(False, [f"margin ${margin:,.2f} exceeds 90% of available ${a.available:,.2f}"])
         tier = m.spec.tier_for(notional)
         liq = est_liquidation(p.ref_price, p.dir, leverage, tier.mmr)
         if (p.ref_price - liq) * p.dir < c.liq_safety * dist:

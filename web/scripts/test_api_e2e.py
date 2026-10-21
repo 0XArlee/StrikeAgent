@@ -125,7 +125,7 @@ if mine:
     a = mine[0]
     # on a site with real trading, creating it connected it: a real agent (starting until the host pushes it), never paper
     kind = "live" if LIVE.get("enabled") else "paper"
-    check(f"its markets and risk are the owner's, {kind}", a["markets"] == ["BTC-USD", "ETH-USD"] and a["riskPct"] == 0.5 and a["kind"] == kind,
+    check(f"its markets and risk are the owner's, {kind}", a["markets"] == ["BTC-USD", "ETH-USD"] and a["riskPct"] == info["riskPresets"]["standard"] and a["kind"] == kind,
           f"{a.get('kind')} {a.get('markets')} {a.get('riskPct')}")
     check("its strategy is the owner's", a.get("strategy") == "pyramid", str(a.get("strategy")))
     check("no wallet address in the public city", w.address not in json.dumps(city))

@@ -50,7 +50,7 @@ def app_info(raw: dict, city: dict) -> dict:
     return {
         "env": i.get("env", "mainnet"), "builderCode": i.get("builder_code", ""), "feeBps": int(i.get("fee_bps", 20)),
         "takerFeeBps": int(i.get("taker_fee_bps", 5)), "markets": i.get("markets", []),
-        "riskPresets": i.get("risk_presets", {"conservative": 0.25, "standard": 0.5, "assertive": 1.0}),
+        "riskPresets": i.get("risk_presets", {"conservative": 0.5, "standard": 1.0, "assertive": 2.0}),   # live/fleet.py RISK
         "agentHealthy": bool(city.get("agents")) and all(a.get("status") != "offline" for a in city["agents"]),
         "engine": ENGINE_VERSION, "connect": bool(i.get("builder_code")),
     }

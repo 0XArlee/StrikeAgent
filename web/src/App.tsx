@@ -14,7 +14,7 @@ const CityPreview = lazy(() => import("./city/CityPreview"));
 const isCityRoute = () => location.hash.startsWith("#/city");
 
 const FALLBACK: AppInfo = { env: "mainnet", builderCode: "smartflow", feeBps: 20, takerFeeBps: 5, markets: ["BTC-USD", "ETH-USD", "SOL-USD"],
-  riskPresets: { conservative: 0.25, standard: 0.5, assertive: 1 }, agentHealthy: false, engine: "1.0.0" };
+  riskPresets: { conservative: 0.5, standard: 1, assertive: 2 }, agentHealthy: false, engine: "1.0.0" };
 
 // the signed-in session (7 days, see SESSION_TTL) survives closing the browser; an expired one asks to sign in again
 function loadLink(): LinkResult | null {

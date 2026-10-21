@@ -169,3 +169,15 @@ def test_uncertain_entry_is_reconciled_not_resent():
     assert _fail("c", HttpError(0, "timeout", "u")).uncertain
     assert _fail("c", HttpError(503, "busy", "u")).uncertain
     assert not _fail("c", HttpError(400, "invalid size", "u")).uncertain
+
+
+def test_leverage_rises_only_as_much_as_the_margin_needs(tmp_path):
+    """Strike cross margin: the leverage only sets the initial margin. With other positions using the balance, the
+    lowest leverage whose margin fits in 90 % of the available is used (up to the cap); the size never changes."""
+    eng = RiskEngine(RiskConfig(), tmp_path)
+    d1 = eng.evaluate(*ctx())                                   # 10k free: 1x
+    assert d1.accepted and d1.leverage == 1 and d1.margin == pytest.approx(d1.notional)
+    d2 = eng.evaluate(*ctx(available=2000.0))                   # notional ~2.58k: 2x makes its margin fit
+    assert d2.accepted and d2.leverage == 2 and d2.qty == d1.qty and d2.margin <= 0.9 * 2000
+    d3 = eng.evaluate(*ctx(available=400.0))                    # not even at 5x
+    assert not d3.accepted and "exceeds 90% of available" in d3.reasons[0]

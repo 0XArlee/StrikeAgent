@@ -2,7 +2,12 @@
 /// <reference path="./env.d.ts" />
 
 export const MARKETS = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "BNB-USD", "ADA-USD", "NEAR-USD", "ZEC-USD"];
-export const RISK: Record<string, number> = { conservative: 0.25, standard: 0.5, assertive: 1.0 };
+// risk per trade of each preset, % (smartflow/live/fleet.py RISK). Smart Flow Pyramid goes up to the standard preset:
+// it stacks up to 3 entries per market, and at 2 % its backtest drawdown was ~58 % (docs/08 "Niveles de riesgo")
+export const RISK: Record<string, number> = { conservative: 0.5, standard: 1.0, assertive: 2.0 };
+export const PYRAMID_MAX_RISK = "standard";
+/** Whether this risk preset is allowed with this strategy. */
+export const riskAllowed = (strategy: string, risk: string) => strategy !== "pyramid" || RISK[risk] <= RISK[PYRAMID_MAX_RISK];
 export const CHALLENGE_TTL = 5 * 60_000;
 export const SESSION_TTL = 7 * 86400_000;
 

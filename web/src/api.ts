@@ -158,7 +158,7 @@ const mock: Api = {
     return {
       env: "mainnet", builderCode: "", feeBps: 20, takerFeeBps: 5,
       markets: ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "BNB-USD", "ADA-USD", "NEAR-USD", "ZEC-USD"],
-      riskPresets: { conservative: 0.25, standard: 0.5, assertive: 1.0 }, agentHealthy: true, engine: "1.0.0", connect: false, paper: true,
+      riskPresets: { conservative: 0.5, standard: 1.0, assertive: 2.0 }, agentHealthy: true, engine: "1.0.0", connect: false, paper: true,
     };
   },
   async challenge(address, o) {

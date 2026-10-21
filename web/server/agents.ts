@@ -55,7 +55,7 @@ export function userAgent(u: UserRow, ref: Agent | undefined, events: UserEvent[
   const chosen = JSON.parse(u.markets) as string[];
   const markets = ref ? chosen.filter((m) => ref.markets.includes(m)) : chosen;
   const set = new Set(markets);
-  const risk = RISK[u.risk] ?? 0.5;
+  const risk = RISK[u.risk] ?? RISK.standard;
   const paused = pausedAt(events);
   const mine = (market: string, opened: number | null | undefined) =>
     set.has(market) && opened != null && opened >= u.created_at && !paused(opened);
@@ -131,7 +131,7 @@ export function startingAgent(u: UserRow, env: string, events: UserEvent[], now:
   const markets = JSON.parse(u.markets) as string[];
   const empty: Agent = {
     id: u.id, name: u.name, owner: "Strike user", kind: "live", env, tf: "240", variant: "reference", changes: [], markets,
-    riskPct: RISK[u.risk] ?? 0.5, feeBps: 20, equity0: null, cash: null, since: u.created_at, lastCheck: null, nextCheck: now,
+    riskPct: RISK[u.risk] ?? RISK.standard, feeBps: 20, equity0: null, cash: null, since: u.created_at, lastCheck: null, nextCheck: now,
     status: "analyzing", alerts: [], positions: [], trades: [], checks: {}, decisions: [],
   };
   return liveAgent(u, empty, events, true);

@@ -308,7 +308,8 @@ class Agent:
         if not decision.accepted:
             rec.to(S.REJECTED_BY_RISK, "; ".join(decision.reasons))
             return
-        plan = self._plan(m, rec, q, decision)
+        # Strike's leverage is per market: a stacked entry never lowers the one the open position already has
+        plan = self._plan(m, rec, q, decision, keep=int(pos.leverage or 0) if pos is not None else 0)
         rec.to(S.ORDER_PREPARED, "risk accepted")
         rec.data.update(qty=float(plan.qty), limit=str(plan.limit_price), plan_stop=str(plan.stop),
                         lev=plan.leverage, decision=decision.summary())
@@ -349,7 +350,7 @@ class Agent:
                                   "funding_rate": q.funding_rate, "impact_bps": impact, "taker": taker}
         return RiskEngine(self.cfg.risk, Path(".")).evaluate(prop, mctx, actx)
 
-    def _plan(self, m: MarketState, rec: TradeRecord, q, decision) -> EntryPlan:
+    def _plan(self, m: MarketState, rec: TradeRecord, q, decision, keep: int = 0) -> EntryPlan:
         spec = self.adapter.market_spec(m.strike)
         slip = self.cfg.max_entry_slippage_bps / 1e4
         limit = spec.round_price(q.ask * (1 + slip), side_up=True) if rec.dir == 1 else \
@@ -357,7 +358,7 @@ class Agent:
         stop = spec.round_price(rec.data["stop"], side_up=None)
         tp = spec.round_price(rec.data["tp"], side_up=rec.dir == -1) if rec.data["tp"] else None
         return EntryPlan(rec.trade_id, m.strike, rec.dir, decision.qty, limit, stop, tp,
-                         int(max(1, math.ceil(decision.leverage))))
+                         int(max(1, math.ceil(decision.leverage), keep)))
 
     def _drop(self, m: MarketState, rec: TradeRecord) -> None:
         if rec in m.trades:

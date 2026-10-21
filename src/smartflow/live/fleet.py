@@ -35,7 +35,17 @@ FILLS_KEPT = 5000   # Strike returns the latest 50: the file keeps every one see
 TRANSFERS_KEPT = 500
 FLOWS_V = 2   # how account.json keeps its transfers: an older file has its "base" marks worked out again
 WEB_AUDIT_EVERY_S = 60      # the site's record of what owners signed, copied here every minute
-RISK = {"conservative": 0.0025, "standard": 0.005, "assertive": 0.01}
+# risk per trade of each preset (web/server/util.ts RISK). Smart Flow Pyramid stacks up to 3 entries per market and
+# goes up to the standard preset: at 2 % its backtest drawdown was ~58 % (docs/08 "Niveles de riesgo")
+RISK = {"conservative": 0.005, "standard": 0.01, "assertive": 0.02}
+DEFAULT_RISK = "standard"
+PYRAMID_MAX_RISK = "standard"
+
+
+def risk_for(link: dict) -> float:
+    """The user's risk per trade; Pyramid never above its cap, whatever the site sent."""
+    r = RISK.get(link.get("risk", DEFAULT_RISK), RISK[DEFAULT_RISK])
+    return min(r, RISK[PYRAMID_MAX_RISK]) if link.get("strategy") == "pyramid" else r
 
 
 def _sig(secret: str, ts: str, payload: str) -> str:
@@ -148,7 +158,7 @@ def agent_config(link: dict, env: str, code: str, fee_bps: int, venue_markets: s
     return AgentConfig(
         name=f"live-{link['userId']}", mode="autonomous", env=env, tf="240", markets=markets, params=OFFICIAL,
         policy="pyramid" if pyramid else "single", max_stack=3,
-        risk=RiskConfig(risk_per_trade=RISK.get(link.get("risk", "standard"), 0.005),
+        risk=RiskConfig(risk_per_trade=risk_for(link),
                         max_open_positions=24 if pyramid else 8),
         builder_code=code, builder_fee_bps=fee_bps, builder_fee_approved_bps=link.get("feeBps", fee_bps),
         allow_autonomous=True, allow_mainnet=allow_mainnet and env == "mainnet", runs_root=runs_root, data_root=data_root)

@@ -8,7 +8,7 @@ import { lookId, normalizeLook } from "../src/city/look";
 import { parseAddress, verifyCip30 } from "./cardano";
 import { addEvent, audit, auditNow, consumeChallenge, eventsFor, newChallenge, publicUsers, saveSnapshot, snapshot, snapshotAt, tooMany, userById } from "./store";
 import {
-  CHALLENGE_TTL, MARKETS, RISK, STRATEGIES, strategyOf, body, cityCacheKey, cleanMarkets, cleanName, edgeCache, fail, hmacHex, ip, issueToken,
+  CHALLENGE_TTL, MARKETS, RISK, STRATEGIES, riskAllowed, strategyOf, body, cityCacheKey, cleanMarkets, cleanName, edgeCache, fail, hmacHex, ip, issueToken,
   json, readToken, sameText, sha256Hex, type UserRow,
 } from "./util";
 
@@ -108,6 +108,7 @@ export async function connectChallenge({ request, env }: Ctx): Promise<Response>
   const pub = b.public === true;
   const strategy = strategyOf(b.strategy);
   if (b.strategy !== undefined && b.strategy !== strategy) return fail(400, "unknown strategy");
+  if (!riskAllowed(strategy, risk)) return fail(400, `Smart Flow Pyramid goes up to the standard risk (${RISK.standard}% per trade)`);
   const look = b.look === undefined || b.look === null ? null : normalizeLook(b.look);
   if (b.look && !look) return fail(400, "invalid character");
   if (await tooMany(env.DB, ip(request), address, "connect", now)) return fail(429, "too many attempts: wait a few minutes");
@@ -266,6 +267,7 @@ export async function actionChallenge({ request, env }: Ctx): Promise<Response> 
     const markets = cleanMarkets(b.markets);
     const risk = typeof b.risk === "string" && b.risk in RISK ? b.risk : null;
     if (!markets || !risk || (b.strategy !== undefined && strategyOf(b.strategy) !== b.strategy)) return fail(400, "invalid settings");
+    if (!riskAllowed(strategyOf(b.strategy), risk)) return fail(400, `Smart Flow Pyramid goes up to the standard risk (${RISK.standard}% per trade)`);
     settings = { strategy: strategyOf(b.strategy), markets, risk };
   }
   if (b.action === "test") {

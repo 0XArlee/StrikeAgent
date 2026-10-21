@@ -273,6 +273,8 @@ legend { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding:
 .seg small { font-weight: 400; color: var(--text-muted); font-size: 11px; }
 .seg input:checked + span, .chips input:checked + span { border-color: var(--primary); background: var(--primary-10); color: var(--primary); }
 .seg input:focus-visible + span, .chips input:focus-visible + span, .check input:focus-visible + span::before { box-shadow: var(--focus); }
+.seg input:disabled { cursor: not-allowed; }
+.seg label.off span { opacity: 0.45; text-decoration: line-through; }   /* a preset this strategy does not allow */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chips span { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border: 1px solid var(--border); border-radius: 9999px; font-weight: 600; font-size: 13px; }
 @media (max-width: 640px) { .chips span { min-height: 44px; } }

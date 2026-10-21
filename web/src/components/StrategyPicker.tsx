@@ -2,7 +2,7 @@
 // resets the markets to that strategy's own (the ones with an edge after costs); the others stay opt-in.
 import type { AppInfo, RiskPreset } from "../api";
 import { fmt, type Dict, type Lang } from "../i18n";
-import { MIN_BALANCE, STRATEGY_DATA, STRATEGY_IDS, STRATEGY_MARKETS, type StrategyId } from "../strategies";
+import { MIN_BALANCE, PYRAMID_MAX_RISK, STRATEGY_DATA, STRATEGY_IDS, STRATEGY_MARKETS, riskAllowed, type StrategyId } from "../strategies";
 
 export interface Plan { strategy: StrategyId; markets: string[]; risk: RiskPreset }
 
@@ -19,7 +19,9 @@ export function StrategyPicker({ t, lang, info, value, onChange, idPrefix, title
   const pct = (v: number) => `${nf(v, 1)}${lang === "es" ? " %" : "%"}`;
   const core = STRATEGY_MARKETS[value.strategy].filter((m) => info.markets.includes(m));
   const more = info.markets.filter((m) => !core.includes(m));
-  const pick = (id: StrategyId) => onChange({ ...value, strategy: id, markets: STRATEGY_MARKETS[id].filter((m) => info.markets.includes(m)) });
+  // Pyramid goes up to the standard risk: picking it with a higher one brings the risk down to its cap
+  const pick = (id: StrategyId) => onChange({ ...value, strategy: id, markets: STRATEGY_MARKETS[id].filter((m) => info.markets.includes(m)),
+    risk: riskAllowed(id, value.risk) ? value.risk : PYRAMID_MAX_RISK });
   const toggle = (mk: string, on: boolean) =>
     onChange({ ...value, markets: on ? info.markets.filter((m) => m === mk || value.markets.includes(m)) : value.markets.filter((m) => m !== mk) });
   const chip = (mk: string) => (
@@ -67,12 +69,14 @@ export function StrategyPicker({ t, lang, info, value, onChange, idPrefix, title
         <p className="field-hint" style={{ marginBottom: 8 }}>{S.riskHint}</p>
         <div className="seg">
           {(Object.keys(info.riskPresets) as RiskPreset[]).map((k) => (
-            <label key={k}>
-              <input type="radio" name={`${idPrefix}-risk`} value={k} checked={value.risk === k} onChange={() => onChange({ ...value, risk: k })} />
+            <label key={k} className={riskAllowed(value.strategy, k) ? undefined : "off"}>
+              <input type="radio" name={`${idPrefix}-risk`} value={k} checked={value.risk === k} disabled={!riskAllowed(value.strategy, k)}
+                     onChange={() => onChange({ ...value, risk: k })} />
               <span>{t.modal.riskNames[k]}<small>{info.riskPresets[k].toLocaleString(loc)}%</small></span>
             </label>
           ))}
         </div>
+        {value.strategy === "pyramid" && <p className="field-hint">{fmt(S.pyramidCap, { max: `${info.riskPresets[PYRAMID_MAX_RISK].toLocaleString(loc)}${lang === "es" ? " %" : "%"}` })}</p>}
         {info.live?.enabled && <p className="field-hint balance-hint">{fmt(t.balance.pick, { min: `${MIN_BALANCE[value.risk]} $` })}</p>}
       </fieldset>
     </>
