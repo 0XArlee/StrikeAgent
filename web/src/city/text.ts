@@ -145,6 +145,11 @@ const en = {
     loading: "Loading the news…",
     more: (n: number) => `Show ${n} more`,
     newTab: " (opens the source in a new tab)",
+    tape: "NEWS",
+    evShort: { fomc: "Fed decision", cpi: "US CPI", nfp: "US jobs" } as Record<string, string>,
+    soon: (ev: string, when: string) => `${ev} ${when}`,
+    soonTip: "A scheduled US release that usually moves crypto. The agents trade as usual: they do not pause for it.",
+    context: "News context", contextNote: "for you: the agent does not use it",
   },
   buildings: {
     lab: "Agents come here at each candle close to analyse the charts: range, displacement, volume and the daily trend.",
@@ -356,6 +361,11 @@ const es: CityText = {
     loading: "Cargando las noticias…",
     more: (n: number) => `Ver ${n} más`,
     newTab: " (abre la fuente en una pestaña nueva)",
+    tape: "NOTICIAS",
+    evShort: { fomc: "Decisión de la Fed", cpi: "IPC de EE. UU.", nfp: "Empleo de EE. UU." },
+    soon: (ev: string, when: string) => `${ev} ${when}`,
+    soonTip: "Un dato programado de EE. UU. que suele mover las cripto. Los agentes operan igual: no se paran por él.",
+    context: "Contexto de noticias", contextNote: "para ti: el agente no lo usa",
   },
   buildings: {
     lab: "Los agentes vienen aquí al cierre de cada vela a analizar los gráficos: rango, desplazamiento, volumen y tendencia diaria.",

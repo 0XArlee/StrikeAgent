@@ -1,5 +1,5 @@
 /* Strike City: full-screen map with floating Strike-styled surfaces (same tokens as the onboarding page). */
-.city { position: fixed; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: #05070a; color: var(--text); }
+.city { position: fixed; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); background: #05070a; color: var(--text); }
 .city .small { font-size: 12px; }
 .city .strong { font-weight: 700; }
 .city .grow { flex: 1; min-width: 0; }
@@ -26,8 +26,21 @@
   border: 1px solid var(--border); border-radius: 9999px; font-size: 12px; font-weight: 600; color: var(--text); }
 .city-news-btn:hover { background: var(--surface-3); }
 .city-news-btn:focus-visible { box-shadow: var(--focus); }
+.city-event { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 10px;
+  border: 1px solid rgba(248, 147, 26, .45); background: var(--golden-10); border-radius: 9999px; font-size: 12px; font-weight: 600; color: #ffd29a; white-space: nowrap; }
+.city-event:hover { background: rgba(248, 147, 26, .2); }
+.city-event:focus-visible { box-shadow: var(--focus); }
+.city-event-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--golden); animation: event-pulse 1.6s ease-out infinite; }
+@keyframes event-pulse { 0% { box-shadow: 0 0 0 0 rgba(248, 147, 26, .55); } 100% { box-shadow: 0 0 0 7px rgba(248, 147, 26, 0); } }
+.city-event.just { border-color: var(--primary-30); background: var(--primary-10); color: var(--primary); }
+.city-event.just .city-event-dot { background: var(--primary); }
+.city-card-context { margin-top: 10px; line-height: 1.45; }
+.city-news-btn { position: relative; }
+.city-news-badge { display: none; position: absolute; top: -2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; background: var(--golden); box-shadow: 0 0 0 2px #0a0a0a; }
 .city-news-btn .num { color: var(--text-muted); } .city-news-btn .num.pos { color: var(--primary); } .city-news-btn .num.neg { color: var(--negative); }
 @media (max-width: 1180px) { .city-tickers { display: none; } .city-top-actions { margin-left: auto; } }
+/* a release coming up: its warning takes the prices' place (the towers' signs show them) */
+@media (max-width: 1720px) { .city-top:has(.city-event) .city-tickers { display: none; } .city-top:has(.city-event) .city-top-actions { margin-left: auto; } }
 
 /* ---------- stage & canvas ---------- */
 .city-stage { position: relative; overflow: hidden; }
@@ -187,6 +200,8 @@
   .city-top .hide-sm { display: none; }
   .city-weather { width: 34px; padding: 0; justify-content: center; }
   .city-news-btn { width: 34px; padding: 0; justify-content: center; }
+  .city-event { display: none; }   /* phones: a dot on the news button instead (the bar keeps one row) */
+  .city-news-badge { display: block; }
   .city-scale-float { display: none; }   /* phones: the scale lives in the Guide panel, the map stays clear */
   .city-scale-inline { padding: 10px 12px; }
   .city-zoom { top: 8px; right: 8px; }
@@ -201,7 +216,7 @@
   .city-statgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 400px) { .city-stats .hide-xs { display: none; } }
-@media (prefers-reduced-motion: reduce) { .city-panel, .city-card, .city-dialog, .city-live-dot { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .city-panel, .city-card, .city-dialog, .city-live-dot, .city-event-dot { animation: none; } }
 
 /* live mode: real agents from /api/city */
 .city-live { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .06em;

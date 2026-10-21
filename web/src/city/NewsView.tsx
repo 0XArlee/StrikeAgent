@@ -16,17 +16,72 @@ const modelName = (m: string | null) => (m && /haiku/i.test(m) ? "Claude Haiku" 
 type Doc = NewsDoc | null | "none" | "error";
 
 /** The top bar's way in: the word (an icon on phones) and, once scored, BTC's reading. */
-export function NewsButton({ T, lang, doc, onOpen }: { T: CityText; lang: Lang; doc: Doc; onOpen: () => void }) {
+export function NewsButton({ T, lang, doc, now, onOpen }: { T: CityText; lang: Lang; doc: Doc; now: number; onOpen: () => void }) {
   const N = T.news;
   const rd = doc && typeof doc === "object" && doc.classifier.on ? doc.markets["BTC-USD"] : undefined;
   const net = rd?.net ?? null;
-  const said = net != null && rd?.label ? `: BTC ${N.labels[rd.label]} ${signed(net, lang)}` : "";
+  const ev = soonEvent(doc, now);   // phones: the top bar's warning becomes a dot here
+  const said = (net != null && rd?.label ? `: BTC ${N.labels[rd.label]} ${signed(net, lang)}` : "")
+    + (ev ? `. ${N.soon(N.evShort[ev.kind] ?? ev.kind, when(T, ev, now))}` : "");
   return (
     <button type="button" className="city-news-btn" aria-haspopup="dialog" aria-label={N.open + said} title={N.open} onClick={onOpen}>
-      <NewsIcon /><span className="hide-sm">{N.title}</span>
+      <NewsIcon />{ev && <span className="city-news-badge" aria-hidden="true" />}<span className="hide-sm">{N.title}</span>
       {net != null && <span className={`num hide-sm ${sideOf(net)}`} aria-hidden="true">BTC {signed(net, lang)}</span>}
     </button>
   );
+}
+
+/** The next scheduled release within 24 h (or one out in the last 2 h), for the top bar's warning and the tape. */
+export function soonEvent(doc: Doc, now: number): { t: number; kind: string; just: boolean } | null {
+  if (!doc || typeof doc !== "object") return null;
+  const just = doc.events.just.find((e) => now - e.t <= 2 * 3600_000 && now >= e.t);
+  if (just) return { t: just.t, kind: just.kind, just: true };
+  const next = doc.events.next.find((e) => e.t > now);
+  return next && next.t - now <= 24 * 3600_000 ? { t: next.t, kind: next.kind, just: false } : null;
+}
+
+const when = (T: CityText, ev: { t: number; just: boolean }, now: number) =>
+  ev.just ? T.news.eventJust : T.news.inTime(countdown(ev.t - now, T.news.units));
+
+/** The top bar's warning before a scheduled US release (24 h before, until 2 h after). */
+export function EventSoon({ T, doc, now, onOpen }: { T: CityText; doc: Doc; now: number; onOpen: () => void }) {
+  const ev = soonEvent(doc, now);
+  if (!ev) return null;
+  const text = T.news.soon(T.news.evShort[ev.kind] ?? ev.kind, when(T, ev, now));
+  return (
+    <button type="button" className={`city-event${ev.just ? " just" : ""}`} title={T.news.soonTip} onClick={onOpen} aria-haspopup="dialog">
+      <span className="city-event-dot" aria-hidden="true" /><span className="hide-sm">{text}</span><span className="sr-only">{`${text}. ${T.news.soonTip}`}</span>
+    </button>
+  );
+}
+
+/** The exchange screen's tape: the news reading of BTC, the theme it follows and the next release. */
+export function tapeLine(doc: Doc, T: CityText, lang: Lang, now: number): string {
+  if (!doc || typeof doc !== "object") return "";
+  const N = T.news, parts: string[] = [N.tape];
+  const rd = doc.classifier.on ? doc.markets["BTC-USD"] : undefined;
+  if (rd?.net != null && rd.label) {
+    parts.push(`BTC ${N.labels[rd.label].toUpperCase()} ${signed(rd.net, lang)}`);
+    const top = rd.drivers[rd.net >= 0 ? "up" : "down"][0]?.top;
+    const h = top ? doc.headlines.find((x) => x.id === top) : undefined;
+    if (h) parts.push(lang === "es" && h.es ? h.es : h.title);
+  } else if (lang === "en" && doc.headlines[0]) {
+    parts.push(doc.headlines[0].title);   // not scored yet: the newest headline (they are in English)
+  }
+  const next = doc.events.next.find((e) => e.t > now);
+  if (next) parts.push(`${(N.evShort[next.kind] ?? next.name).toUpperCase()} ${N.inTime(countdown(next.t - now, N.units))}`);
+  return parts.length > 1 ? parts.join(" · ") : "";
+}
+
+/** For an agent in a trade: what the news say about its market, as context for whoever looks (never as its reason). */
+export function contextLine(doc: Doc, market: string, T: CityText, lang: Lang, now: number): string | null {
+  if (!doc || typeof doc !== "object") return null;
+  const N = T.news, parts: string[] = [];
+  const rd = doc.classifier.on ? doc.markets[market] : undefined;
+  if (rd?.net != null && rd.label) parts.push(`${N.labels[rd.label]} ${signed(rd.net, lang)}`);
+  const ev = soonEvent(doc, now);
+  if (ev) parts.push(N.soon(N.evShort[ev.kind] ?? ev.kind, when(T, ev, now)));
+  return parts.length ? parts.join(" · ") : null;
 }
 
 export const NewsIcon = () => (

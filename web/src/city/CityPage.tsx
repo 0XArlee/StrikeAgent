@@ -11,7 +11,7 @@ import { CityEngine, SCREEN_BOOK, SCREEN_CHART, STATUS_COLOR, drawIcon, type Sel
 import type { Look } from "./look";
 import { FEET, FW, HEAD_TOP, frameAt, onSheet, sheetFor } from "./sprites";
 import { BOOK_MARKET, CITY_MARKETS, CityStore, type Book } from "./store";
-import { NewsButton, NewsView } from "./NewsView";
+import { EventSoon, NewsButton, NewsView, contextLine, tapeLine } from "./NewsView";
 import { useNews } from "./news";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
 import { BUILDINGS } from "./world";
@@ -167,8 +167,10 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
   weather.current = !btc ? 0 : Math.abs(btc.change) >= 4 ? 2 : Math.abs(btc.change) >= 1.5 ? 1 : 0;
   const latest = store.feed.find((x) => x.d.kind !== "analysis") ?? store.feed[0];
   const SL = T.stats;
-  headline.current = latest ? `${latest.agent.toUpperCase()} · ${describe(latest.d, T, lang).text}`
-    : btc ? `EDGECRAFT-STRIKECITY · BTC ${fmtPrice(btc.price, lang)} ${fmtPct(btc.change, lang)}` : "EDGECRAFT-STRIKECITY";
+  const tape = tapeLine(newsDoc, T, lang, Date.now());   // the news reading and the next US release, after the agents' line
+  headline.current = (latest ? `${latest.agent.toUpperCase()} · ${describe(latest.d, T, lang).text}`
+    : btc ? `EDGECRAFT-STRIKECITY · BTC ${fmtPrice(btc.price, lang)} ${fmtPct(btc.change, lang)}` : "EDGECRAFT-STRIKECITY")
+    + (tape ? `      ${tape}` : "");
   const agent = sel?.kind === "agent" ? store.agent(sel.id) : undefined;
   const bld = sel?.kind === "building" ? BUILDINGS.find((b) => b.id === sel.id) : undefined;
   void version;
@@ -197,7 +199,8 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
           })}
         </ul>
         <div className="city-top-actions">
-          <NewsButton T={T} lang={lang} doc={newsDoc} onOpen={() => setNews("BTC-USD")} />
+          <EventSoon T={T} doc={newsDoc} now={Date.now()} onOpen={() => setNews("BTC-USD")} />
+          <NewsButton T={T} lang={lang} doc={newsDoc} now={Date.now()} onOpen={() => setNews("BTC-USD")} />
           <span className={`city-weather w${weather.current}`} title={T.weather.tip}>
             <WeatherIcon w={weather.current} /><span className="hide-sm">{[T.weather.calm, T.weather.breezy, T.weather.storm][weather.current]}</span>
             <span className="sr-only">. {T.weather.tip}</span>
@@ -263,7 +266,8 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
         {agent && !me && !(panel && isSmall()) && (
           <AgentCard T={T} lang={lang} a={agent} following={engine.current?.following === agent.id}
                      onFollow={() => { engine.current?.setFollow(engine.current.following !== agent.id); force((x) => x + 1); }}
-                     onDetails={() => setDetails(true)} onClose={() => choose(null)} marks={marksOf(store.prices)} />
+                     onDetails={() => setDetails(true)} onClose={() => choose(null)} marks={marksOf(store.prices)}
+                     context={agent.position ? contextLine(newsDoc, agent.position.market, T, lang, Date.now()) : null} />
         )}
         {bld && !me && !(panel && isSmall()) && (
           <aside className="city-card" aria-labelledby="bld-title">
@@ -420,8 +424,8 @@ function KindTag({ T, a }: { T: CityText; a: AgentView }) {
 
 const money = (v: number, lang: Lang) => v.toLocaleString(lang === "es" ? "es-ES" : "en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
-function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks }: { T: CityText; lang: Lang; a: AgentView; following: boolean;
-  onFollow: () => void; onDetails: () => void; onClose: () => void; marks: Record<string, number> }) {
+function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks, context }: { T: CityText; lang: Lang; a: AgentView; following: boolean;
+  onFollow: () => void; onDetails: () => void; onClose: () => void; marks: Record<string, number>; context?: string | null }) {
   const last = nowDecision(a);
   const p = a.position;
   const today = a.trades.filter((x) => x.time >= Date.now() - 86400_000).reduce((s, x) => s + x.r, 0);
@@ -481,6 +485,7 @@ function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks 
           <div><dt>{T.card.today}</dt><dd className={`num ${today >= 0 ? "pos" : "neg"}`}>{fmtR(today, lang)}</dd></div>
         </dl>
       )}
+      {p && context && <p className="city-card-context small"><span className="muted">{T.news.context}:</span> {context} <span className="faint">({T.news.contextNote})</span></p>}
       <div className="city-card-actions">
         <button type="button" className="btn btn-ghost" aria-pressed={following} onClick={onFollow}><Ico.target />{following ? T.card.following : T.card.follow}</button>
         <button type="button" className="btn btn-primary" onClick={onDetails}>{T.card.details}</button>
