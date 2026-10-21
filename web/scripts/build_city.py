@@ -363,7 +363,7 @@ def decorate(placed: list[dict], R: random.Random) -> Decor:
     lamp = prop("Street_Lamp_5")
     trees_street = [prop(f"Tree_{i}") for i in (9, 13, 14)]
     trees_park = [prop(f"Tree_{i}") for i in (1, 2, 3, 4, 5, 6, 11, 12)]
-    bushes = [prop(f"Shrub_{i}") for i in (1, 2, 3, 5, 6, 9)] + [prop(f"Flower_Bush_{i}") for i in (1, 3, 5)]
+    bushes = [prop(f"Shrub_{i}") for i in (1, 2, 3, 5, 6, 9, 11)]
     flowers = [prop(f"Flowers_{i}") for i in range(1, 6)]
     # street lamps on the sidewalks along the roads (their light pools: the night layer)
     for r in HROADS:
@@ -399,7 +399,10 @@ def decorate(placed: list[dict], R: random.Random) -> Decor:
             if roll < 0.13 and D.free(x - 1, y - 1, 3, 2):
                 D.add(trees_park[R.randrange(len(trees_park))], x * T + 8 + R.randrange(-3, 4), y * T + T, [(x, y)])
             elif roll < 0.19:
-                D.add(bushes[R.randrange(len(bushes))], x * T + 8, y * T + T - 2, [(x, y)])
+                im = bushes[R.randrange(len(bushes))]
+                span = [(x + i, y) for i in range(-(im.width // 32), im.width // 32 + 1)]   # a wide planter: every tile it covers
+                if all(D.free(tx, ty) for tx, ty in span):
+                    D.add(im, x * T + 8, y * T + T - 2, span)
             elif roll < 0.27:
                 D.add(flowers[R.randrange(len(flowers))], x * T + 8, y * T + T - 3)
     # the plaza: planters at its corners, benches facing the fountain, two carts

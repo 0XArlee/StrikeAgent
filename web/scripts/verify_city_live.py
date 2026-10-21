@@ -11,6 +11,7 @@ check open R against the live Strike price and the trades table.
 
 import json
 import re
+import os
 import sys
 from pathlib import Path
 
@@ -43,6 +44,8 @@ def overflow(page):
 
 def open_city(browser, base, viewport, mobile, welcome=True, block_api=False, hash="#/city"):
     ctx = browser.new_context(viewport=viewport, locale="en-US", device_scale_factor=2 if mobile else 1, is_mobile=mobile, has_touch=mobile)
+    if os.environ.get("SF_ART"):   # the city's art to check (new: LimeZu's, web/scripts/build_city.py)
+        ctx.add_init_script("try { sessionStorage.setItem('sf-art', '%s') } catch (e) {}" % os.environ["SF_ART"])
     if block_api:
         ctx.route("**/api/city", lambda r: r.abort())
     page = ctx.new_page()

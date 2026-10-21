@@ -8,6 +8,7 @@ changes over time, live Strike prices, the deep link, keyboard control, reduced 
 """
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -53,6 +54,8 @@ def overflow(page):
 def run(p, name, viewport, mobile):
     browser = p.chromium.launch()
     ctx = browser.new_context(viewport=viewport, locale="en-US", device_scale_factor=2 if mobile else 1, is_mobile=mobile, has_touch=mobile)
+    if os.environ.get("SF_ART"):   # the city's art to check (new: LimeZu's, web/scripts/build_city.py)
+        ctx.add_init_script("try { sessionStorage.setItem('sf-art', '%s') } catch (e) {}" % os.environ["SF_ART"])
     page = ctx.new_page()
     errors = []
     page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
@@ -148,6 +151,8 @@ def run(p, name, viewport, mobile):
 
     # deep link + reduced motion in a fresh context
     ctx = browser.new_context(viewport=viewport, locale="en-US", reduced_motion="reduce", device_scale_factor=1, is_mobile=mobile, has_touch=mobile)
+    if os.environ.get("SF_ART"):   # the city's art to check (new: LimeZu's, web/scripts/build_city.py)
+        ctx.add_init_script("try { sessionStorage.setItem('sf-art', '%s') } catch (e) {}" % os.environ["SF_ART"])
     page = ctx.new_page()
     errs2 = []
     page.on("pageerror", lambda e: errs2.append(str(e)))
