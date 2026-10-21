@@ -144,7 +144,7 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
             ? <p className="faint" style={{ marginTop: 10 }}>{fmt(L.seeStrike, { env: envName })}</p>
             : <p className="live-starting" role="status"><span className="spinner spinner-sm" aria-hidden="true" /> {fmt(L.startingCard, { env: envName })}</p>}
           {canTest && <p className="faint" style={{ marginTop: 10 }}>{L.testHint}</p>}
-          {testShort && <p className="field-hint" id="test-needs" style={{ marginTop: 6 }}>{fmt(L.testNeeds, { min: usd(TEST_MIN_AVAILABLE), avail: usd(available) })}</p>}
+          {testShort && <p className="field-hint" id="test-needs" style={{ marginTop: 6 }}>{fmt(L.testNeeds, { min: `${TEST_MIN_AVAILABLE} $`, avail: usd(available) })}</p>}
           <div className="actions-row">
             {canTest && (
               <button type="button" className="btn btn-outline" onClick={() => act("test")} disabled={!!busy || expired || testShort}

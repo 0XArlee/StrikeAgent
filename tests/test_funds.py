@@ -127,6 +127,9 @@ def test_existing_account_takes_its_first_reading_from_its_chart(tmp_path):
                                                    "sig_dir": 0, "why": []}) + "\n")
     s = snapshot(load_live(runs, "mainnet")[0], t0 + 66_100_000)
     assert s["result"] == round(106.08 - 103.05 - 2.9, 6)          # +0.13 $, not the -10.87 $ of the wrong marks
+    # the chart: the points kept from before carry the money moved by their time, recomputed from the transfers
+    pts = s["portfolio"]["history"]
+    assert pts[0] == [t0, 103.05, 0.0, 0.0] and pts[-1][2:] == [2.9, 24.9]
     for r in fleet.running.values():
         r.stop.set()
 

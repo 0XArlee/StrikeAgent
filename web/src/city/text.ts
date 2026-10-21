@@ -49,6 +49,7 @@ const en = {
     entering: "Sending order", in_trade: "In a trade", exiting: "Trade closed", paused: "Paused", offline: "Offline",
     unfunded: "Waiting for a deposit",
   } as Record<Status, string>,
+  unfundedNow: "Connected to Strike, but its account has no balance yet: it sends no order and pays nothing. As soon as a deposit arrives it takes the next signal by itself.",
   card: {
     follow: "Follow", following: "Following", details: "Details", close: "Close", markets: "Markets", risk: "Risk per trade",
     now: "Right now", position: "Open position", entry: "Entry", stop: "Stop", exit: "Dynamic exit", rOpen: "Open result",
@@ -211,6 +212,7 @@ const es: CityText = {
     entering: "Enviando orden", in_trade: "En operación", exiting: "Operación cerrada", paused: "En pausa", offline: "Sin conexión",
     unfunded: "Esperando un depósito",
   },
+  unfundedNow: "Conectado a Strike, pero su cuenta todavía no tiene saldo: no envía órdenes ni paga nada. En cuanto llegue un depósito tomará la siguiente señal él solo.",
   card: {
     follow: "Seguir", following: "Siguiendo", details: "Detalles", close: "Cerrar", markets: "Mercados", risk: "Riesgo por operación",
     now: "Ahora mismo", position: "Posición abierta", entry: "Entrada", stop: "Stop", exit: "Salida dinámica", rOpen: "Resultado abierto",

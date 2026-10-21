@@ -166,7 +166,8 @@ export class CityStore {
   agent(id: string | null): AgentView | undefined { return id ? this.agents.find((a) => a.id === id) : undefined; }
 
   totals() {
-    const live = this.agents.filter((a) => a.status !== "paused" && a.status !== "offline" && a.status !== "unfunded").length;
+    // one waiting for its first deposit is online too: it checks every candle, it only has no money to trade yet
+    const live = this.agents.filter((a) => a.status !== "paused" && a.status !== "offline").length;
     const inTrade = this.agents.filter((a) => a.position).length;
     const today = Date.now() - 24 * 3600_000;
     const trades = this.agents.reduce((s, a) => s + a.trades.filter((x) => x.time >= today).length, 0);

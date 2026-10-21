@@ -384,7 +384,7 @@ function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks 
       </div>
       <div className="city-card-status"><KindTag T={T} a={a} />{a.strategy === "pyramid" && <span className="city-tag strat">{T.strategyTag.pyramid}</span>}<StatusPill T={T} a={a} /><span className="faint small">{a.real ? `${tfLabel(a.real.tf)} · ` : ""}{marketList(a.markets)}</span></div>
       <p className="city-card-label">{T.card.now}</p>
-      <p className="city-card-text">{last ? describe(last, T, lang).text : T.status[a.status]}</p>
+      <p className="city-card-text">{a.status === "unfunded" ? T.unfundedNow : last ? describe(last, T, lang).text : T.status[a.status]}</p>
       {p ? (
         <dl className="city-kv">
           <div><dt>{T.card.position}</dt><dd className={p.side === "long" ? "pos" : "neg"}>{p.side === "long" ? "LONG" : "SHORT"} {ticker(p.market)}</dd></div>
@@ -426,7 +426,7 @@ function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks 
 function AgentsPanel({ T, lang, store, selected, onPick }: { T: CityText; lang: Lang; store: CityStore; selected?: string; onPick: (id: string) => void }) {
   const [q, setQ] = useState("");
   const [f, setF] = useState<"all" | "in_trade" | "analyzing" | "waiting" | "paused">("all");
-  const groups: Record<typeof f, Status[]> = { all: [], in_trade: ["in_trade", "entering"], analyzing: ["analyzing", "signal", "risk", "exiting"], waiting: ["waiting"], paused: ["paused", "offline", "unfunded"] };
+  const groups: Record<typeof f, Status[]> = { all: [], in_trade: ["in_trade", "entering"], analyzing: ["analyzing", "signal", "risk", "exiting"], waiting: ["waiting", "unfunded"], paused: ["paused", "offline"] };
   const list = store.agents.filter((a) => (f === "all" || groups[f].includes(a.status)) && a.name.toLowerCase().includes(q.trim().toLowerCase()));
   const rows = (xs: AgentView[]) => (
     <ul className="city-list">

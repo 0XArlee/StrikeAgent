@@ -411,6 +411,25 @@ def _base(acct: dict) -> tuple[float, float]:
     return round(start + (_num(acct.get("inflows")) or 0.0), 6), _num(acct.get("flows")) or 0.0
 
 
+def _points(hist: list, transfers: list[dict] | None) -> list:
+    """Chart points as [time, equity, net money moved in by then, gross money moved in by then], from the account's
+    transfers as fleet.account_flows marks them (the page then charts the result, so a deposit or a withdrawal never
+    shows as a jump). Recomputed here so older points, kept without these, chart the same way."""
+    if transfers is None:
+        return hist
+    from ..strike.models import TX_DONE
+    moves = sorted((int(t.get("time") or 0), float(t.get("amount") or 0)) for t in transfers
+                   if not t.get("base") and str(t.get("status")) in TX_DONE)
+    out, k, net, gross = [], 0, 0.0, 0.0
+    for h in sorted(hist, key=lambda h: h[0]):
+        while k < len(moves) and moves[k][0] <= h[0]:
+            net += moves[k][1]
+            gross += max(0.0, moves[k][1])
+            k += 1
+        out.append([h[0], h[1], round(net, 6), round(gross, 6)])
+    return out
+
+
 def _tally(trades: list[dict]) -> dict:
     """Win/loss counts in R over every closed trade (the page shows them; the trade list it gets is capped)."""
     rs = [float(t["r"]) for t in trades if _num(t.get("r")) is not None]
@@ -488,7 +507,7 @@ def _portfolio(acct: dict, positions: list[dict], fee_bps: int, since: int | Non
         "fees": {"trading": round(sum(_num(f.get("fee")) or 0 for f in mine), 6),
                  "builder": round(sum((_num(f.get("price")) or 0) * (_num(f.get("size")) or 0) for f in ours) * fee_bps / 1e4, 6),
                  "builderBps": fee_bps},
-        "history": (hist[::step] + ([hist[-1]] if hist and (len(hist) - 1) % step else []))[-121:],
+        "history": _points((hist[::step] + ([hist[-1]] if hist and (len(hist) - 1) % step else []))[-121:], acct.get("transfers")),
     }
 
 
