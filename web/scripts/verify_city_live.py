@@ -85,18 +85,39 @@ def real_mode(p, name, viewport, mobile):
     check(f"{name}: only real agents, no demo population", page.locator(".city-row").count() == len(real)
           and page.locator(".city-demo, .city-switch").count() == 0, f"{page.locator('.city-row').count()} rows")
 
-    # a real agent's card: its latest real check, schedule and paper account
-    page.locator(".city-row.real").first.click()
-    page.wait_for_selector(".city-card")
-    page.wait_for_timeout(1500)
-    card = page.locator(".city-card").inner_text()
+    # a real agent's card: its latest real check, schedule and paper account. An agent in a trade shows its position
+    # instead, so the first one that is not in a trade (when all are, its position is checked)
+    # (one of Smart Flow's own paper agents: the checks below are about those)
+    def open_card(i):
+        if not page.locator(".city-panel").count():   # phones: picking an agent closes the panel
+            page.locator(".city-dock-btn", has_text="Agents").click()
+            page.wait_for_selector(".city-panel")
+        page.locator(".city-row.real").nth(i).click()
+        page.wait_for_selector(".city-card")
+        page.wait_for_timeout(1500)
+        return page.locator(".city-card").inner_text()
+    card, first_paper = "", None
+    for i in range(len(real)):
+        card = open_card(i)
+        if "PAPER" not in card.upper():
+            continue
+        first_paper = i if first_paper is None else first_paper
+        if "Open position" not in card:
+            break
+    else:
+        card = open_card(first_paper or 0)
     page.screenshot(path=str(OUT / f"l05_card_{name}.png"))
     # Smart Flow's own agents are tagged "Paper" (the header says LIVE); users' real ones "Real · Strike" (2026-10-20)
     check(f"{name}: card tags the agent as paper", "PAPER" in card.upper() or "PAPEL" in card.upper())
-    nxt = re.search(r"Next check\s+(in [^\n]+)", card)
-    check(f"{name}: card shows the next candle check", bool(nxt), nxt.group(1) if nxt else card.replace("\n", " | ")[-200:])
     check(f"{name}: card shows the latest real check", "No trade on" in card or "Opened" in card or "BUY" in card or "SELL" in card)
-    check(f"{name}: card shows the paper account", "Paper account" in card and "$" in card)
+    if "Open position" in card:
+        print(f"  ({name}: every agent is in a trade: its open position is checked instead of the next check)")
+        check(f"{name}: card shows the open position", all(k in card for k in ("Entry", "Stop")), card.replace("\n", " | ")[-200:])
+        check(f"{name}: card shows its open result", bool(re.search(r"Open result\s+[+−-]?\d", card)), card.replace("\n", " | ")[-120:])
+    else:
+        nxt = re.search(r"Next check\s+(in [^\n]+)", card)
+        check(f"{name}: card shows the next candle check", bool(nxt), nxt.group(1) if nxt else card.replace("\n", " | ")[-200:])
+        check(f"{name}: card shows the paper account", "Paper account" in card and "$" in card)
     page.get_by_role("button", name="Details").click()
     page.wait_for_selector("dialog.city-details[open]")
     page.wait_for_timeout(300)

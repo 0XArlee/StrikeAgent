@@ -70,6 +70,15 @@ old = str(now - 10 * 60_000)
 code, _ = call("POST", "/api/internal/push", raw=encode(doc), headers={"X-SF-Time": old, "X-SF-Signature": sign(SECRET, old, encode(doc))})
 check("push with a stale timestamp is refused", code == 401, str(code))
 
+# the News Tower's document: only the host can send it, and only a news document (nothing is stored by these)
+code, _ = post(BASE + "/api/internal/news", "x" * 64, encode({"v": 1, "generated": now, "markets": {}, "headlines": []}))
+check("news with a wrong secret is refused", code == 401, str(code))
+code, _ = post(BASE + "/api/internal/news", SECRET, encode(doc))
+check("a city snapshot sent as news is refused", code == 400, str(code))
+code, nd = call("GET", "/api/news")
+check("news: served to everyone (a document, or none yet)", code == 200 and (nd.get("none") is True or (nd.get("v") == 1 and isinstance(nd.get("headlines"), list))),
+      f"{code} {str(nd)[:120]}")
+
 code, info = call("GET", "/api/info")
 check("info: paper mode, real trading not enabled yet", code == 200 and info.get("paper") is True and info.get("connect") is False and info.get("agentHealthy") is True, json.dumps(info)[:160])
 
