@@ -268,7 +268,7 @@ export function App() {
         <footer className="site-footer">
           <div className="container foot" data-reveal>
             <div className="foot-brand"><Mark size={32} /><span className="foot-word">EdgeCraft-StrikeCity</span><span className="foot-by">{t.footBy}</span></div>
-            <p>{t.footer.legal}</p><p>{t.footer.by} Engine {info.engine}.</p>
+            <p>{t.footer.legal}</p><p>{t.footer.by} Engine {info.engine}. <a href="https://limezu.itch.io/" target="_blank" rel="noopener noreferrer">{t.footer.art}<span className="sr-only"> (opens in a new tab)</span></a></p>
           </div>
         </footer>
       </main>

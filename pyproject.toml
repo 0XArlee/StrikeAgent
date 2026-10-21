@@ -10,6 +10,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+art = ["pillow>=10"]          # web/scripts/build_art.py: the LimeZu pieces cut down for the web (only on the PC)
 
 [project.scripts]
 smartflow = "smartflow.cli:main"

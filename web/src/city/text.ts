@@ -98,6 +98,7 @@ const en = {
   zoomIn: "Zoom in", zoomOut: "Zoom out", recenter: "Recenter", canvas: (live: number, trade: number) =>
     `Map of EdgeCraft-StrikeCity with ${live} agents online, ${trade} in a trade. Use the arrow keys to move and + or − to zoom. The Agents and Feed panels list the same information.`,
   building: { agentsHere: (n: number) => `${n} agents here`, close: "Close" },
+  artCredit: "Character art by LimeZu (limezu.itch.io).",
   chart: {
     title: "live chart",
     open: "Open the live chart",
@@ -269,6 +270,7 @@ const es: CityText = {
   zoomIn: "Acercar", zoomOut: "Alejar", recenter: "Centrar", canvas: (live: number, trade: number) =>
     `Mapa de EdgeCraft-StrikeCity con ${live} agentes en línea, ${trade} en operación. Usa las flechas para moverte y + o − para el zoom. Los paneles Agentes y Actividad muestran la misma información.`,
   building: { agentsHere: (n: number) => `${n} agentes aquí`, close: "Cerrar" },
+  artCredit: "Personajes dibujados por LimeZu (limezu.itch.io).",
   chart: {
     title: "gráfico en vivo",
     open: "Abrir el gráfico en vivo",

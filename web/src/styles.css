@@ -383,7 +383,7 @@ legend { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding:
   align-self: start; position: sticky; top: 0; }
 .av-stage-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
 .av-stage-art { position: relative; width: 144px; height: 200px; display: grid; place-items: end center; }
-.av-big { width: 144px; height: 192px; image-rendering: pixelated; position: relative; z-index: 1; }
+.av-big { width: 128px; height: 176px; image-rendering: pixelated; position: relative; z-index: 1; }
 .av-shadow { position: absolute; bottom: 2px; left: 50%; width: 92px; height: 14px; transform: translateX(-50%); border-radius: 50%; background: rgba(0, 0, 0, .6); }
 .av-stage-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .av-stage-actions .btn { padding: 6px 10px; font-size: 13px; min-height: 36px; }
@@ -402,6 +402,12 @@ legend { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding:
 .av-tile > span { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; border: 1px solid var(--border);
   border-radius: var(--radius-sm); background: var(--surface-2); }
 .av-tile canvas { width: 36px; height: 48px; image-rendering: pixelated; }
+/* tiles: a piece on a default character, cut from its part's strip (AvatarEditor thumbStyle) */
+.av-tile i { display: block; flex: none; }
+.av-tiles-face { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+.av-none { width: 32px; height: 44px; border: 1px dashed var(--border); border-radius: 6px;
+  background: linear-gradient(135deg, transparent 47%, var(--text-faint) 48%, var(--text-faint) 52%, transparent 53%); }
+.av-credit { font-size: 11px; color: var(--text-faint); }
 .av-tile small { font-size: 11px; color: var(--text-muted); text-align: center; line-height: 1.2; }
 .av-tile:hover > span { border-color: var(--primary-30); }
 .av-tile input:checked + span { border-color: var(--primary); background: var(--primary-10); }
@@ -419,17 +425,17 @@ legend { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding:
   .av-stage { position: static; flex-direction: row; justify-content: space-between; padding: 8px 12px; }
   .av-stage-title { display: none; }
   .av-stage-art { width: 72px; height: 100px; }
-  .av-big { width: 72px; height: 96px; }
+  .av-big { width: 64px; height: 88px; }
   .av-shadow { width: 48px; height: 8px; }
   .av-stage-actions { justify-content: flex-end; flex: 1; }
   .av-panel { max-height: none; }
 }
 .done-avatar { display: grid; place-items: center; margin: 4px 0 8px; }
-.av-mid { width: 72px; height: 96px; image-rendering: pixelated; }
+.av-mid { width: 80px; height: 110px; image-rendering: pixelated; }   /* 16 x 22 art px x 5 */
 .dash-who { display: flex; align-items: center; gap: 14px; }
 .dash-avatar { display: grid; place-items: center; width: 64px; height: 76px; border: 1px solid var(--border); border-radius: var(--radius);
   background: radial-gradient(circle at 50% 70%, rgba(78, 250, 176, .14), transparent 65%), #05070a; flex: none; }
-.dash-avatar canvas { width: 48px; height: 64px; image-rendering: pixelated; }
+.dash-avatar canvas { width: 48px; height: 66px; image-rendering: pixelated; }
 /* builder connect card (My agent) */
 .live-card.live-on { border-color: var(--primary-30); }
 .live-points { margin: 12px 0 0; padding-left: 18px; display: grid; gap: 6px; color: var(--text-muted); font-size: 14px; }

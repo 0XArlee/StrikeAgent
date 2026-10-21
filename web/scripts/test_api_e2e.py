@@ -76,9 +76,12 @@ check("info: paper mode, real trading not enabled yet", code == 200 and info.get
 # ---------------------------------------------------------------- sign in with a wallet
 NET = 0 if info.get("env") == "testnet" else 1    # the QA site is the testnet world (Preprod wallets)
 w, intruder = TestWallet(network=NET, base=True), TestWallet(network=NET)
-LOOK = {"skin": "#7a4a33", "eyes": "#4efab0", "hair": "afro", "hairColor": "#ec4899", "top": "jacket", "topColor": "#172554",
-        "top2": "#facc15", "accent": "#4efab0", "bottom": "shorts", "pants": "#334155", "shoes": "#f43f5e", "face": "visor",
-        "faceColor": "#4efab0", "head": "crown", "headColor": "#facc15", "back": "cape", "backColor": "#7c3aed"}
+# a character of the LimeZu creator (web/src/city/chars.json ids)
+LOOK = {"v": 2, "body": "05", "eyes": "03", "outfit": "12_02", "hair": "21_03", "acc": "15_01"}
+# one saved with the first creator (drawn styles, free colours): still accepted, turned into the closest pieces
+LOOK_V1 = {"skin": "#7a4a33", "eyes": "#4efab0", "hair": "afro", "hairColor": "#ec4899", "top": "jacket", "topColor": "#172554",
+           "top2": "#facc15", "accent": "#4efab0", "bottom": "shorts", "pants": "#334155", "shoes": "#f43f5e", "face": "visor",
+           "faceColor": "#4efab0", "head": "beanie", "headColor": "#facc15", "back": "cape", "backColor": "#7c3aed"}
 ask = {"address": w.address, "chain": "cardano", "risk": "standard", "markets": ["BTC-USD", "ETH-USD"], "name": "Nova Test", "public": True,
        "look": LOOK, "strategy": "pyramid"}
 LIVE = info.get("live") or {}
@@ -172,11 +175,16 @@ def act(action, wallet=w):
 
 code, ch_bad = call("POST", "/api/action/challenge", {"accountId": aid, "action": "look", "look": "dragon"})
 check("an invalid character is refused", code == 400, str(code))
-NEW = dict(LOOK, hair="mohawk", head="headphones", top="suit")
+NEW = dict(LOOK, hair="26_01", acc="none", outfit="05_03")
 code, ch = call("POST", "/api/action/challenge", {"accountId": aid, "action": "look", "look": NEW})
 code, r = call("POST", "/api/action", {"sessionId": ch["sessionId"], "walletSignature": w.sign_data(ch["messageToSign"].encode())})
-check("owner changes the character with a signature", code == 200 and (r.get("look") or {}).get("hair") == "mohawk", str(code))
-code, ch = call("POST", "/api/action/challenge", {"accountId": aid, "action": "look", "look": dict(NEW, hair="long")})
+check("owner changes the character with a signature", code == 200 and (r.get("look") or {}).get("hair") == "26_01", str(code))
+code, ch = call("POST", "/api/action/challenge", {"accountId": aid, "action": "look", "look": LOOK_V1})
+code, r = call("POST", "/api/action", {"sessionId": ch["sessionId"], "walletSignature": w.sign_data(ch["messageToSign"].encode())})
+old = r.get("look") or {}
+check("a character from the first creator is turned into LimeZu pieces", code == 200 and old.get("v") == 2 and str(old.get("hair", "")).startswith("08_")
+      and str(old.get("acc", "")).startswith("11_"), json.dumps(old)[:120])
+code, ch = call("POST", "/api/action/challenge", {"accountId": aid, "action": "look", "look": dict(NEW, hair="10_02")})
 code, r = call("POST", "/api/action", {"sessionId": ch["sessionId"], "walletSignature": intruder.sign_data(ch["messageToSign"].encode())})
 check("someone else cannot change it", code == 401, str(code))
 

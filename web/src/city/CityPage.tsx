@@ -9,7 +9,7 @@ import { Icon, Mark } from "../components/ui";
 import { nowDecision, stats, type AgentView, type FeedItem, type Status } from "./agents";
 import { CityEngine, SCREEN_BOOK, SCREEN_CHART, STATUS_COLOR, drawIcon, type Sel } from "./engine";
 import type { Look } from "./look";
-import { spritesFor } from "./sprites";
+import { FEET, FW, HEAD_TOP, frameAt, onSheet, sheetFor } from "./sprites";
 import { BOOK_MARKET, CITY_MARKETS, CityStore, type Book } from "./store";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
 import { BUILDINGS } from "./world";
@@ -353,17 +353,25 @@ function SwarmScale({ T, n, inline }: { T: CityText; n: number; inline?: boolean
   );
 }
 
+// the character facing you, from the top of its head to its feet (16 x 22 art px); drawn again once its pieces load
+const AV_H = FEET + 1 - HEAD_TOP;
 function Avatar({ id, look, size = 24 }: { id: string; look?: Look; size?: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    const c = ref.current;
-    if (!c) return;
-    const g = c.getContext("2d")!;
-    g.imageSmoothingEnabled = false;
-    g.clearRect(0, 0, c.width, c.height);
-    g.drawImage(spritesFor(id, look).down[0], 0, 0, 12, 16, 0, 0, 24, 32);
+    const draw = () => {
+      const c = ref.current, sheet = sheetFor(id, look);
+      if (!c || !sheet) return false;
+      const g = c.getContext("2d")!;
+      g.imageSmoothingEnabled = false;
+      g.clearRect(0, 0, c.width, c.height);
+      const [sx, sy] = frameAt("idle", "down", 0);
+      g.drawImage(sheet, sx, sy + HEAD_TOP, FW, AV_H, 0, 0, c.width, c.height);
+      return true;
+    };
+    if (draw()) return;
+    return onSheet(() => { draw(); });
   }, [id, look]);
-  return <canvas ref={ref} className="city-avatar" width={24} height={32} style={{ width: size, height: (size * 4) / 3 }} aria-hidden="true" />;
+  return <canvas ref={ref} className="city-avatar" width={FW * 2} height={AV_H * 2} style={{ width: size, height: (size * AV_H) / FW }} aria-hidden="true" />;
 }
 
 function Glyph({ status, side }: { status: Status; side?: "long" | "short" }) {
@@ -611,6 +619,7 @@ function GuidePanel({ T, n }: { T: CityText; n: number }) {
         ))}
       </div>
       <p className="note">{T.liveLong}</p>
+      <p className="note"><a href="https://limezu.itch.io/" target="_blank" rel="noopener noreferrer">{T.artCredit}<span className="sr-only"> (opens in a new tab)</span></a></p>
     </>
   );
 }

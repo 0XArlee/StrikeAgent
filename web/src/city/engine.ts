@@ -1,7 +1,7 @@
 // Strike City renderer: camera, input, picking and the per-frame dynamic layers over the pre-rendered city.
 import type { AgentView, Prices, Status } from "./agents";
 import { isActive, step } from "./agents";
-import { spritesFor } from "./sprites";
+import { FEET, HEAD_TOP, drawFrame, hash, sheetFor, type Anim } from "./sprites";
 import type { Book } from "./store";
 import { BUILDINGS, FOUNTAIN, H, SCREEN, TILE, W, footprint, renderGlow, renderLight, renderStatic } from "./world";
 
@@ -82,7 +82,8 @@ export class CityEngine {
   private t0 = performance.now();
   private placed: { x: number; y: number; w: number; h: number }[] = [];   // bubbles already drawn this frame
   private few = true;
-  private bookW = new Array<number>(10).fill(0);   // the book's bars (5 asks, 5 bids), easing to each new reading
+  private bookW = new Array<number>(10).fill(0);
+  private phases = new Map<string, number>();     // each agent's animation offset (seconds), stable   // the book's bars (5 asks, 5 bids), easing to each new reading
 
   constructor(private canvas: HTMLCanvasElement, private o: EngineOpts) {
     this.ctx = canvas.getContext("2d", { alpha: false })!;
@@ -222,7 +223,7 @@ export class CityEngine {
     const w = this.toWorld(sx, sy);
     let best: string | null = null, bd = 22 / this.zoom + 6;   // generous hit area, at least ~22 screen px
     for (const a of this.o.getAgents()) {
-      const d = Math.hypot(a.x - w.x, a.y - 8 - w.y);
+      const d = Math.hypot(a.x - w.x, a.y - (FEET - HEAD_TOP) / 2 - w.y);   // the middle of the character
       if (d < bd) { bd = d; best = a.id; }
     }
     if (best) return { kind: "agent", id: best };
@@ -438,9 +439,8 @@ export class CityEngine {
   }
 
   private drawAgent(g: CanvasRenderingContext2D, a: AgentView) {
-    const sp = spritesFor(a.id, a.look);
+    const sheet = sheetFor(a.id, a.look);   // null until its pieces have loaded: its ring shows meanwhile
     const walking = a.path.length > 0;
-    const img = sp[a.dir][walking ? Math.floor(a.frame) % 2 : 0];
     g.fillStyle = "rgba(0,0,0,0.45)";
     g.beginPath(); g.ellipse(a.x, a.y, 5, 2, 0, 0, Math.PI * 2); g.fill();
     {   // a ring: every agent here is a real one. It pulses only while the agent is doing something; one that waits
@@ -456,7 +456,14 @@ export class CityEngine {
       g.strokeStyle = "#4efab0"; g.lineWidth = 1;
       g.beginPath(); g.ellipse(a.x, a.y, 8, 3.5, 0, 0, Math.PI * 2); g.stroke();
     }
-    g.drawImage(img, Math.round(a.x - 6), Math.round(a.y - 16));
+    if (!sheet) return;
+    // walking, its 6 frames in the way it goes; analysing a candle, it checks its phone; otherwise it stands (and
+    // breathes). Each agent's animation starts at its own moment, so a crowd does not move in step
+    const anim: Anim = walking ? "walk" : a.status === "analyzing" ? "phone" : "idle";
+    let ph = this.phases.get(a.id);
+    if (ph === undefined) { ph = (hash(a.id) % 1000) / 250; this.phases.set(a.id, ph); }
+    const t = this.o.reducedMotion ? 0 : performance.now() / 1000 + ph;
+    drawFrame(g, sheet, anim, anim === "phone" ? "down" : a.dir, t, a.x, a.y);
   }
 
   private drawSigns(g: CanvasRenderingContext2D, t: number, night: number) {
@@ -509,7 +516,7 @@ export class CityEngine {
   }
 
   private drawBubble(g: CanvasRenderingContext2D, a: AgentView, t: number) {
-    const s = this.toScreen(a.x, a.y - 18);
+    const s = this.toScreen(a.x, a.y - (FEET - HEAD_TOP) - 3);   // just over its head
     if (s.x < -40 || s.y < -40 || s.x > this.vw + 40 || s.y > this.vh + 40) return;
     const scale = Math.min(1.1, Math.max(0.8, this.zoom / 2));
     const bob = isActive(a) ? Math.sin(t * 2 + a.x) * 1.5 : 0;   // a waiting agent's bubble stays still too

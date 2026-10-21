@@ -1,101 +1,84 @@
-// An agent's look (the character creator): body, hair, clothes and accessories. Shared by the page (sprites, editor)
-// and the site API (web/server validates what owners save), so both accept exactly the same values.
+// An agent's look (the character creator): pieces of LimeZu's character generator (city/chars.json, cut down by
+// web/scripts/build_art.py): a body (the skin tone), eyes, an outfit, a hairstyle and an accessory, stacked in that
+// order. Shared by the page (sprites, editor) and the site API (web/server validates what owners save), so both accept
+// exactly the same values. Looks saved with the first creator (drawn styles and free colours, no "v") become the
+// closest pieces, so nobody loses their character.
+import chars from "./chars.json";
 
-export const HAIR_STYLES = ["short", "long", "spiky", "mohawk", "ponytail", "afro", "shaved"] as const;
-export const TOP_STYLES = ["tee", "hoodie", "jacket", "suit"] as const;
-export const BOTTOM_STYLES = ["pants", "shorts"] as const;
-export const FACE_STYLES = ["none", "glasses", "shades", "visor"] as const;
-export const HEAD_STYLES = ["none", "cap", "beanie", "headphones", "crown"] as const;
-export const BACK_STYLES = ["none", "backpack", "cape"] as const;
+export type Part = "body" | "eyes" | "outfit" | "hair" | "acc";
+export const PARTS: Part[] = ["body", "eyes", "outfit", "hair", "acc"];
+export interface Piece { id: string; style?: string; name?: string; rgb: string }
+/** hair and acc may be NONE (no hair, no accessory). */
+export interface Look { v: 2; body: string; eyes: string; outfit: string; hair: string; acc: string }
+export const NONE = "none";
 
-export type HairStyle = (typeof HAIR_STYLES)[number];
-export type TopStyle = (typeof TOP_STYLES)[number];
-export type BottomStyle = (typeof BOTTOM_STYLES)[number];
-export type FaceStyle = (typeof FACE_STYLES)[number];
-export type HeadStyle = (typeof HEAD_STYLES)[number];
-export type BackStyle = (typeof BACK_STYLES)[number];
-
-export interface Look {
-  skin: string; eyes: string;
-  hair: HairStyle; hairColor: string;
-  top: TopStyle; topColor: string; top2: string; accent: string;
-  bottom: BottomStyle; pants: string; shoes: string;
-  face: FaceStyle; faceColor: string;
-  head: HeadStyle; headColor: string;
-  back: BackStyle; backColor: string;
-}
-
-export interface Swatch { hex: string; en: string; es: string }
-
-export const SKINS: Swatch[] = [
-  { hex: "#f7dcc6", en: "Porcelain", es: "Porcelana" }, { hex: "#f0c9a6", en: "Light", es: "Clara" },
-  { hex: "#e2ad85", en: "Warm", es: "Cálida" }, { hex: "#c68e6a", en: "Tan", es: "Bronceada" },
-  { hex: "#a26b4a", en: "Brown", es: "Morena" }, { hex: "#7a4a33", en: "Deep", es: "Oscura" },
-  { hex: "#5a3826", en: "Ebony", es: "Ébano" }, { hex: "#9be7c4", en: "Mint (android)", es: "Menta (androide)" },
-];
-export const EYES: Swatch[] = [
-  { hex: "#0b0b0b", en: "Black", es: "Negro" }, { hex: "#3b2416", en: "Brown", es: "Marrón" },
-  { hex: "#1d4ed8", en: "Blue", es: "Azul" }, { hex: "#15803d", en: "Green", es: "Verde" },
-  { hex: "#4efab0", en: "Mint glow", es: "Menta brillante" }, { hex: "#f43f5e", en: "Red glow", es: "Rojo brillante" },
-];
-export const HAIRS: Swatch[] = [
-  { hex: "#1c1917", en: "Black", es: "Negro" }, { hex: "#3b2416", en: "Dark brown", es: "Castaño oscuro" },
-  { hex: "#6b3a1e", en: "Brown", es: "Castaño" }, { hex: "#a16207", en: "Honey", es: "Miel" },
-  { hex: "#facc15", en: "Blond", es: "Rubio" }, { hex: "#c2410c", en: "Ginger", es: "Pelirrojo" },
-  { hex: "#e5e7eb", en: "Silver", es: "Plateado" }, { hex: "#4efab0", en: "Mint", es: "Menta" },
-  { hex: "#0ea5e9", en: "Blue", es: "Azul" }, { hex: "#7c3aed", en: "Violet", es: "Violeta" },
-  { hex: "#ec4899", en: "Pink", es: "Rosa" }, { hex: "#be123c", en: "Crimson", es: "Carmesí" },
-];
-export const CLOTHES: Swatch[] = [
-  { hex: "#4efab0", en: "Strike mint", es: "Menta Strike" }, { hex: "#0f766e", en: "Teal", es: "Verde azulado" },
-  { hex: "#15803d", en: "Green", es: "Verde" }, { hex: "#1d4ed8", en: "Blue", es: "Azul" },
-  { hex: "#1f6f8b", en: "Ocean", es: "Océano" }, { hex: "#172554", en: "Navy", es: "Marino" },
-  { hex: "#7c3aed", en: "Violet", es: "Violeta" }, { hex: "#ec4899", en: "Pink", es: "Rosa" },
-  { hex: "#9f1239", en: "Wine", es: "Granate" }, { hex: "#f43f5e", en: "Red", es: "Rojo" },
-  { hex: "#f97316", en: "Orange", es: "Naranja" }, { hex: "#facc15", en: "Yellow", es: "Amarillo" },
-  { hex: "#e5e7eb", en: "White", es: "Blanco" }, { hex: "#737373", en: "Grey", es: "Gris" },
-  { hex: "#334155", en: "Slate", es: "Pizarra" }, { hex: "#171717", en: "Black", es: "Negro" },
-];
-
-const HEX = /^#[0-9a-f]{6}$/i;
-const pick = <T extends string>(v: unknown, allowed: readonly T[], dflt: T): T => (allowed.includes(v as T) ? (v as T) : dflt);
-const color = (v: unknown, dflt: string) => (typeof v === "string" && HEX.test(v) ? v.toLowerCase() : dflt);
+export const PIECES = chars.parts as Record<Part, Piece[]>;
+const IDS = Object.fromEntries(PARTS.map((p) => [p, new Set(PIECES[p].map((x) => x.id))])) as Record<Part, Set<string>>;
+const OPTIONAL: Part[] = ["hair", "acc"];
 
 export const DEFAULT_LOOK: Look = {
-  skin: SKINS[2].hex, eyes: EYES[0].hex, hair: "short", hairColor: HAIRS[1].hex,
-  top: "tee", topColor: CLOTHES[4].hex, top2: CLOTHES[12].hex, accent: CLOTHES[0].hex,
-  bottom: "pants", pants: CLOTHES[5].hex, shoes: "#0b0b0b",
-  face: "none", faceColor: CLOTHES[15].hex, head: "none", headColor: CLOTHES[0].hex, back: "none", backColor: CLOTHES[14].hex,
+  v: 2, body: chars.defaults.body, eyes: chars.defaults.eyes, outfit: chars.defaults.outfit, hair: chars.defaults.hair, acc: NONE,
 };
 
-/** Any input -> a valid look (unknown values fall back to defaults), or null when it is not an object. */
+/** The styles of a part (outfits, hairstyles, accessories), each with its colour variants, in catalogue order. */
+export function stylesOf(part: Part): { style: string; name?: string; pieces: Piece[] }[] {
+  const out: { style: string; name?: string; pieces: Piece[] }[] = [];
+  for (const p of PIECES[part]) {
+    const s = p.style ?? p.id;
+    const last = out[out.length - 1];
+    if (last && last.style === s) last.pieces.push(p); else out.push({ style: s, name: p.name, pieces: [p] });
+  }
+  return out;
+}
+
+const valid = (part: Part, v: unknown, dflt: string) =>
+  typeof v === "string" && (IDS[part].has(v) || (OPTIONAL.includes(part) && v === NONE)) ? v : dflt;
+
+/** Any input -> a valid look (unknown pieces fall back to defaults), or null when it is not an object. */
 export function normalizeLook(v: unknown): Look | null {
   if (!v || typeof v !== "object" || Array.isArray(v)) return null;
   const o = v as Record<string, unknown>, d = DEFAULT_LOOK;
-  return {
-    skin: color(o.skin, d.skin), eyes: color(o.eyes, d.eyes),
-    hair: pick(o.hair, HAIR_STYLES, d.hair), hairColor: color(o.hairColor, d.hairColor),
-    top: pick(o.top, TOP_STYLES, d.top), topColor: color(o.topColor, d.topColor), top2: color(o.top2, d.top2),
-    accent: color(o.accent, d.accent),
-    bottom: pick(o.bottom, BOTTOM_STYLES, d.bottom), pants: color(o.pants, d.pants), shoes: color(o.shoes, d.shoes),
-    face: pick(o.face, FACE_STYLES, d.face), faceColor: color(o.faceColor, d.faceColor),
-    head: pick(o.head, HEAD_STYLES, d.head), headColor: color(o.headColor, d.headColor),
-    back: pick(o.back, BACK_STYLES, d.back), backColor: color(o.backColor, d.backColor),
-  };
+  if (o.v !== 2) return fromV1(o);
+  return { v: 2, body: valid("body", o.body, d.body), eyes: valid("eyes", o.eyes, d.eyes), outfit: valid("outfit", o.outfit, d.outfit),
+    hair: valid("hair", o.hair, d.hair), acc: valid("acc", o.acc, NONE) };
+}
+
+// ---------------------------------------------------------------- the first creator's looks -> pieces
+const HEX = /^#[0-9a-f]{6}$/i;
+const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const dist = (a: string, b: string) => { const [x, y] = [rgb(a), rgb(b)]; return (x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2 + (x[2] - y[2]) ** 2; };
+function nearest(pieces: Piece[], hex: unknown, dflt: string): string {
+  if (typeof hex !== "string" || !HEX.test(hex) || !pieces.length) return dflt;
+  return pieces.reduce((a, b) => (dist(b.rgb, hex) < dist(a.rgb, hex) ? b : a)).id;
+}
+const inStyle = (part: Part, style: string) => PIECES[part].filter((p) => p.style === style);
+// the drawn hairstyles of the first creator -> the closest LimeZu style (by eye); shaved is no hair
+const HAIR_V1: Record<string, string> = { short: "16", long: "10", spiky: "21", mohawk: "26", ponytail: "11", afro: "08" };
+// one accessory slot: the head one first, then the face, then the back
+const HEAD_V1: Record<string, string> = { cap: "04", beanie: "11" };
+const FACE_V1: Record<string, string> = { glasses: "15", shades: "15" };
+const BACK_V1: Record<string, string> = { backpack: "03" };
+
+function fromV1(o: Record<string, unknown>): Look {
+  const d = DEFAULT_LOOK;
+  const hairStyle = typeof o.hair === "string" ? o.hair : "";
+  const hair = hairStyle === "shaved" ? NONE : HAIR_V1[hairStyle] ? nearest(inStyle("hair", HAIR_V1[hairStyle]), o.hairColor, d.hair) : d.hair;
+  let acc = NONE;
+  for (const [table, field, color] of [[HEAD_V1, "head", "headColor"], [FACE_V1, "face", "faceColor"], [BACK_V1, "back", "backColor"]] as const) {
+    const style = typeof o[field] === "string" ? table[o[field] as string] : undefined;
+    if (style) { acc = nearest(inStyle("acc", style), o[color], NONE); break; }
+  }
+  return { v: 2, body: nearest(PIECES.body, o.skin, d.body), eyes: d.eyes, outfit: nearest(PIECES.outfit, o.topColor, d.outfit), hair, acc };
 }
 
 /** Deterministic look for an agent without one (stable per id, varied across the city). */
 export function randomLook(R: () => number): Look {
   const one = <T,>(xs: readonly T[]) => xs[Math.floor(R() * xs.length)];
-  const rare = <T extends string>(xs: readonly T[], p: number) => (R() < p ? one(xs.slice(1)) : xs[0]);
+  const natural = PIECES.body.slice(0, 7);   // the two last bodies are fantasy tones: only when chosen
   return {
-    skin: one(SKINS.slice(0, 7)).hex, eyes: R() < 0.8 ? EYES[0].hex : one(EYES).hex,
-    hair: one(HAIR_STYLES), hairColor: one(R() < 0.75 ? HAIRS.slice(0, 7) : HAIRS).hex,
-    top: one(TOP_STYLES), topColor: one(CLOTHES).hex, top2: one(CLOTHES).hex, accent: one(CLOTHES).hex,
-    bottom: R() < 0.8 ? "pants" : "shorts", pants: one(CLOTHES.slice(4)).hex, shoes: R() < 0.7 ? "#0b0b0b" : one(CLOTHES).hex,
-    face: rare(FACE_STYLES, 0.3), faceColor: one(CLOTHES).hex,
-    head: rare(HEAD_STYLES, 0.3), headColor: one(CLOTHES).hex,
-    back: rare(BACK_STYLES, 0.2), backColor: one(CLOTHES).hex,
+    v: 2, body: one(natural).id, eyes: one(PIECES.eyes).id, outfit: one(PIECES.outfit).id,
+    hair: R() < 0.06 ? NONE : one(PIECES.hair.filter((h) => Number(h.style) < 27)).id,   // 27-29: the bright anime ones
+    acc: R() < 0.72 ? NONE : one(PIECES.acc).id,
   };
 }
 
