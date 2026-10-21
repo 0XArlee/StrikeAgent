@@ -14,7 +14,7 @@ import { BOOK_MARKET, CITY_MARKETS, CityStore, type Book } from "./store";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
 import { BUILDINGS } from "./world";
 import { PortfolioView, livePosition } from "./portfolio";
-import { TradingViewChart } from "./tradingview";
+import { TradingViewChart, warmTradingView } from "./tradingview";
 
 type Panel = "agents" | "ranks" | "feed" | "markets" | "guide";
 
@@ -34,6 +34,7 @@ const CHART_MARKETS = [...CITY_MARKETS, "NEAR-USD", "ZEC-USD"];
 // TradingView's screen chart is laid out at this many CSS px per world px and scaled with the map: zooming only
 // transforms it (no new layout inside the iframe), and its text stays readable from the default zoom
 const TV_K = 2.5;
+warmTradingView();   // as the city's code arrives: TradingView's connections open while the city loads
 
 function readDeepLink(): string | null {
   const m = /[?&]agent=([\w-]+)/.exec(location.hash);
@@ -53,7 +54,7 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
   const [me, setMe] = useState(wantsMe);   // "My agent" open over the map
   const [details, setDetails] = useState(false);
   const [chart, setChart] = useState<string | null>(null);   // the market whose full chart is open
-  const [showTv, setShowTv] = useState(false);               // TradingView on the exchange's screen (after the city)
+  const [tvOn, setTvOn] = useState(false);                   // TradingView's candles are drawn: show them
   const tvScreen = useRef<HTMLDivElement>(null);
   const bookScreen = useRef<HTMLDivElement>(null);
   const [welcome, setWelcome] = useState(() => { try { return localStorage.getItem("sf-city-welcome") !== "1"; } catch { return true; } });
@@ -100,12 +101,6 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
     if (deep && store.agent(deep)) { e.select({ kind: "agent", id: deep }, false); setSel({ kind: "agent", id: deep }); }
     return () => { e.stop(); engine.current = null; };
   }, [ready, store]);
-  // TradingView loads once the city is up and the browser has a moment: the city comes first
-  useEffect(() => {
-    if (!ready) return;
-    const id = window.setTimeout(() => setShowTv(true), 1200);
-    return () => clearTimeout(id);
-  }, [ready]);
 
   // keep the followed agent visible beside the side panel (desktop) or above the bottom card (mobile)
   useEffect(() => {
@@ -212,10 +207,12 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
       <div className="city-stage">
         <canvas ref={canvas} className="city-canvas" tabIndex={0} role="application" aria-roledescription="map"
                 aria-label={T.canvas(totals.live, totals.inTrade)} />
-        {ready && showTv && (
-          <div ref={tvScreen} className="city-tv" aria-hidden="true"
+        {/* it loads as soon as the city is drawn (loading it during the city's own load delayed the city ~0.35 s, measured);
+            until its candles are drawn the screen shows the city's own chart (Strike's prices), then it fades in */}
+        {ready && (
+          <div ref={tvScreen} className={`city-tv${tvOn ? " on" : ""}`} aria-hidden="true"
                style={{ width: SCREEN_CHART.w * TV_K, height: SCREEN_CHART.h * TV_K, visibility: "hidden" }}>
-            <TradingViewChart market="BTC-USD" lang={lang} title={T.chart.screen} />
+            <TradingViewChart market="BTC-USD" lang={lang} title={T.chart.screen} onReady={() => setTvOn(true)} />
           </div>
         )}
         {ready && store.book && (

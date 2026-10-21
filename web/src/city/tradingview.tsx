@@ -7,6 +7,17 @@ import { useEffect, useRef } from "react";
 import type { Lang } from "../i18n";
 
 const SRC = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+const FRAME_ORIGIN = "https://www.tradingview-widget.com";
+
+/** Opens the connections to TradingView ahead (DNS, TLS): its chart then starts loading at once. */
+export function warmTradingView(): void {
+  if (typeof document === "undefined" || document.querySelector('link[data-tv-warm]')) return;
+  for (const href of ["https://s3.tradingview.com", FRAME_ORIGIN]) {
+    const l = document.createElement("link");
+    l.rel = "preconnect"; l.href = href; l.crossOrigin = "anonymous"; l.dataset.tvWarm = "1";
+    document.head.appendChild(l);
+  }
+}
 
 /** A city market on TradingView's own crypto index ("BTC-USD" -> "CRYPTO:BTCUSD"): no exchange's name on it. */
 export const tvSymbol = (market: string) => `CRYPTO:${market.split("-")[0]}USD`;
@@ -21,10 +32,13 @@ interface Props {
   market: string; lang: Lang;
   full?: boolean;     // the whole chart with its tools; otherwise the city's screen
   title: string;      // the iframe's accessible name
+  onReady?: () => void;   // its candles are drawn (a moment after TradingView's own "tv-widget-load" message)
 }
 
-export function TradingViewChart({ market, lang, full = false, title }: Props) {
+export function TradingViewChart({ market, lang, full = false, title, onReady }: Props) {
   const host = useRef<HTMLDivElement>(null);
+  const ready = useRef(onReady);
+  ready.current = onReady;
   useEffect(() => {
     const el = host.current;
     if (!el) return;
@@ -45,7 +59,16 @@ export function TradingViewChart({ market, lang, full = false, title }: Props) {
       mo.disconnect();
     });
     mo.observe(el, { childList: true, subtree: true });
-    return () => { mo.disconnect(); el.replaceChildren(); };
+    // TradingView posts "tv-widget-load" when its page has loaded; its candles follow ~¼ s later (measured), so the
+    // chart is shown a little after that and never as an empty box
+    let timer = 0;
+    const onMsg = (e: MessageEvent) => {
+      const f = el.querySelector("iframe");
+      if (e.origin !== FRAME_ORIGIN || !f || e.source !== f.contentWindow || !JSON.stringify(e.data ?? "").includes("tv-widget-load")) return;
+      timer = window.setTimeout(() => ready.current?.(), 600);
+    };
+    window.addEventListener("message", onMsg);
+    return () => { mo.disconnect(); window.removeEventListener("message", onMsg); clearTimeout(timer); el.replaceChildren(); };
   }, [market, lang, full, title]);
   return <div ref={host} className="tradingview-widget-container" />;
 }

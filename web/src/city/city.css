@@ -237,7 +237,8 @@
 /* on the exchange's screen: laid over the map, moved and scaled with it (CityPage onScreen); presses go through to the
    map, which opens the full chart */
 .city-tv { position: absolute; left: 0; top: 0; z-index: 1; transform-origin: 0 0; pointer-events: none; overflow: hidden;
-  background: #020806; will-change: transform; contain: strict; }
+  will-change: transform; contain: strict; opacity: 0; transition: opacity .5s ease; }
+.city-tv.on { opacity: 1; background: #020806; }   /* until then the canvas's own chart shows through */
 .city-tv .tradingview-widget-container, .city-tv iframe { display: block; width: 100%; height: 100%; border: 0; }
 /* the prices at the top open their chart */
 .city-tk-btn { all: unset; display: flex; gap: 6px; align-items: baseline; cursor: pointer; border-radius: 4px; }
@@ -282,4 +283,4 @@
 .bk-row.ask .bk-px { color: #fb7185; }
 .bk-row.bid .bk-px { color: var(--primary); }
 .bk-q { color: #d4d4d4; }
-@media (prefers-reduced-motion: reduce) { .bk-bar { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .bk-bar, .city-tv { transition: none; } }

@@ -109,7 +109,7 @@ export class CityStore {
 
   async load(progress: (k: number) => void): Promise<void> {
     progress(0.1);
-    await Promise.all([this.refreshPrices(), this.refreshCity()]);
+    await Promise.all([this.refreshPrices(), this.refreshCity(), this.refreshBook()]);   // the book is on screen with the city
     progress(0.55);
     await Promise.all(["BTC-USD", "ETH-USD", "SOL-USD"].map(async (m) => {
       try { this.hist[m] = await history(this.source === "offline" ? "strike" : this.source, m); } catch { this.hist[m] = []; }
@@ -173,7 +173,6 @@ export class CityStore {
     }, 400));
     this.timers.push(window.setInterval(() => { void this.refreshPrices(); }, 15_000));
     this.timers.push(window.setInterval(() => { void this.refreshCity(); }, 10_000));   // the host pushes within ~10 s
-    void this.refreshBook();
     this.timers.push(window.setInterval(() => { void this.refreshBook(); }, 2500));
     // the UI re-renders at most once per second
     this.timers.push(window.setInterval(() => { if (this.dirty) { this.dirty = false; this.emit(); } }, 1000));
