@@ -36,18 +36,32 @@ export function App() {
     window.addEventListener("hashchange", f);
     return () => window.removeEventListener("hashchange", f);
   }, []);
-  // the live city on the landing loads when its section comes near the viewport
+  // the live city on the landing: its engine is built while the browser is idle soon after the page loads (it takes a
+  // ~100 ms block on a phone; mid-scroll that was a visible hitch), or as soon as its section comes near, if earlier
   const citySection = useRef<HTMLElement>(null);
   const [showCity, setShowCity] = useState(false);
   const [cityStats, setCityStats] = useState<{ online: number; inTrade: number } | null>(null);
   useReveal(!city);   // the landing's entrances (components/useReveal.ts)
   const onCityStats = useCallback((s: { online: number; inTrade: number }) => setCityStats(s), []);
   useEffect(() => {
+    if (city) return;
     const el = citySection.current;
     if (!el || !("IntersectionObserver" in window)) { setShowCity(true); return; }
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setShowCity(true); io.disconnect(); } }, { rootMargin: "300px" });
+    // never in the middle of a scroll: its code loads at the first pause (the page waits 400 ms without scrolling)
+    let lastScroll = 0, t = 0;
+    const onScroll = () => { lastScroll = performance.now(); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    const go = () => {
+      clearTimeout(t);
+      const q = performance.now() - lastScroll;
+      if (q < 400) { t = window.setTimeout(go, 400 - q); return; }
+      if (idle) idle(() => setShowCity(true), { timeout: 2500 }); else setShowCity(true);
+    };
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { go(); io.disconnect(); } }, { rootMargin: "300px" });
     io.observe(el);
-    return () => io.disconnect();
+    t = window.setTimeout(go, 1200);
+    return () => { io.disconnect(); clearTimeout(t); window.removeEventListener("scroll", onScroll); };
   }, [city]);
   const heroCta = useRef<HTMLButtonElement>(null);
   const [heroCtaVisible, setHeroCtaVisible] = useState(true);

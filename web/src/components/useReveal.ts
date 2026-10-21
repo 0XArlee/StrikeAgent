@@ -9,15 +9,17 @@ export function useReveal(on: boolean): void {
     const root = document.documentElement;
     const els = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal], [data-reveal-group]"));
     for (const g of els.filter((e) => e.hasAttribute("data-reveal-group"))) {
-      Array.from(g.children).forEach((c, i) => (c as HTMLElement).style.setProperty("--i", String(Math.min(i, 8))));
+      Array.from(g.children).forEach((c, i) => (c as HTMLElement).style.setProperty("--i", String(Math.min(i, 5))));
     }
+    // it starts a little before a block enters the screen, so content is never waited for; one already scrolled past
+    // (a jump from the menu) is simply there
     const io = new IntersectionObserver((entries) => {
       for (const e of entries) {
-        if (!e.isIntersecting) continue;
-        e.target.classList.add("is-in");
+        if (!e.isIntersecting && e.boundingClientRect.bottom > 0) continue;
+        e.target.classList.add(e.isIntersecting ? "is-in" : "is-past");
         io.unobserve(e.target);
       }
-    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    }, { rootMargin: "0px 0px 12% 0px", threshold: 0 });
     root.classList.add("reveal-on");
     els.forEach((e) => io.observe(e));
     return () => { io.disconnect(); root.classList.remove("reveal-on"); };

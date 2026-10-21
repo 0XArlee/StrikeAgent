@@ -558,7 +558,8 @@ legend { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding:
 }
 
 /* ---------- landing: the city's pixel grid and the mobile menu's light, on the whole page (2026-10-21) ---------- */
-.landing-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.landing-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
+  transform: translateZ(0); contain: strict; }   /* its own layer: scrolling never repaints it */
 /* the grid stays still while the page scrolls (a HUD over the city), strongest at the top */
 .landing-bg::before { content: ""; position: absolute; inset: 0;
   background:
@@ -572,7 +573,7 @@ legend { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding:
     radial-gradient(42% 26% at 50% 16%, rgba(78, 250, 176, .15), transparent 70%),
     radial-gradient(30% 28% at 92% 78%, rgba(196, 155, 255, .07), transparent 70%),
     radial-gradient(26% 24% at 6% 66%, rgba(247, 165, 49, .045), transparent 70%);
-  animation: lb-drift 40s ease-in-out infinite alternate; }
+  will-change: transform; animation: lb-drift 40s ease-in-out infinite alternate; }
 @keyframes lb-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-3%, 2%, 0) scale(1.05); } }
 
 /* a line of light opens each section, as on top of the menu */
@@ -602,11 +603,11 @@ legend { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding:
 .landing .faq details[open] > summary { color: var(--primary); }
 
 /* entrances (components/useReveal.ts): each block, and the pieces of a group one after the other, rise in once */
-@keyframes sf-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes sf-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes sf-curtain { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
-.reveal-on [data-reveal]:not(.is-in), .reveal-on [data-reveal-group]:not(.is-in) > * { opacity: 0; }
+.reveal-on [data-reveal]:not(.is-in):not(.is-past), .reveal-on [data-reveal-group]:not(.is-in):not(.is-past) > * { opacity: 0; }
 .reveal-on [data-reveal].is-in, .reveal-on [data-reveal-group].is-in > * {
-  animation: sf-rise .7s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(.05s + var(--i, 0) * .07s); }
+  animation: sf-rise .5s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(var(--i, 0) * .05s); }
 /* the strategy card unrolls like the menu's panel */
 .reveal-on .hero .card-raised { animation: sf-curtain .95s cubic-bezier(.77, 0, .18, 1) .3s backwards; }
 

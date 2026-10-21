@@ -1,9 +1,11 @@
 // The live city as a picture for the landing: same engine, data and agents as #/city, no input (the whole frame is a
-// link to the city). Loaded only when the section comes into view; drawing pauses while it is off-screen.
+// link to the city). Built while the browser is idle (App.tsx); drawing pauses while it is off-screen, and its first
+// frame (the heaviest: the whole map is drawn) waits until the page stops scrolling, so it never stalls a scroll.
+// Until then the poster under it shows.
 import { useEffect, useRef, useState } from "react";
 import "@fontsource/ibm-plex-mono/600.css";
 import "@fontsource/ibm-plex-mono/700.css";
-import { CityEngine } from "./engine";
+import { CityEngine, idleMoment, prepareLayers } from "./engine";
 import { CityStore } from "./store";
 
 const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -22,8 +24,30 @@ export default function CityPreview({ onStats }: { onStats?: (s: { online: numbe
     let engine: CityEngine | null = null;
     let visible = true;
     let alive = true;
+    let drawn = false;              // the first frame happened
+    let lastScroll = 0;
+    let timer = 0;
+    const onScroll = () => { lastScroll = performance.now(); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    const run = () => {
+      clearTimeout(timer);
+      if (!engine || !visible || !alive) return;
+      const quiet = performance.now() - lastScroll;
+      if (drawn || quiet >= 180) {
+        drawn = true;
+        engine.start();
+        setOn(true);
+      } else {
+        timer = window.setTimeout(run, 180 - quiet);
+      }
+    };
     const unsub = store.subscribe(() => { const t = store.totals(); onStats?.({ online: t.live, inTrade: t.inTrade }); });
-    store.load(() => undefined).then(() => {
+    // each heavy step waits for a pause in the scrolling and an idle moment: none of them lands in the middle of a scroll
+    const whenQuiet = async () => {
+      for (let q = performance.now() - lastScroll; q < 300; q = performance.now() - lastScroll) await new Promise((r) => setTimeout(r, 300 - q));
+      await idleMoment();
+    };
+    store.load(() => undefined).then(() => prepareLayers(whenQuiet)).then(() => {
       if (!alive) return;
       store.start();
       engine = new CityEngine(c, {
@@ -36,16 +60,15 @@ export default function CityPreview({ onStats }: { onStats?: (s: { online: numbe
         getWeather: () => 0, onSelect: () => undefined,
         reducedMotion: !!reduced, interactive: false, view: VIEW, viewSmall: VIEW_SMALL,
       });
-      if (visible) engine.start();
-      setOn(true);
+      run();
     });
     const io = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
       if (!engine) return;
-      if (visible) engine.start(); else engine.pause();
+      if (visible) run(); else { clearTimeout(timer); engine.pause(); }
     });
     io.observe(c);
-    return () => { alive = false; io.disconnect(); unsub(); engine?.stop(); store.stop(); };
+    return () => { alive = false; clearTimeout(timer); window.removeEventListener("scroll", onScroll); io.disconnect(); unsub(); engine?.stop(); store.stop(); };
   }, [onStats]);
 
   return <canvas ref={canvas} className={`city-show-canvas${on ? " on" : ""}`} aria-hidden="true" />;

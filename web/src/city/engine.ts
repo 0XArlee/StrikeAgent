@@ -30,11 +30,30 @@ function countdown(ms: number): string {
   return m >= 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}` : `${m}m`;
 }
 
+// The city's three pre-rendered layers (deterministic: the same for every engine), made once per page. Drawing them in
+// one go blocks the page ~100 ms on a phone: prepareLayers() makes them one at a time in the browser's idle moments.
+type Layers = { ground: HTMLCanvasElement; light: HTMLCanvasElement; glow: HTMLCanvasElement };
+let layers: Layers | null = null;
+/** A moment the browser has nothing else to do (or the next turn, where it cannot say). */
+export const idleMoment = () => new Promise<void>((r) => {
+  const ric = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+  if (ric) ric(() => r(), { timeout: 1000 }); else setTimeout(r, 0);
+});
+const layersNow = (): Layers => (layers ??= (() => { const ground = renderStatic(); return { ground, light: renderLight(), glow: renderGlow() }; })());
+
+export async function prepareLayers(wait: () => Promise<void> = idleMoment): Promise<void> {
+  if (layers) return;
+  await wait(); const ground = renderStatic();      // the light sources the other two use are found here
+  await wait(); const light = renderLight();
+  await wait(); const glow = renderGlow();
+  layers ??= { ground, light, glow };
+}
+
 export class CityEngine {
   private ctx: CanvasRenderingContext2D;
-  private staticLayer = renderStatic();
-  private lightLayer = renderLight();
-  private glowLayer = renderGlow();
+  private staticLayer = layersNow().ground;
+  private lightLayer = layersNow().light;
+  private glowLayer = layersNow().glow;
   private raf = 0;
   private last = performance.now();
   private dpr = Math.min(2, window.devicePixelRatio || 1);
