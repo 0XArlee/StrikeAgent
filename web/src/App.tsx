@@ -2,6 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react"
 import { api, isMock, type AppInfo } from "./api";
 import strategy from "./data/strategy.json";   // engine version shown in the footer
 import { MobileMenu } from "./components/MobileMenu";
+import { useReveal } from "./components/useReveal";
 import { ConnectModal, type LinkResult } from "./components/ConnectModal";
 import { sessionWallet } from "./cardano/wallets";
 import { Dashboard } from "./components/Dashboard";
@@ -39,6 +40,7 @@ export function App() {
   const citySection = useRef<HTMLElement>(null);
   const [showCity, setShowCity] = useState(false);
   const [cityStats, setCityStats] = useState<{ online: number; inTrade: number } | null>(null);
+  useReveal(!city);   // the landing's entrances (components/useReveal.ts)
   const onCityStats = useCallback((s: { online: number; inTrade: number }) => setCityStats(s), []);
   useEffect(() => {
     const el = citySection.current;
@@ -120,6 +122,8 @@ export function App() {
   return (
     <>
       <a className="skip-link" href="#main">{t.skip}</a>
+      {/* the city's pixel grid under the whole landing, with its mint glow (as the mobile menu) */}
+      <div className="landing-bg" aria-hidden="true" />
       <header className="header">
         <div className="container header-inner">
           <div className="brand-wrap">
@@ -148,10 +152,10 @@ export function App() {
         </div>
       </header>
 
-      <main id="main" tabIndex={-1}>
+      <main id="main" className="landing" tabIndex={-1}>
         <section className="hero" id="top" aria-labelledby="hero-title">
           <div className="container hero-grid">
-            <div>
+            <div data-reveal-group>
               <h1 id="hero-title">{t.hero.title1}<em>{t.hero.title2}</em></h1>
               <p className="hero-lead">{t.hero.lead}</p>
               <div className="hero-ctas">
@@ -169,7 +173,7 @@ export function App() {
 
         <section className="section" id="city" aria-labelledby="city-title" ref={citySection}>
           <div className="container">
-            <a className="city-show" href="#/city" aria-labelledby="city-title" aria-describedby="city-sub">
+            <a className="city-show" data-reveal href="#/city" aria-labelledby="city-title" aria-describedby="city-sub">
               <span className="city-show-frame">
                 <img className="city-show-poster" src="/city-preview.jpg" alt="" width={1800} height={900} loading="lazy" decoding="async"
                      onError={(e) => { e.currentTarget.style.display = "none"; }} />
@@ -191,8 +195,8 @@ export function App() {
 
         <section className="section" id="how" aria-labelledby="how-title">
           <div className="container">
-            <div className="section-head"><span className="kicker">{t.kicker.how}</span><h2 id="how-title">{t.how.title}</h2><p>{t.how.sub}</p></div>
-            <ol className="grid grid-4 steps" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            <div className="section-head" data-reveal><span className="kicker">{t.kicker.how}</span><h2 id="how-title">{t.how.title}</h2><p>{t.how.sub}</p></div>
+            <ol className="grid grid-4 steps" data-reveal-group style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {t.how.steps.map(([h, p], i) => (
                 <li key={h} className="card">
                   <div className="card-head"><span className="step-num" aria-hidden="true">{i + 1}</span><h3>{h}</h3></div>
@@ -200,20 +204,13 @@ export function App() {
                 </li>
               ))}
             </ol>
-            <aside className="balance-note" aria-labelledby="balance-title">
-              <span className="balance-icon" aria-hidden="true"><Icon.alert /></span>
-              <div>
-                <h3 id="balance-title">{t.balance.title}</h3>
-                <p>{t.balance.text}</p>
-              </div>
-            </aside>
           </div>
         </section>
 
         <section className="section" id="strategy" aria-labelledby="st-title">
           <div className="container">
-            <div className="section-head"><span className="kicker">{t.kicker.strategy}</span><h2 id="st-title">{t.strategy.title}</h2><p>{t.strategy.sub}</p></div>
-            <div className="grid grid-2">
+            <div className="section-head" data-reveal><span className="kicker">{t.kicker.strategy}</span><h2 id="st-title">{t.strategy.title}</h2><p>{t.strategy.sub}</p></div>
+            <div className="grid grid-2" data-reveal-group>
               {t.strategy.items.map(([h, p], i, all) => (   // an odd last card spans the row: no empty slot beside it
                 <article key={h} className={`card${i === all.length - 1 && all.length % 2 ? " span-row" : ""}`}><h3>{h}</h3><p>{p}</p></article>))}
             </div>
@@ -223,8 +220,8 @@ export function App() {
 
         <section className="section" id="control" aria-labelledby="ctl-title">
           <div className="container">
-            <div className="section-head"><span className="kicker">{t.kicker.control}</span><h2 id="ctl-title">{t.control.title}</h2></div>
-            <div className="grid grid-2">
+            <div className="section-head" data-reveal><span className="kicker">{t.kicker.control}</span><h2 id="ctl-title">{t.control.title}</h2></div>
+            <div className="grid grid-2" data-reveal-group>
               {t.control.items.map(([h, p]) => <article key={h} className="card"><h3>{h}</h3><p>{p}</p></article>)}
             </div>
           </div>
@@ -232,15 +229,15 @@ export function App() {
 
         <section className="section" id="faq" aria-labelledby="faq-title">
           <div className="container">
-            <div className="section-head"><span className="kicker">{fmt(t.kicker.faq, { n: String(t.faq.items.length) })}</span><h2 id="faq-title">{t.faq.title}</h2></div>
-            <div className="faq">
+            <div className="section-head" data-reveal><span className="kicker">{fmt(t.kicker.faq, { n: String(t.faq.items.length) })}</span><h2 id="faq-title">{t.faq.title}</h2></div>
+            <div className="faq" data-reveal-group>
               {t.faq.items.map(([q, a]) => <details key={q}><summary>{q}</summary><div>{a}</div></details>)}
             </div>
           </div>
         </section>
 
         <footer className="site-footer">
-          <div className="container foot">
+          <div className="container foot" data-reveal>
             <div className="foot-brand"><Mark size={32} /><span className="foot-word">EdgeCraft-StrikeCity</span><span className="foot-by">{t.footBy}</span></div>
             <p>{t.footer.legal}</p><p>{t.footer.by} Engine {strategy.engine}.</p>
           </div>

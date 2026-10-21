@@ -138,12 +138,6 @@ main { padding-bottom: calc(var(--status-h) + 24px); }
 .trust svg { flex: none; margin-top: 2px; color: var(--primary); }
 .hero-balance { margin-top: 14px; display: flex; gap: 8px; align-items: flex-start; color: #ffd29a; font-size: 14px; }
 .hero-balance svg { flex: none; margin-top: 2px; color: var(--golden); }
-.balance-note { margin-top: 16px; display: flex; gap: 14px; align-items: flex-start; padding: 18px 20px; border-radius: var(--radius-lg);
-  background: var(--golden-10); border: 1px solid rgba(248, 147, 26, .35); }
-.balance-note h3 { font-size: 16px; color: #ffd29a; }
-.balance-note p { margin-top: 6px; color: var(--text-muted); }
-.balance-icon { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
-  background: rgba(248, 147, 26, .18); color: var(--golden); }
 .field-hint.balance-hint { margin-top: 10px; color: #ffd29a; }
 
 /* ---------- cards (Strike vault-card pattern) ---------- */
@@ -561,4 +555,62 @@ legend { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding:
   .mm, .mm[data-open="true"], .mm-backdrop, .menu-bars i { transition: none; }
   .mm .mm-list li, .mm .mm-city, .mm .mm-foot { opacity: 1; transform: none; transition: none; }
   .mm-live-dot { animation: none; }
+}
+
+/* ---------- landing: the city's pixel grid and the mobile menu's light, on the whole page (2026-10-21) ---------- */
+.landing-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+/* the grid stays still while the page scrolls (a HUD over the city), strongest at the top */
+.landing-bg::before { content: ""; position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, .042) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .042) 0 1px, transparent 1px 8px);
+  -webkit-mask-image: radial-gradient(140% 95% at 50% 0%, #000 30%, rgba(0, 0, 0, .55) 68%, rgba(0, 0, 0, .3) 100%);
+          mask-image: radial-gradient(140% 95% at 50% 0%, #000 30%, rgba(0, 0, 0, .55) 68%, rgba(0, 0, 0, .3) 100%); }
+/* the light: mint from the top, and far off the violet of SOL and the amber of BTC, drifting very slowly */
+.landing-bg::after { content: ""; position: absolute; inset: -20%;
+  background:
+    radial-gradient(42% 26% at 50% 16%, rgba(78, 250, 176, .15), transparent 70%),
+    radial-gradient(30% 28% at 92% 78%, rgba(196, 155, 255, .07), transparent 70%),
+    radial-gradient(26% 24% at 6% 66%, rgba(247, 165, 49, .045), transparent 70%);
+  animation: lb-drift 40s ease-in-out infinite alternate; }
+@keyframes lb-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-3%, 2%, 0) scale(1.05); } }
+
+/* a line of light opens each section, as on top of the menu */
+.landing .section { position: relative; }
+.landing .section::before { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: min(var(--maxw), calc(100% - 32px)); height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(78, 250, 176, .32), transparent); }
+/* the kicker gets a lit pixel */
+.landing .kicker::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; vertical-align: 1px;
+  background: var(--primary); box-shadow: 0 0 10px rgba(78, 250, 176, .8); }
+
+/* cards: dark glass over the grid, a mint edge that lights up on hover */
+.landing .card { position: relative; background: linear-gradient(180deg, rgba(78, 250, 176, .035), transparent 45%), rgba(12, 12, 12, .88);
+  transition: border-color .25s, box-shadow .25s; }
+.landing .card::before { content: ""; position: absolute; left: 14px; right: 14px; top: -1px; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent); opacity: 0; transition: opacity .3s; }
+.landing .card:hover { border-color: var(--primary-30); box-shadow: 0 22px 44px -28px rgba(78, 250, 176, .45); }
+.landing .card:hover::before, .landing .card-raised::before { opacity: .9; }
+.landing .card-raised { border-color: rgba(78, 250, 176, .22); box-shadow: 0 30px 70px -40px rgba(78, 250, 176, .45); }
+.landing .step-num { box-shadow: 0 0 18px rgba(78, 250, 176, .35); }
+.landing .city-show { box-shadow: 0 30px 80px -50px rgba(78, 250, 176, .5); }
+
+/* questions: glass too, the open one marked in mint */
+.landing .faq details { background: rgba(12, 12, 12, .88); transition: border-color .25s, box-shadow .25s; }
+.landing .faq details:hover { border-color: #3a4a43; }
+.landing .faq details[open] { border-color: var(--primary-30); box-shadow: inset 2px 0 0 var(--primary); }
+.landing .faq details[open] > summary { color: var(--primary); }
+
+/* entrances (components/useReveal.ts): each block, and the pieces of a group one after the other, rise in once */
+@keyframes sf-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes sf-curtain { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+.reveal-on [data-reveal]:not(.is-in), .reveal-on [data-reveal-group]:not(.is-in) > * { opacity: 0; }
+.reveal-on [data-reveal].is-in, .reveal-on [data-reveal-group].is-in > * {
+  animation: sf-rise .7s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(.05s + var(--i, 0) * .07s); }
+/* the strategy card unrolls like the menu's panel */
+.reveal-on .hero .card-raised { animation: sf-curtain .95s cubic-bezier(.77, 0, .18, 1) .3s backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-bg::after { animation: none; }
+  .landing .card, .landing .card::before, .landing .faq details { transition: none; }
 }
