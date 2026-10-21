@@ -226,10 +226,7 @@ export function App() {
 
         <section className="section" id="strategies" aria-labelledby="strategies-title">
           <div className="container">
-            <div className="section-head" data-reveal>
-              <span className="kicker">{fmt(t.catalog.kicker, { n: String(STRATEGY_IDS.length) })}</span>
-              <h2 id="strategies-title">{t.catalog.title}</h2><p>{t.catalog.sub}</p>
-            </div>
+            <div className="section-head" data-reveal><h2 id="strategies-title">{t.catalog.title}</h2><p>{t.catalog.sub}</p></div>
             <StrategyCatalog t={t} lang={lang} info={info} onUse={onUse} headingId="cat" />
             <p className="catalog-note">{t.catalog.note}</p>
           </div>

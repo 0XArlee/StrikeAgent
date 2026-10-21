@@ -19,7 +19,6 @@ const en = {
   connectCardano: "Connect Cardano wallet",
   dashboard: "My agent",
   catalog: {
-    kicker: "{n} live · full backtests",
     title: "Strategies",
     sub: "Each one with its full backtest and its rules in plain view. Switch strategy any time in My agent.",
     year: "a year*",
@@ -331,7 +330,6 @@ const es: Dict = {
   connectCardano: "Conectar wallet de Cardano",
   dashboard: "Mi agente",
   catalog: {
-    kicker: "{n} en marcha · backtests completos",
     title: "Estrategias",
     sub: "Cada una con su backtest completo y sus reglas a la vista. Puedes cambiar de estrategia cuando quieras desde Mi agente.",
     year: "al año*",
