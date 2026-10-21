@@ -16,6 +16,7 @@ paper_equity = 10000.0
 policy = "pyramid"
 max_stack = 3
 
+strategy = "pyramid"   # config/strategies.json: this is its official paper agent
 [params]
 # the official Smart Flow configuration (core.config.OFFICIAL, docs/10)
 range_filter = true

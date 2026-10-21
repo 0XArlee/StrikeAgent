@@ -1,13 +1,13 @@
 // Shared helpers for the Pages Functions: JSON responses, limits, HMAC, session tokens and input validation.
 /// <reference path="./env.d.ts" />
+import registry from "../../config/strategies.json";
 
 export const MARKETS = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "BNB-USD", "ADA-USD", "NEAR-USD", "ZEC-USD"];
-// risk per trade of each preset, % (smartflow/live/fleet.py RISK). Smart Flow Pyramid goes up to the standard preset:
-// it stacks up to 3 entries per market, and at 2 % its backtest drawdown was ~58 % (docs/08 "Niveles de riesgo")
+// risk per trade of each preset, % (smartflow/live/fleet.py RISK); each strategy caps it (config/strategies.json
+// max_risk: Smart Flow Pyramid stacks up to 3 entries per market and goes up to the standard preset, docs/08)
 export const RISK: Record<string, number> = { conservative: 0.5, standard: 1.0, assertive: 2.0 };
-export const PYRAMID_MAX_RISK = "standard";
 /** Whether this risk preset is allowed with this strategy. */
-export const riskAllowed = (strategy: string, risk: string) => strategy !== "pyramid" || RISK[risk] <= RISK[PYRAMID_MAX_RISK];
+export const riskAllowed = (strategy: string, risk: string) => (RISK[risk] ?? Infinity) <= RISK[STRATEGIES[strategyOf(strategy)].maxRisk];
 export const CHALLENGE_TTL = 5 * 60_000;
 export const SESSION_TTL = 7 * 86400_000;
 
@@ -81,12 +81,15 @@ export interface UserRow {
   created_at: number; updated_at: number; look: string | null; strategy?: string;
 }
 
-/** The strategies a user can pick; each has an official paper agent on the agents' host that its users follow. */
-export const STRATEGIES: Record<string, { ref: string; name: string }> = {
-  smartflow: { ref: "sf-reference", name: "Smart Flow" },
-  pyramid: { ref: "sf-pyramid", name: "Smart Flow Pyramid" },
-};
-export const strategyOf = (v: unknown): string => (typeof v === "string" && v in STRATEGIES ? v : "smartflow");
+/** The strategies a user can pick: the live ones of the registry the agents' host also reads (config/strategies.json).
+ *  ref: its official paper agent in the city; maxRisk: the highest preset allowed with it. */
+export const STRATEGIES: Record<string, { ref: string; name: string; maxRisk: string }> = Object.fromEntries(
+  (registry.strategies as { id: string; name: string; status: string; max_risk: string; paper?: { city_id?: string } }[])
+    .filter((s) => s.status === "live").map((s) => [s.id, { ref: s.paper?.city_id ?? "", name: s.name, maxRisk: s.max_risk }]));
+export const DEFAULT_STRATEGY: string = registry.default;
+export const strategyOf = (v: unknown): string => (typeof v === "string" && v in STRATEGIES ? v : DEFAULT_STRATEGY);
+/** A strategy the site offers (an unknown id is refused, never stored as another one). */
+export const isStrategy = (v: unknown): v is string => typeof v === "string" && v in STRATEGIES;
 
 export const cityCacheKey = (req: Request) => new Request(new URL("/api/city", req.url).toString());
 export const edgeCache = () => (caches as unknown as { default: Cache }).default;

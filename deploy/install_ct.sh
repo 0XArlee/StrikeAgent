@@ -50,7 +50,9 @@ systemctl enable --now smartflow-backup.timer
 [ -f /etc/smartflow/alert.env ] && { chown root:smartflow /etc/smartflow/alert.env; chmod 640 /etc/smartflow/alert.env; }
 systemctl enable --now smartflow-watchdog.timer
 systemctl enable --now smartflow-health.timer
-PAPER="reference pyramid recommended 2h flowexit"
+# the official paper agent of every strategy of the registry (config/strategies.json), then the internal variants
+PAPER=$(runuser -u smartflow -- "$APP/.venv/bin/python" -c "from smartflow.live.watchdog import paper_agents; print(' '.join(paper_agents()))")
+echo "paper agents: $PAPER"
 for i in $PAPER; do
   systemctl enable "smartflow-paper@$i" >/dev/null 2>&1
   [ "$ONLY" = "api" ] || systemctl restart "smartflow-paper@$i"

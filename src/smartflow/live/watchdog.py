@@ -25,9 +25,19 @@ from pathlib import Path
 
 from .. import notify
 
-PAPER = ("reference", "pyramid", "recommended", "2h", "flowexit")
+VARIANTS = ("recommended", "2h", "flowexit")   # internal paper variants (no strategy of their own)
+
+
+def paper_agents() -> list[str]:
+    """The paper agent instances that should run (smartflow-paper@<name>, config/paper-<name>.toml): the official one of
+    every strategy of the registry, then the internal variants."""
+    from .. import strategies
+    names = [Path(s.paper_config).stem.removeprefix("paper-") for s in strategies.all_strategies() if s.paper_config]
+    return list(dict.fromkeys(names + list(VARIANTS)))
+
+
 # unit -> its settings file (None: always expected)
-UNITS = {**{f"smartflow-paper@{p}": None for p in PAPER}, "smartflow-api": None,
+UNITS = {**{f"smartflow-paper@{p}": None for p in paper_agents()}, "smartflow-api": None,
          "smartflow-push": "/etc/smartflow/push.env", "smartflow-push-qa": "/etc/smartflow/push-qa.env",
          "smartflow-fleet": "/etc/smartflow/fleet.env", "smartflow-fleet-mainnet": "/etc/smartflow/fleet-mainnet.env",
          "smartflow-data.timer": None, "smartflow-backup.timer": None}

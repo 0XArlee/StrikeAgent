@@ -10,7 +10,7 @@ import { fmt, type Dict, type Lang } from "../i18n";
 import type { LinkResult } from "./ConnectModal";
 import { AvatarEditor, Sprite } from "./AvatarEditor";
 import { PortfolioView, useMarks } from "../city/portfolio";
-import { MIN_BALANCE, TEST_MIN_AVAILABLE, strategyId } from "../strategies";
+import { MIN_BALANCE, TEST_MIN_AVAILABLE, strategyId, strategyName } from "../strategies";
 import { StrategyPicker, type Plan } from "./StrategyPicker";
 import { Alert, Icon } from "./ui";
 
@@ -183,7 +183,7 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
         </span>
       </p>
       <dl className="rows">
-        <div className="row"><dt>{S.label}</dt><dd>{S.names[strat]}</dd></div>
+        <div className="row"><dt>{S.label}</dt><dd>{strategyName(strat)}</dd></div>
         <div className="row"><dt>{t.modal.risk}</dt><dd>{t.modal.riskNames[me?.risk ?? link.risk]} · {info.riskPresets[me?.risk ?? link.risk]}%</dd></div>
         <div className="row"><dt>{t.modal.markets}</dt><dd>{(me?.markets ?? link.markets).map((x) => x.replace("-USD", "")).join(" · ")}</dd></div>
         {paper && <div className="row"><dt>{P.city}</dt><dd>{shown
@@ -238,7 +238,7 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
         )}
         {error && <Alert kind="err">{error}</Alert>}
         {notice && <Alert kind="info">{notice}</Alert>}
-        {me?.hold && liveOn && <Alert kind="warn">{fmt(t.hold, { strategy: S.names[strat] })}</Alert>}
+        {me?.hold && liveOn && <Alert kind="warn">{fmt(t.hold, { strategy: strategyName(strat) })}</Alert>}
         {emptyAccount && <Alert kind="warn">{fmt(t.balance.empty, { min: `${MIN_BALANCE[riskNow]} $` })}</Alert>}
         {lowBalance && <Alert kind="warn">{fmt(t.balance.low, { eq: usd(equityNow), min: `${MIN_BALANCE[riskNow]} $`, risk: t.modal.riskNames[riskNow].toLowerCase() })}</Alert>}
         {paper && !me?.live?.enabled && <Alert kind="info">{P.note}</Alert>}

@@ -42,8 +42,8 @@ export function MobileMenu({ t, lang, setLang, connectLabel, onConnect }: Props)
   }, [open, close]);
 
   const items: { href: string; label: string; sub: string }[] = [
+    { href: "#strategies", label: t.nav.strategy, sub: M.strategy },
     { href: "#how", label: t.nav.how, sub: M.how },
-    { href: "#strategy", label: t.nav.strategy, sub: M.strategy },
     { href: "#faq", label: t.nav.faq, sub: M.faq },
   ];
 

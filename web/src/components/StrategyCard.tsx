@@ -1,73 +1,57 @@
-import { useState } from "react";
+// A strategy's backtest, drawn in the city's own language: the account curve as a stepped pixel line, and the figures
+// that matter to whoever picks it. Used by the catalog cards and by each strategy's page.
 import type { Dict, Lang } from "../i18n";
-import { STRATEGY_DATA, STRATEGY_IDS, type StrategyId } from "../strategies";
-import { Mark, Tip } from "./ui";
+import { STRATEGY_DATA, type StrategyId } from "../strategies";
+import { Tip } from "./ui";
 
-function Sparkline({ points, label }: { points: number[]; label: string }) {
-  const w = 300, h = 76, pad = 4;
+/** The account curve as pixel steps (one per month), crisp at any size. */
+export function PixelCurve({ points, label, height = 76 }: { points: number[]; label: string; height?: number }) {
+  const w = 300, h = height, pad = 3;
   const min = Math.min(...points), max = Math.max(...points);
-  const x = (i: number) => pad + (i / (points.length - 1)) * (w - 2 * pad);
-  const y = (v: number) => h - pad - ((v - min) / (max - min || 1)) * (h - 2 * pad);
-  const d = points.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-  const area = `${d} L${x(points.length - 1).toFixed(1)},${h} L${x(0).toFixed(1)},${h} Z`;
+  const step = (w - 2 * pad) / points.length;
+  const y = (v: number) => Math.round(h - pad - ((v - min) / (max - min || 1)) * (h - 2 * pad));
+  let d = `M${pad},${y(points[0])}`;
+  points.forEach((v, i) => { d += ` V${y(v)} H${(pad + (i + 1) * step).toFixed(1)}`; });
+  const area = `${d} V${h} H${pad} Z`;
+  const up = points[points.length - 1] >= points[0];
   return (
-    <svg className="spark" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" role="img" aria-label={label}>
-      <defs>
-        <linearGradient id="sf-area" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#4efab0" stopOpacity=".22" />
-          <stop offset="1" stopColor="#4efab0" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill="url(#sf-area)" />
-      <path d={d} fill="none" stroke="#4efab0" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+    <svg className={`pixel-curve ${up ? "up" : "down"}`} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" role="img" aria-label={label} shapeRendering="crispEdges">
+      <path className="pc-area" d={area} />
+      <path className="pc-line" d={d} vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
 
-export function StrategyCard({ t, lang }: { t: Dict; lang: Lang }) {
-  const [id, setId] = useState<StrategyId>("smartflow");   // the two strategies a user can pick, same method
+export function curveLabel(id: StrategyId, lang: Lang): string {
+  const s = STRATEGY_DATA[id];
+  const nf = (v: number) => v.toLocaleString(lang === "es" ? "es-ES" : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const first = s.equity_curve[0][0], last = s.equity_curve[s.equity_curve.length - 1][0];
+  const end = s.equity_curve[s.equity_curve.length - 1][1];
+  return lang === "es"
+    ? `Curva de la cuenta simulada de ${first} a ${last}: de 1,00 a ${nf(end)} veces el capital inicial`
+    : `Simulated account curve from ${first} to ${last}: from 1.00 to ${nf(end)} times the starting capital`;
+}
+
+/** The full figures of one strategy (its page). */
+export function StrategyFigures({ id, t, lang }: { id: StrategyId; t: Dict; lang: Lang }) {
   const s = STRATEGY_DATA[id];
   const nf = (v: number, d = 2) => v.toLocaleString(lang === "es" ? "es-ES" : "en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
-  const curve = s.equity_curve.map((p) => p[1] as number);
-  const first = s.equity_curve[0][0] as string, last = s.equity_curve[s.equity_curve.length - 1][0] as string;
-  const spark = lang === "es"
-    ? `Curva de la cuenta simulada de ${first} a ${last}: de 1,00 a ${nf(curve[curve.length - 1])} veces el capital inicial`
-    : `Simulated account curve from ${first} to ${last}: from 1.00 to ${nf(curve[curve.length - 1])} times the starting capital`;
+  const sign = lang === "es" ? " %" : "%";
   return (
-    <article className="card card-raised" aria-labelledby="sc-title">
-      <div className="card-head">
-        <span className="avatar"><Mark size={32} /></span>
-        <div>
-          <h2 id="sc-title" className="card-title">{t.strategies.names[id]} · 4h</h2>
-          <p className="card-sub" style={{ marginTop: 0 }}>{t.card.sub}</p>
-        </div>
+    <article className="figures" aria-labelledby={`fig-${id}`}>
+      <h2 id={`fig-${id}`} className="figures-title">{t.detail.figures}</h2>
+      <div className="figures-top">
+        <div><div className="figures-big num pos">+{nf(s.avg_r)}R</div><div className="kpi-label"><Tip label={t.card.avgR} text={t.card.avgRTip} /></div></div>
+        <div><div className="figures-big num">{nf(s.cagr_pct, 1)}{sign}</div><div className="kpi-label"><Tip label={t.card.cagr} text={t.card.cagrTip} /></div></div>
+        <div><div className="figures-big num neg">−{nf(s.equity_max_dd_pct, 1)}{sign}</div><div className="kpi-label"><Tip label={t.card.dd} text={t.card.ddTip} /></div></div>
       </div>
-      <div className="seg seg-sm" role="radiogroup" aria-label={t.strategies.label}>
-        {STRATEGY_IDS.map((k) => (
-          <label key={k}>
-            <input type="radio" name="sc-strategy" value={k} checked={id === k} onChange={() => setId(k)} />
-            <span>{t.strategies.names[k]}</span>
-          </label>
-        ))}
-      </div>
-      <p className="card-sub sc-tagline">{t.strategies.taglines[id]}</p>
-      <div className="kpi-top">
-        <div>
-          <div className="kpi-big num pos">+{nf(s.avg_r)}R</div>
-          <div className="kpi-label"><Tip label={t.card.avgR} text={t.card.avgRTip} /></div>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <div className="kpi-big num">{nf(s.cagr_pct, 1)}%</div>
-          <div className="kpi-label"><Tip label={t.card.cagr} text={t.card.cagrTip} /></div>
-        </div>
-      </div>
-      <Sparkline points={curve} label={spark} />
+      <PixelCurve points={s.equity_curve.map((p) => p[1])} label={curveLabel(id, lang)} height={120} />
       <dl className="rows">
         <div className="row"><dt>{t.card.ci}</dt><dd className="num">{nf(s.ci95[0])}R … {nf(s.ci95[1])}R</dd></div>
-        <div className="row"><dt>{t.card.win}</dt><dd className="num">{nf(100 * s.win_rate, 0)}%</dd></div>
+        <div className="row"><dt>{t.card.win}</dt><dd className="num">{nf(100 * s.win_rate, 0)}{sign}</dd></div>
         <div className="row"><dt><Tip label={t.card.pf} text={t.card.pfTip} /></dt><dd className="num">{nf(s.profit_factor)}</dd></div>
-        <div className="row"><dt><Tip label={t.card.dd} text={t.card.ddTip} /></dt><dd className="num neg">−{nf(s.equity_max_dd_pct, 1)}%</dd></div>
         <div className="row"><dt>{t.card.trades}</dt><dd className="num">{s.trades_per_year}</dd></div>
+        <div className="row"><dt>{t.detail.sample}</dt><dd className="num">{s.trades}</dd></div>
       </dl>
       <p className="disclaimer">{t.card.disclaimer}</p>
     </article>

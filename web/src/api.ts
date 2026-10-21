@@ -54,10 +54,10 @@ export interface Linked {
   mode?: "paper" | "live";
   live?: LiveView;
   signin?: boolean;         // signed in to an agent that already existed: its settings as they are
-  agent?: { name: string; markets: string[]; risk: RiskPreset; public: boolean; look: Look | null; strategy: "smartflow" | "pyramid" };
+  agent?: { name: string; markets: string[]; risk: RiskPreset; public: boolean; look: Look | null; strategy: string };
 }
 
-export interface StartOptions { risk: RiskPreset; markets: string[]; name: string; public: boolean; look?: Look; strategy?: "smartflow" | "pyramid" }
+export interface StartOptions { risk: RiskPreset; markets: string[]; name: string; public: boolean; look?: Look; strategy?: string }
 
 /** A journal entry as the city renders it (code + args, see city/text.ts). */
 export interface JournalEntry { time: number; market: string; kind: string; code: string; args?: Record<string, string | number | null>; text?: string }
@@ -82,7 +82,7 @@ export interface Me {
   look?: Look | null;
   live?: LiveView;
   portfolio?: Portfolio | null;   // connected to Strike: the real account (amounts: only the owner gets them)
-  strategy?: "smartflow" | "pyramid";
+  strategy?: string;
   hold?: { since: number; why: string[] } | null;   // its strategy's safety hold: new trades wait
 }
 

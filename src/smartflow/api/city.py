@@ -384,7 +384,7 @@ def snapshot(agent: CityAgent, now_ms: int | None = None, full: bool = False) ->
         "env": cfg.get("env", "testnet"), "tf": tf, "engine": own[-1].get("engine", ENGINE_VERSION),
         "params": own[-1].get("params", ""),
         "variant": _variant(params), "changes": sorted(params) if _variant(params) == "experimental" else [],
-        "strategy": "pyramid" if cfg.get("policy") == "pyramid" else "smartflow",
+        "strategy": cfg.get("strategy") or ("pyramid" if cfg.get("policy") == "pyramid" else "smartflow"),
         "markets": markets, "riskPct": 100 * float(risk.get("risk_per_trade", 0.005)),
         "feeBps": int(cfg.get("builder_fee_bps", 0)),
         "equity0": equity0, "cash": cash,

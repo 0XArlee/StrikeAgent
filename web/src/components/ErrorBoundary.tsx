@@ -2,7 +2,8 @@
 // unmounting the whole app and leaving a black screen.
 import { Component, type ReactNode } from "react";
 
-interface Props { children: ReactNode; onClose?: () => void; inline?: boolean }
+// silent: nothing is shown instead (an ornament, like the landing's live city: the poster under it stays)
+interface Props { children: ReactNode; onClose?: () => void; inline?: boolean; silent?: boolean }
 
 export class ErrorBoundary extends Component<Props, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -14,6 +15,7 @@ export class ErrorBoundary extends Component<Props, { error: Error | null }> {
   render() {
     const { error } = this.state;
     if (!error) return this.props.children;
+    if (this.props.silent) return null;
     const es = document.documentElement.lang === "es";
     const body = (
       <div className="dialog" role="alertdialog" aria-modal="true" aria-labelledby="eb-title" aria-describedby="eb-desc">

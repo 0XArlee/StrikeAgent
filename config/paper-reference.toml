@@ -12,6 +12,7 @@ markets = [
 builder_fee_bps = 20   # the Smart Flow fee (Edgar, 2026-10-19)
 paper_equity = 10000.0
 
+strategy = "smartflow"   # config/strategies.json: this is its official paper agent
 [params]
 # the official Smart Flow configuration (core.config.OFFICIAL, docs/10)
 range_filter = true

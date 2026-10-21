@@ -2,12 +2,13 @@
 // resets the markets to that strategy's own (the ones with an edge after costs); the others stay opt-in.
 import type { AppInfo, RiskPreset } from "../api";
 import { fmt, type Dict, type Lang } from "../i18n";
-import { MIN_BALANCE, PYRAMID_MAX_RISK, STRATEGY_DATA, STRATEGY_IDS, STRATEGY_MARKETS, riskAllowed, type StrategyId } from "../strategies";
+import { DEFAULT_STRATEGY, MIN_BALANCE, STRATEGY_DATA, STRATEGY_IDS, STRATEGY_MARKETS, maxRisk, riskAllowed, strategyName, strategyText, type StrategyId } from "../strategies";
 
 export interface Plan { strategy: StrategyId; markets: string[]; risk: RiskPreset }
 
-export const defaultPlan = (info: AppInfo, strategy: StrategyId = "smartflow"): Plan => ({
-  strategy, markets: STRATEGY_MARKETS[strategy].filter((m) => info.markets.includes(m)), risk: "standard",
+export const defaultPlan = (info: AppInfo, strategy: StrategyId = DEFAULT_STRATEGY): Plan => ({
+  strategy, markets: STRATEGY_MARKETS[strategy].filter((m) => info.markets.includes(m)),
+  risk: riskAllowed(strategy, "standard") ? "standard" : maxRisk(strategy),
 });
 
 interface Props { t: Dict; lang: Lang; info: AppInfo; value: Plan; onChange: (p: Plan) => void; idPrefix: string; titled?: boolean }
@@ -19,9 +20,10 @@ export function StrategyPicker({ t, lang, info, value, onChange, idPrefix, title
   const pct = (v: number) => `${nf(v, 1)}${lang === "es" ? " %" : "%"}`;
   const core = STRATEGY_MARKETS[value.strategy].filter((m) => info.markets.includes(m));
   const more = info.markets.filter((m) => !core.includes(m));
-  // Pyramid goes up to the standard risk: picking it with a higher one brings the risk down to its cap
+  // a strategy may cap the risk (config/strategies.json max_risk): picking it with a higher one brings the risk down to it
   const pick = (id: StrategyId) => onChange({ ...value, strategy: id, markets: STRATEGY_MARKETS[id].filter((m) => info.markets.includes(m)),
-    risk: riskAllowed(id, value.risk) ? value.risk : PYRAMID_MAX_RISK });
+    risk: riskAllowed(id, value.risk) ? value.risk : maxRisk(id) });
+  const cap = maxRisk(value.strategy);
   const toggle = (mk: string, on: boolean) =>
     onChange({ ...value, markets: on ? info.markets.filter((m) => m === mk || value.markets.includes(m)) : value.markets.filter((m) => m !== mk) });
   const chip = (mk: string) => (
@@ -41,8 +43,8 @@ export function StrategyPicker({ t, lang, info, value, onChange, idPrefix, title
             <label key={id} className={`sp-card${value.strategy === id ? " on" : ""}`}>
               <input type="radio" name={`${idPrefix}-strategy`} value={id} checked={value.strategy === id} onChange={() => pick(id)} />
               <span className="sp-body">
-                <span className="sp-name">{S.names[id]}</span>
-                <span className="sp-tagline">{S.taglines[id]}</span>
+                <span className="sp-name">{strategyName(id)}</span>
+                <span className="sp-tagline">{strategyText(id, lang).tagline}</span>
                 <span className="sp-stats">
                   <span><strong className="num">{d.trades_per_year}</strong> {S.tradesYear}</span>
                   <span><strong className="num pos">+{nf(d.avg_r)} R</strong> {S.avgR}</span>
@@ -76,7 +78,8 @@ export function StrategyPicker({ t, lang, info, value, onChange, idPrefix, title
             </label>
           ))}
         </div>
-        {value.strategy === "pyramid" && <p className="field-hint">{fmt(S.pyramidCap, { max: `${info.riskPresets[PYRAMID_MAX_RISK].toLocaleString(loc)}${lang === "es" ? " %" : "%"}` })}</p>}
+        {cap !== "assertive" && <p className="field-hint">{fmt(S.riskCap, { name: strategyName(value.strategy),
+          max: `${info.riskPresets[cap].toLocaleString(loc)}${lang === "es" ? " %" : "%"}`, note: strategyText(value.strategy, lang).risk_note })}</p>}
         {info.live?.enabled && <p className="field-hint balance-hint">{fmt(t.balance.pick, { min: `${MIN_BALANCE[value.risk]} $` })}</p>}
       </fieldset>
     </>

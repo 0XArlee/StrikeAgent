@@ -1,5 +1,6 @@
 // EdgeCraft-StrikeCity: the agents of Smart Flow users living on a map, driven by the same lifecycle as the real agent.
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
+import { DEFAULT_STRATEGY, strategyDef } from "../strategies";
 import "@fontsource/ibm-plex-mono/600.css";
 import "@fontsource/ibm-plex-mono/700.css";
 import "./city.css";
@@ -382,7 +383,7 @@ function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks 
         </div>
         <button type="button" className="icon-btn" aria-label={T.card.close} onClick={onClose}><Icon.close /></button>
       </div>
-      <div className="city-card-status"><KindTag T={T} a={a} />{a.strategy === "pyramid" && <span className="city-tag strat">{T.strategyTag.pyramid}</span>}<StatusPill T={T} a={a} /><span className="faint small">{a.real ? `${tfLabel(a.real.tf)} · ` : ""}{marketList(a.markets)}</span></div>
+      <div className="city-card-status"><KindTag T={T} a={a} />{strategyDef(a.strategy ?? "").tag && a.strategy !== DEFAULT_STRATEGY && <span className="city-tag strat">{strategyDef(a.strategy!).tag}</span>}<StatusPill T={T} a={a} /><span className="faint small">{a.real ? `${tfLabel(a.real.tf)} · ` : ""}{marketList(a.markets)}</span></div>
       <p className="city-card-label">{T.card.now}</p>
       <p className="city-card-text">{a.status === "unfunded" ? T.unfundedNow : last ? describe(last, T, lang).text : T.status[a.status]}</p>
       {p ? (

@@ -58,7 +58,7 @@ export interface AgentView {
   portfolio?: Portfolio;  // a user's live agent: its Strike account (shares of it in the public city)
   testTrades?: Trade[];   // the test trades its owner asked for: in its trades list, never in any count
   tally?: Tally;          // counts over every one of its trades (the list above is the latest ones only)
-  strategy?: "smartflow" | "pyramid";
+  strategy?: string;
   look?: Look;            // chosen by the owner (character creator); otherwise derived from the id
   tour?: number;          // live: the market its card shows first while it waits (two agents never show the same one)
   post?: { x: number; y: number };     // its own spot in the plaza: where it stands still while it waits
@@ -224,7 +224,7 @@ export function fromApi(x: ApiAgent, prev: AgentView | undefined, R: () => numbe
   a.trades = all.filter((t) => !t.test);
   a.testTrades = all.filter((t) => t.test);
   a.tally = x.tally ?? undefined;
-  a.strategy = x.strategy === "pyramid" ? "pyramid" : "smartflow";
+  a.strategy = x.strategy || undefined;
   a.decisions = x.decisions ?? [];
   a.rToday = +a.trades.filter((t) => t.time >= Date.now() - 86400_000).reduce((s, t) => s + t.r, 0).toFixed(2);
   a.position = positions.find((p) => p.market === a.position?.market) ?? positions[0] ?? null;

@@ -272,6 +272,12 @@ def cmd_watchdog(a) -> int:
     return 1 if doc["open"] else 0
 
 
+def cmd_figures(a) -> int:
+    from .backtest.figures import write
+    write(a.strategy, a.builder_bps, Path(a.root))
+    return 0
+
+
 def cmd_site_check(a) -> int:
     from . import notify
     from .live.watchdog import site_check
@@ -408,13 +414,18 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("health", help="each strategy's real results against its backtest; sets / releases its safety hold")
     s.add_argument("--city", default="config/city.toml")
     s.add_argument("--runs", default="runs")
-    s.add_argument("--release", choices=["smartflow", "pyramid"], help="lift the hold of this strategy (operator)")
+    s.add_argument("--release", metavar="STRATEGY", help="lift the hold of this strategy (its id in config/strategies.json)")
     s.set_defaults(fn=cmd_health)
 
     s = sub.add_parser("watchdog", help="check the host once (services, pushes, agents, disk) and alert the operator")
     s.add_argument("--city", default="config/city.toml")
     s.add_argument("--runs", default="runs")
     s.set_defaults(fn=cmd_watchdog)
+
+    s = sub.add_parser("figures", help="each strategy's backtest figures for the catalog and the health check (config/figures)")
+    s.add_argument("--builder-bps", type=int, default=20)
+    s.add_argument("--strategy", help="only this strategy (its id in config/strategies.json)")
+    s.set_defaults(fn=cmd_figures)
 
     s = sub.add_parser("site-check", help="from outside the host: does the site still get the agents' data? (exit 1 if not)")
     s.add_argument("--url", default="https://edgecraft-strikecity.pages.dev")

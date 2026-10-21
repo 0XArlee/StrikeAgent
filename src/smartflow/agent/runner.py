@@ -266,7 +266,7 @@ class Agent:
             # the strategy's safety hold (live/health.py): real money opens nothing new until the operator lifts it;
             # the paper agents keep trading so the strategy is still measured
             from ..live.health import hold_reason
-            why = hold_reason(Path(self.cfg.runs_root), "pyramid" if self.cfg.policy == "pyramid" else "smartflow")
+            why = hold_reason(Path(self.cfg.runs_root), self.cfg.strategy)
             if why:
                 rec.to(S.REJECTED_BY_RISK, f"strategy on hold: {why}")
                 self.journal.write("decision", trade_id=trade_id, accepted=False, reasons=[f"strategy on hold: {why}"])

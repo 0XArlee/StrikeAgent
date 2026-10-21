@@ -29,6 +29,7 @@ class AgentConfig:
     markets: list[MarketMap] = field(default_factory=lambda: [MarketMap("BTC-USD", "BTCUSDT"),
                                                               MarketMap("ETH-USD", "ETHUSDT")])
     params: Params = field(default_factory=Params)
+    strategy: str = "smartflow"          # its entry in config/strategies.json (the safety hold and the city follow it)
     risk: RiskConfig = field(default_factory=RiskConfig)
     builder_code: str = ""
     builder_fee_bps: int = 0

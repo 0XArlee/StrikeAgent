@@ -1,0 +1,205 @@
+{
+ "_doc": "The strategies users can pick. One entry per strategy: the site (catalog, sign-up, checks, city), the agents' host (fleet, health, paper agents) and the figures generator all read this file. Add a strategy: docs/08 'Estrategias (registro)'. Engine 'smartflow' is the only one the agent runs today.",
+ "version": 1,
+ "default": "smartflow",
+ "strategies": [
+  {
+   "id": "smartflow",
+   "name": "Smart Flow",
+   "tag": "",
+   "status": "live",
+   "listed": true,
+   "engine": "smartflow",
+   "timeframe": "240",
+   "params": {
+    "range_filter": true,
+    "chand_atr": 4.0
+   },
+   "policy": "single",
+   "max_stack": 1,
+   "max_open_positions": 8,
+   "max_risk": "assertive",
+   "markets": {
+    "core": [
+     "BTC-USD",
+     "ETH-USD",
+     "SOL-USD"
+    ],
+    "allowed": [
+     "BTC-USD",
+     "ETH-USD",
+     "SOL-USD",
+     "XRP-USD",
+     "BNB-USD",
+     "ADA-USD",
+     "NEAR-USD",
+     "ZEC-USD"
+    ]
+   },
+   "paper": {
+    "city_id": "sf-reference",
+    "config": "config/paper-reference.toml"
+   },
+   "creator": {
+    "id": "edgecraft",
+    "name": "EdgeCraft",
+    "revenue_share_bps": 0
+   },
+   "texts": {
+    "en": {
+     "tagline": "One position per market. It enters strong breakouts with volume in the direction of the trend and lets the winners run.",
+     "summary": "Strong, high-volume breakouts in the direction of the trend; one position per market.",
+     "details": [
+      [
+       "How it trades",
+       "One position per market at a time. It enters strong breakouts with volume in the direction of the higher-timeframe trend and lets the winners run."
+      ],
+      [
+       "Entry",
+       "A 4-hour candle with a range of at least 1 ATR and a body of at least 60% that closes beyond the last 20 candles, on 1.5× average volume, aligned with the daily market structure. It skips breakouts born inside a very wide range (the last 100 candles spanning more than 12 ATR): those tend to fail."
+      ],
+      [
+       "Protection",
+       "A stop 1.5 ATR away goes on Strike together with the entry. The size leaves room for slippage: even if the price jumps past the stop by a quarter of its distance, the loss stays within the risk you chose (1% by default), so a clean stop costs about 0.8% plus fees. Then it only ever rises: after every 4-hour close the agent moves it on Strike to the highest price reached minus 4 ATR (a chandelier stop), so the protection, and the gain already made, stay on Strike even if our server stopped."
+      ],
+      [
+       "When it does not trade",
+       "No breakout, weak volume, against the trend, inside a very wide range, stale data, a wide spread or a risk limit reached. Every skipped signal is explained."
+      ],
+      [
+       "How profits are taken",
+       "There is no fixed take profit, on purpose: a winning trade keeps running while the trend goes on, and two things take the profit. The stop on Strike follows the price, 4 ATR below the highest price reached (above the lowest, in a short), so a sharp reversal closes the trade with most of the gain. And when a 4-hour candle closes back through the 10-candle channel, the agent closes it. Both only ever move in the trade’s favour, so the exit rises with the price without cutting the few large winners that make the result. And a trade still open after 300 four-hour candles (about 50 days) is closed by the agent. Most trades are small losses; a minority are large winners."
+      ]
+     ],
+     "risk_note": ""
+    },
+    "es": {
+     "tagline": "Una posición por mercado. Entra en rupturas fuertes con volumen a favor de la tendencia y deja correr las ganadoras.",
+     "summary": "Rupturas fuertes y con volumen a favor de la tendencia; una posición por mercado.",
+     "details": [
+      [
+       "Cómo opera",
+       "Una posición por mercado a la vez. Entra en rupturas fuertes y con volumen a favor de la tendencia del marco superior y deja correr las ganadoras."
+      ],
+      [
+       "Entrada",
+       "Una vela de 4 horas con rango de al menos 1 ATR y cuerpo de al menos el 60 % que cierra fuera de las últimas 20 velas, con 1,5× el volumen medio y a favor de la estructura diaria. Descarta las rupturas que nacen dentro de un rango muy amplio (las últimas 100 velas abarcan más de 12 ATR): suelen fallar."
+      ],
+      [
+       "Protección",
+       "Junto con la entrada se coloca en Strike un stop a 1,5 ATR. El tamaño deja margen para el deslizamiento: aunque el precio se pase del stop un cuarto de su distancia, la pérdida no supera el riesgo que elegiste (1 % por defecto), así que un stop limpio cuesta alrededor del 0,8 % más comisiones. Después solo sube: tras cada cierre de 4 horas el agente lo mueve en Strike al máximo alcanzado menos 4 ATR (un stop chandelier), así la protección, y la ganancia ya hecha, siguen en Strike aunque nuestro servidor se parase."
+      ],
+      [
+       "Cuándo no opera",
+       "Sin ruptura, volumen débil, contra la tendencia, dentro de un rango muy amplio, datos desactualizados, spread amplio o algún límite de riesgo alcanzado. Cada señal descartada se explica."
+      ],
+      [
+       "Cómo se recogen las ganancias",
+       "No hay take profit fijo, a propósito: una operación ganadora sigue abierta mientras dura la tendencia, y dos cosas recogen el beneficio. El stop en Strike acompaña al precio, 4 ATR por debajo del máximo alcanzado (por encima del mínimo, en un corto), así un giro brusco la cierra con la mayor parte de la ganancia. Y cuando una vela de 4 horas cierra de vuelta dentro del canal de 10 velas, el agente la cierra. Los dos solo se mueven a favor, así que la salida sube con el precio sin cortar las pocas ganadoras grandes que hacen el resultado. Y si una operación sigue abierta tras 300 velas de 4 horas (unos 50 días), el agente la cierra. La mayoría de las operaciones son pérdidas pequeñas; una minoría, ganancias grandes."
+      ]
+     ],
+     "risk_note": ""
+    }
+   }
+  },
+  {
+   "id": "pyramid",
+   "name": "Smart Flow Pyramid",
+   "tag": "Pyramid",
+   "status": "live",
+   "listed": true,
+   "engine": "smartflow",
+   "timeframe": "240",
+   "params": {
+    "range_filter": true,
+    "chand_atr": 4.0
+   },
+   "policy": "pyramid",
+   "max_stack": 3,
+   "max_open_positions": 24,
+   "max_risk": "standard",
+   "markets": {
+    "core": [
+     "BTC-USD",
+     "ETH-USD",
+     "SOL-USD"
+    ],
+    "allowed": [
+     "BTC-USD",
+     "ETH-USD",
+     "SOL-USD",
+     "XRP-USD",
+     "BNB-USD",
+     "ADA-USD",
+     "NEAR-USD",
+     "ZEC-USD"
+    ]
+   },
+   "paper": {
+    "city_id": "sf-pyramid",
+    "config": "config/paper-pyramid.toml"
+   },
+   "creator": {
+    "id": "edgecraft",
+    "name": "EdgeCraft",
+    "revenue_share_bps": 0
+   },
+   "texts": {
+    "en": {
+     "tagline": "The same signals, adding up to 3 entries in the same direction while the trend goes on, each with its own stop. More trades and more return, with deeper drawdowns.",
+     "summary": "The Smart Flow signals, adding up to 3 entries in the same direction while the trend goes on.",
+     "details": [
+      [
+       "How it trades",
+       "The same signals as Smart Flow, adding up to 3 entries in the same direction while the trend goes on, each with its own stop and its own exit. More trades and more return, with deeper drawdowns."
+      ],
+      [
+       "Entry",
+       "A 4-hour candle with a range of at least 1 ATR and a body of at least 60% that closes beyond the last 20 candles, on 1.5× average volume, aligned with the daily market structure. It skips breakouts born inside a very wide range (the last 100 candles spanning more than 12 ATR): those tend to fail."
+      ],
+      [
+       "Protection",
+       "A stop 1.5 ATR away goes on Strike together with the entry. The size leaves room for slippage: even if the price jumps past the stop by a quarter of its distance, the loss stays within the risk you chose (1% by default), so a clean stop costs about 0.8% plus fees. Then it only ever rises: after every 4-hour close the agent moves it on Strike to the highest price reached minus 4 ATR (a chandelier stop), so the protection, and the gain already made, stay on Strike even if our server stopped."
+      ],
+      [
+       "When it does not trade",
+       "No breakout, weak volume, against the trend, inside a very wide range, stale data, a wide spread or a risk limit reached. Every skipped signal is explained."
+      ],
+      [
+       "How profits are taken",
+       "There is no fixed take profit, on purpose: a winning trade keeps running while the trend goes on, and two things take the profit. The stop on Strike follows the price, 4 ATR below the highest price reached (above the lowest, in a short), so a sharp reversal closes the trade with most of the gain. And when a 4-hour candle closes back through the 10-candle channel, the agent closes it. Both only ever move in the trade’s favour, so the exit rises with the price without cutting the few large winners that make the result. And a trade still open after 300 four-hour candles (about 50 days) is closed by the agent. Most trades are small losses; a minority are large winners."
+      ]
+     ],
+     "risk_note": "it stacks up to 3 entries per market, so its drawdowns are deeper"
+    },
+    "es": {
+     "tagline": "Las mismas señales, pero añade hasta 3 entradas en la misma dirección mientras sigue la tendencia, cada una con su stop. Más operaciones y más rentabilidad, con caídas más profundas.",
+     "summary": "Las señales de Smart Flow, sumando hasta 3 entradas en la misma dirección mientras sigue la tendencia.",
+     "details": [
+      [
+       "Cómo opera",
+       "Las mismas señales que Smart Flow, sumando hasta 3 entradas en la misma dirección mientras sigue la tendencia, cada una con su stop y su salida. Más operaciones y más rentabilidad, con caídas más profundas."
+      ],
+      [
+       "Entrada",
+       "Una vela de 4 horas con rango de al menos 1 ATR y cuerpo de al menos el 60 % que cierra fuera de las últimas 20 velas, con 1,5× el volumen medio y a favor de la estructura diaria. Descarta las rupturas que nacen dentro de un rango muy amplio (las últimas 100 velas abarcan más de 12 ATR): suelen fallar."
+      ],
+      [
+       "Protección",
+       "Junto con la entrada se coloca en Strike un stop a 1,5 ATR. El tamaño deja margen para el deslizamiento: aunque el precio se pase del stop un cuarto de su distancia, la pérdida no supera el riesgo que elegiste (1 % por defecto), así que un stop limpio cuesta alrededor del 0,8 % más comisiones. Después solo sube: tras cada cierre de 4 horas el agente lo mueve en Strike al máximo alcanzado menos 4 ATR (un stop chandelier), así la protección, y la ganancia ya hecha, siguen en Strike aunque nuestro servidor se parase."
+      ],
+      [
+       "Cuándo no opera",
+       "Sin ruptura, volumen débil, contra la tendencia, dentro de un rango muy amplio, datos desactualizados, spread amplio o algún límite de riesgo alcanzado. Cada señal descartada se explica."
+      ],
+      [
+       "Cómo se recogen las ganancias",
+       "No hay take profit fijo, a propósito: una operación ganadora sigue abierta mientras dura la tendencia, y dos cosas recogen el beneficio. El stop en Strike acompaña al precio, 4 ATR por debajo del máximo alcanzado (por encima del mínimo, en un corto), así un giro brusco la cierra con la mayor parte de la ganancia. Y cuando una vela de 4 horas cierra de vuelta dentro del canal de 10 velas, el agente la cierra. Los dos solo se mueven a favor, así que la salida sube con el precio sin cortar las pocas ganadoras grandes que hacen el resultado. Y si una operación sigue abierta tras 300 velas de 4 horas (unos 50 días), el agente la cierra. La mayoría de las operaciones son pérdidas pequeñas; una minoría, ganancias grandes."
+      ]
+     ],
+     "risk_note": "apila hasta 3 entradas por mercado, así que sus caídas son más profundas"
+    }
+   }
+  }
+ ]
+}

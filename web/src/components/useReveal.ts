@@ -3,7 +3,7 @@
 // and without reduced motion (html.reveal-on); otherwise, and before this runs, everything is simply there.
 import { useEffect } from "react";
 
-export function useReveal(on: boolean): void {
+export function useReveal(on: boolean, page = ""): void {   // page: runs again for each page of the landing
   useEffect(() => {
     if (!on || typeof IntersectionObserver === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const root = document.documentElement;
@@ -23,5 +23,5 @@ export function useReveal(on: boolean): void {
     root.classList.add("reveal-on");
     els.forEach((e) => io.observe(e));
     return () => { io.disconnect(); root.classList.remove("reveal-on"); };
-  }, [on]);
+  }, [on, page]);
 }

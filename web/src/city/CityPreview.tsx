@@ -1,7 +1,6 @@
-// The live city as a picture for the landing: same engine, data and agents as #/city, no input (the whole frame is a
-// link to the city). Built while the browser is idle (App.tsx); drawing pauses while it is off-screen, and its first
-// frame (the heaviest: the whole map is drawn) waits until the page stops scrolling, so it never stalls a scroll.
-// Until then the poster under it shows.
+// The live city as a picture for the landing's hero: same engine, data and agents as #/city, no input (the whole frame
+// is a link to the city). Built while the browser is idle (App.tsx); it draws only while it is on screen and the page
+// is not scrolling, so it never stalls a scroll. Until its first frame the poster under it shows.
 import { useEffect, useRef, useState } from "react";
 import "@fontsource/ibm-plex-mono/600.css";
 import "@fontsource/ibm-plex-mono/700.css";
@@ -9,7 +8,8 @@ import { CityEngine, idleMoment, prepareLayers } from "./engine";
 import { CityStore } from "./store";
 
 const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-// the text covers the left of the frame: the camera puts the exchange and the plaza (where the agents gather) on the right
+// a wide frame (700 px and more) has room for the exchange and the plaza (where the agents gather) side by side; the
+// hero's square frame takes the small view: the exchange's board on top, the plaza filling the rest
 const VIEW = { cx: 640, cy: 490, zoom: 1.7 };
 const VIEW_SMALL = { cx: 770, cy: 520, zoom: 1.25 };   // phones: the text sits below, the plaza fills the square
 
@@ -24,23 +24,35 @@ export default function CityPreview({ onStats }: { onStats?: (s: { online: numbe
     let engine: CityEngine | null = null;
     let visible = true;
     let alive = true;
-    let drawn = false;              // the first frame happened
-    let lastScroll = 0;
+    let lastScroll = performance.now();   // a scroll already going on when it mounts is not missed: it waits for quiet
     let timer = 0;
-    const onScroll = () => { lastScroll = performance.now(); };
-    window.addEventListener("scroll", onScroll, { passive: true });
+    let check = 0;
+    // it draws only while the page is still: a scroll pauses it and it carries on 180 ms after (in the hero it is on
+    // screen as the scroll starts; its frames there were the only hitches left, on a throttled phone)
     const run = () => {
       clearTimeout(timer);
+      cancelAnimationFrame(check);
       if (!engine || !visible || !alive) return;
       const quiet = performance.now() - lastScroll;
-      if (drawn || quiet >= 180) {
-        drawn = true;
+      if (quiet < 180) { timer = window.setTimeout(run, 180 - quiet); return; }
+      // a slow task can outlast the 180 ms while the scroll goes on; its scroll event only comes with the next frame,
+      // so the last check is made in that frame (after its scroll events)
+      check = requestAnimationFrame(() => {
+        if (!engine || !visible || !alive) return;
+        if (performance.now() - lastScroll < 180) { timer = window.setTimeout(run, 180); return; }
         engine.start();
         setOn(true);
-      } else {
-        timer = window.setTimeout(run, 180 - quiet);
-      }
+      });
     };
+    const onScroll = () => {
+      lastScroll = performance.now();
+      if (!engine || !visible) return;
+      engine.pause();
+      clearTimeout(timer);
+      cancelAnimationFrame(check);
+      timer = window.setTimeout(run, 180);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
     const unsub = store.subscribe(() => { const t = store.totals(); onStats?.({ online: t.live, inTrade: t.inTrade }); });
     // each heavy step waits for a pause in the scrolling and an idle moment: none of them lands in the middle of a scroll
     const whenQuiet = async () => {
@@ -65,10 +77,10 @@ export default function CityPreview({ onStats }: { onStats?: (s: { online: numbe
     const io = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
       if (!engine) return;
-      if (visible) run(); else { clearTimeout(timer); engine.pause(); }
+      if (visible) run(); else { clearTimeout(timer); cancelAnimationFrame(check); engine.pause(); }
     });
     io.observe(c);
-    return () => { alive = false; clearTimeout(timer); window.removeEventListener("scroll", onScroll); io.disconnect(); unsub(); engine?.stop(); store.stop(); };
+    return () => { alive = false; clearTimeout(timer); cancelAnimationFrame(check); window.removeEventListener("scroll", onScroll); io.disconnect(); unsub(); engine?.stop(); store.stop(); };
   }, [onStats]);
 
   return <canvas ref={canvas} className={`city-show-canvas${on ? " on" : ""}`} aria-hidden="true" />;

@@ -5,7 +5,7 @@ import { KNOWN_WALLETS, WalletError, connect, signMessage, watchWallets, type Co
 import { fmt, type Dict, type Lang } from "../i18n";
 import type { Look } from "../city/look";
 import { lookFor } from "../city/sprites";
-import { MIN_BALANCE, type StrategyId } from "../strategies";
+import { MIN_BALANCE, strategyId, strategyName, type StrategyId } from "../strategies";
 import { AvatarEditor, Sprite } from "./AvatarEditor";
 import { StrategyPicker, defaultPlan, type Plan } from "./StrategyPicker";
 import { Alert, CardanoLogo, Icon, Mark, WalletIcon } from "./ui";
@@ -23,6 +23,7 @@ interface Props {
   t: Dict; lang: Lang; info: AppInfo; onClose: () => void; onLinked: (r: LinkResult) => void; onOpenDashboard: () => void;
   fromCity?: boolean;                    // opened from EdgeCraft-StrikeCity: showing the agent there is the point
   onOpenCity?: (agentId: string) => void;
+  strategy?: StrategyId;                 // picked in the catalog: the sign-up starts with it
 }
 
 // same rule as the server (web/server/util.ts cleanName), minus the reserved words it also checks
@@ -30,7 +31,7 @@ const NAME_RE = /^[\p{L}\p{N} ._·-]{2,24}$/u;
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard, fromCity, onOpenCity }: Props) {
+export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard, fromCity, onOpenCity, strategy }: Props) {
   const m = t.modal;
   const P = t.paper;
   const A = t.avatar;
@@ -46,7 +47,7 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
   const [step, setStep] = useState<Step>("wallets");
   const [wallets, setWallets] = useState<DetectedWallet[]>([]);
   const [conn, setConn] = useState<Connected | null>(null);
-  const [plan, setPlan] = useState<Plan>(() => defaultPlan(info));
+  const [plan, setPlan] = useState<Plan>(() => defaultPlan(info, strategy));
   const [ack, setAck] = useState(false);
   const [name, setName] = useState("");
   const [pub, setPub] = useState(!!fromCity);
@@ -148,7 +149,7 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
     if (!a) {
       const x = await api.me(l);
       a = { name: x.name ?? "", markets: x.markets, risk: x.risk, public: !!x.public, look: x.look ?? null,
-        strategy: x.strategy === "pyramid" ? "pyramid" : "smartflow" };
+        strategy: strategyId(x.strategy) };
     }
     onLinked({ ...l, address: c.address, walletName: c.wallet.name, risk: a.risk, markets: a.markets, strategy: a.strategy, name: a.name,
       public: a.public, look: a.look ?? undefined });
@@ -353,7 +354,7 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
               <div className="kv"><span>{m.network}</span><span>{info.env === "mainnet" ? "Mainnet" : "Testnet"}</span></div>
               <div className="kv"><span>{P.mode}</span><span>{live ? fmt(L.mode, { env: envName }) : P.modeVal}</span></div>
               {live && <div className="kv"><span>{L.fee}</span><span className="num">{feePct}</span></div>}
-              <div className="kv"><span>{S.label}</span><span>{S.names[plan.strategy]}</span></div>
+              <div className="kv"><span>{S.label}</span><span>{strategyName(plan.strategy)}</span></div>
               <div className="kv"><span>{m.markets}</span><span>{marketList}</span></div>
               <div className="kv"><span>{m.risk}</span><span>{riskText}</span></div>
               <div className="kv"><span>{P.city}</span><span>{pub ? P.shown : P.privateLbl}</span></div>
@@ -403,7 +404,7 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
             {look && <div className="done-avatar"><Sprite look={look} scale={6} className="av-mid" /></div>}
             <div className="box">
               <div className="kv"><span>{P.agent}</span><span>{cleanName()}</span></div>
-              <div className="kv"><span>{S.label}</span><span>{S.names[plan.strategy]}</span></div>
+              <div className="kv"><span>{S.label}</span><span>{strategyName(plan.strategy)}</span></div>
               <div className="kv"><span>{m.markets}</span><span>{marketList}</span></div>
               <div className="kv"><span>{m.risk}</span><span>{riskText}</span></div>
               <div className="kv"><span>{P.city}</span><span>{pub ? P.shown : P.privateLbl}</span></div>

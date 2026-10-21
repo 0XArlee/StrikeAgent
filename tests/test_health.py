@@ -12,14 +12,18 @@ from smartflow.live import health, watchdog
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_expectations_match_the_backtest_the_page_shows():
-    for strat, f in (("smartflow", "strategy.json"), ("pyramid", "strategy-pyramid.json")):
-        p = ROOT / "web" / "src" / "data" / f
-        if not p.exists():   # the agents' host has no web/
-            pytest.skip("web/ not here")
-        d = json.loads(p.read_text(encoding="utf-8"))
-        e = health.EXPECT[strat]
+def test_every_strategy_is_judged_against_its_own_backtest():
+    """Each live strategy of the registry has its figures (config/figures) and an official paper agent: the health
+    check reads its expectations from the same file the catalog shows."""
+    from smartflow import strategies
+    for s in strategies.all_strategies():
+        if not s.runnable:
+            continue
+        d = json.loads((ROOT / "config" / "figures" / f"{s.id}.json").read_text(encoding="utf-8"))
+        e = health.expected(s.id)
         assert (d["avg_r"], tuple(d["ci95"]), d["max_dd_r"], d["trades_per_year"]) == (e["avg_r"], e["ci95"], e["max_dd_r"], e["trades_per_year"])
+        assert d["params"] == s.params.fingerprint() and d["markets"] == list(s.markets_core)
+    assert {s.id for s in health.judged()} == {s.id for s in strategies.all_strategies() if s.runnable}
 
 
 def test_health_states():
@@ -76,7 +80,7 @@ def test_live_agent_opens_nothing_while_its_strategy_is_on_hold(tmp_path):
 
     class Cfg:
         params = type("P", (), {"stop_atr": 1.5, "tp_r": 0.0, "chan_n": 20, "exit_mode": type("E", (), {"value": "x"})()})()
-        runs_root, policy = str(runs), "single"
+        runs_root, policy, strategy = str(runs), "single", "smartflow"
 
     class M:
         strike, blocked, trades = "BTC-USD", "", []

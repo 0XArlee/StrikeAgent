@@ -1,19 +1,25 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api, isMock, type AppInfo } from "./api";
-import strategy from "./data/strategy.json";   // engine version shown in the footer
 import { MobileMenu } from "./components/MobileMenu";
 import { useReveal } from "./components/useReveal";
 import { ConnectModal, type LinkResult } from "./components/ConnectModal";
 import { sessionWallet } from "./cardano/wallets";
 import { Dashboard } from "./components/Dashboard";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { StrategyCard } from "./components/StrategyCard";
+import { StrategyCatalog } from "./components/StrategyCatalog";
+import { StrategyPage } from "./components/StrategyPage";
 import { Icon, Mark } from "./components/ui";
 import { dict, fmt, initialLang, saveLang, type Lang } from "./i18n";
+import { STRATEGY_IDS, type StrategyId } from "./strategies";
 
 const CityPage = lazy(() => import("./city/CityPage"));
 const CityPreview = lazy(() => import("./city/CityPreview"));
-const isCityRoute = () => location.hash.startsWith("#/city");
+// "city" (#/city), "strategy:<id>" (#/strategy/<id>, a strategy of the catalog) or "landing" (anything else)
+const routeOf = (): string => {
+  if (location.hash.startsWith("#/city")) return "city";
+  const m = /^#\/strategy\/([\w-]+)/.exec(location.hash);
+  return m && STRATEGY_IDS.includes(m[1]) ? `strategy:${m[1]}` : "landing";
+};
 
 const FALLBACK: AppInfo = { env: "mainnet", builderCode: "smartflow", feeBps: 20, takerFeeBps: 5, markets: ["BTC-USD", "ETH-USD", "SOL-USD"],
   riskPresets: { conservative: 0.5, standard: 1, assertive: 2 }, agentHealthy: false, engine: "1.0.0" };
@@ -30,21 +36,30 @@ export function App() {
   const [fromCity, setFromCity] = useState(false);
   const [link, setLink] = useState<LinkResult | null>(loadLink);
   const t = dict[lang];
-  const [city, setCity] = useState(isCityRoute);
+  const [route, setRoute] = useState(routeOf);
+  const city = route === "city";
+  const landing = route === "landing";
+  const strategyPage: StrategyId | null = route.startsWith("strategy:") ? route.slice(9) : null;
   useEffect(() => {
-    const f = () => setCity(isCityRoute());
+    const f = () => setRoute(routeOf());
     window.addEventListener("hashchange", f);
     return () => window.removeEventListener("hashchange", f);
   }, []);
-  // the live city on the landing: its engine is built while the browser is idle soon after the page loads (it takes a
-  // ~100 ms block on a phone; mid-scroll that was a visible hitch), or as soon as its section comes near, if earlier
-  const citySection = useRef<HTMLElement>(null);
+  // back on the landing from a strategy's page through one of its anchors (#strategies, #faq...): the browser looked for
+  // it before the landing was there, so it is scrolled to once it is
+  useLayoutEffect(() => {
+    if (!landing || !/^#[\w-]+$/.test(location.hash)) return;
+    document.getElementById(location.hash.slice(1))?.scrollIntoView({ behavior: "instant" as ScrollBehavior });
+  }, [landing]);
+  // the live city in the hero: its engine is built while the browser is idle soon after the page loads (it takes a
+  // ~100 ms block on a phone; mid-scroll that was a visible hitch), never in the middle of a scroll
+  const citySection = useRef<HTMLAnchorElement>(null);
   const [showCity, setShowCity] = useState(false);
   const [cityStats, setCityStats] = useState<{ online: number; inTrade: number } | null>(null);
-  useReveal(!city);   // the landing's entrances (components/useReveal.ts)
+  useReveal(!city, route);   // the landing's entrances (components/useReveal.ts)
   const onCityStats = useCallback((s: { online: number; inTrade: number }) => setCityStats(s), []);
   useEffect(() => {
-    if (city) return;
+    if (!landing) return;
     const el = citySection.current;
     if (!el || !("IntersectionObserver" in window)) { setShowCity(true); return; }
     // never in the middle of a scroll: its code loads at the first pause (the page waits 400 ms without scrolling)
@@ -62,7 +77,7 @@ export function App() {
     io.observe(el);
     t = window.setTimeout(go, 1200);
     return () => { io.disconnect(); clearTimeout(t); window.removeEventListener("scroll", onScroll); };
-  }, [city]);
+  }, [landing]);
   const heroCta = useRef<HTMLButtonElement>(null);
   const [heroCtaVisible, setHeroCtaVisible] = useState(true);
   useEffect(() => {
@@ -71,7 +86,7 @@ export function App() {
     const io = new IntersectionObserver(([e]) => setHeroCtaVisible(e.isIntersecting), { threshold: 0.1 });
     io.observe(el);
     return () => io.disconnect();
-  }, [city]);
+  }, [route]);
 
   useEffect(() => { document.documentElement.lang = lang; saveLang(lang); }, [lang]);
   useEffect(() => { api.info().then(setInfo).catch(() => undefined); }, []);
@@ -107,26 +122,32 @@ export function App() {
     window.addEventListener("focus", onFocus);
     return () => { alive = false; timers.forEach(clearTimeout); clearInterval(every); window.removeEventListener("focus", onFocus); };
   }, [link, signOut, t]);
-  const openConnect = (city: boolean) => { setFromCity(city); setOpen(true); };
+  const [picked, setPicked] = useState<StrategyId | undefined>(undefined);   // the strategy the sign-up starts with
+  const openConnect = (city: boolean, strategy?: StrategyId) => { setFromCity(city); setPicked(strategy); setOpen(true); };
 
   const connectLabel = link ? t.dashboard : t.connect;
   const onConnectClick = () => (link ? goDashboard() : openConnect(false));
+  // "Use this strategy": the sign-up with it already picked, or My agent (where the strategy is changed) for an agent
+  const onUse = (id: StrategyId) => (link ? goDashboard() : openConnect(false, id));
   const modal = open && (
     <ErrorBoundary onClose={() => setOpen(false)}>
       <ConnectModal t={t} lang={lang} info={info} onClose={() => setOpen(false)} onLinked={onLinked} onOpenDashboard={goDashboard}
-                    fromCity={fromCity} onOpenCity={openCity} />
+                    fromCity={fromCity} onOpenCity={openCity} strategy={picked} />
     </ErrorBoundary>
   );
 
   if (city) {
     return (
       <>
+        {/* its code failing to load (a lost connection, a page left open across a deploy) explains itself and goes back */}
+        <ErrorBoundary onClose={() => { location.hash = ""; }}>
         <Suspense fallback={<div className="city-boot" role="status"><span className="sr-only">Loading EdgeCraft-StrikeCity</span></div>}>
           <CityPage lang={lang} setLang={setLang} onConnect={() => (link ? openCity(link.cityId ?? link.accountId) : openConnect(true))}
                     myAgent={link ? <Dashboard t={t} lang={lang} info={info} link={link} onUnlinked={unlink} onSignOut={() => signOut(t.dash.signedOut)}
                                                onSignIn={() => { unlink(); openConnect(true); }} onOpenCity={openCity} /> : null}
                     owner={link?.token ? { id: link.cityId ?? link.accountId, token: link.token } : null} />
         </Suspense>
+        </ErrorBoundary>
         {modal}
         {bye && <div className="toast" role="status">{bye}</div>}
       </>
@@ -149,7 +170,7 @@ export function App() {
             </a>
           </div>
           <nav className="nav" aria-label="Main">
-            <a href="#how">{t.nav.how}</a><a href="#strategy">{t.nav.strategy}</a>
+            <a href="#strategies">{t.nav.strategy}</a><a href="#how">{t.nav.how}</a>
             <a href="#faq">{t.nav.faq}</a>
             <a href="#/city" className="nav-city">{t.nav.city}</a>
           </nav>
@@ -167,43 +188,50 @@ export function App() {
       </header>
 
       <main id="main" className="landing" tabIndex={-1}>
+        {strategyPage ? <StrategyPage id={strategyPage} t={t} lang={lang} info={info} onUse={onUse} ctaRef={heroCta} /> : <>
         <section className="hero" id="top" aria-labelledby="hero-title">
           <div className="container hero-grid">
-            <div data-reveal-group>
-              <h1 id="hero-title">{t.hero.title1}<em>{t.hero.title2}</em></h1>
+            <div className="hero-text" data-reveal-group>
+              <h1 id="hero-title">{t.hero.title}</h1>
               <p className="hero-lead">{t.hero.lead}</p>
               <div className="hero-ctas">
                 <button ref={heroCta} type="button" className="btn btn-primary btn-lg" onClick={onConnectClick}>{link ? t.dashboard : t.connectCardano}</button>
-                <a className="btn btn-outline btn-lg" href="#how">{t.hero.how}</a>
+                <a className="btn btn-outline btn-lg" href="#strategies">{t.hero.browse}</a>
               </div>
               <p className="hero-balance"><Icon.alert />{t.balance.hero}</p>
-              <ul className="trust">
-                {t.hero.trust.map((x) => <li key={x}><Icon.shield />{x}</li>)}
-              </ul>
             </div>
-            <StrategyCard t={t} lang={lang} />
+            {/* the live city: every agent of every strategy, on Strike's prices; the whole frame opens it. On a phone it
+                comes right after the buttons, before the guarantees */}
+            <a className="hero-city" href="#/city" ref={citySection} aria-label={t.cityPromo.label}>
+              <span className="hero-city-frame">
+                <img className="city-show-poster" src="/city-preview.jpg" alt="" width={1800} height={900} decoding="async"
+                     onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                {showCity && <ErrorBoundary silent><Suspense fallback={null}><CityPreview onStats={onCityStats} /></Suspense></ErrorBoundary>}
+                <span className="hero-city-scan" aria-hidden="true" />
+              </span>
+              <span className="hero-city-bar">
+                <span className="hero-city-badge"><span className="live-dot" aria-hidden="true" />{t.cityPromo.eyebrow}</span>
+                <span className="hero-city-title">{t.cityPromo.title}</span>
+                {cityStats && cityStats.online > 0 && (
+                  <span className="hero-city-stats">{fmt(t.cityPromo.stats, { n: String(cityStats.online), t: String(cityStats.inTrade) })}</span>
+                )}
+                <span className="hero-city-go">{t.cityPromo.cta}<Icon.chevron /></span>
+              </span>
+            </a>
+            <ul className="trust" data-reveal-group>
+              {t.hero.trust.map((x) => <li key={x}><Icon.shield />{x}</li>)}
+            </ul>
           </div>
         </section>
 
-        <section className="section" id="city" aria-labelledby="city-title" ref={citySection}>
+        <section className="section" id="strategies" aria-labelledby="strategies-title">
           <div className="container">
-            <a className="city-show" data-reveal href="#/city" aria-labelledby="city-title" aria-describedby="city-sub">
-              <span className="city-show-frame">
-                <img className="city-show-poster" src="/city-preview.jpg" alt="" width={1800} height={900} loading="lazy" decoding="async"
-                     onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                {showCity && <Suspense fallback={null}><CityPreview onStats={onCityStats} /></Suspense>}
-                <span className="city-show-shade" aria-hidden="true" />
-              </span>
-              <span className="city-show-text">
-                <span className="city-show-badge"><span className="live-dot" aria-hidden="true" />{t.cityPromo.eyebrow}</span>
-                <span id="city-title" className="city-show-title">{t.cityPromo.title}</span>
-                <span id="city-sub" className="city-show-sub">{t.cityPromo.sub}</span>
-                {cityStats && cityStats.online > 0 && (
-                  <span className="city-show-stats">{fmt(t.cityPromo.stats, { n: String(cityStats.online), t: String(cityStats.inTrade) })}</span>
-                )}
-                <span className="btn btn-primary btn-lg">{t.cityPromo.cta}<Icon.chevron /></span>
-              </span>
-            </a>
+            <div className="section-head" data-reveal>
+              <span className="kicker">{fmt(t.catalog.kicker, { n: String(STRATEGY_IDS.length) })}</span>
+              <h2 id="strategies-title">{t.catalog.title}</h2><p>{t.catalog.sub}</p>
+            </div>
+            <StrategyCatalog t={t} lang={lang} info={info} onUse={onUse} headingId="cat" />
+            <p className="catalog-note">{t.catalog.note}</p>
           </div>
         </section>
 
@@ -220,17 +248,6 @@ export function App() {
             </ol>
           </div>
         </section>
-
-        <section className="section" id="strategy" aria-labelledby="st-title">
-          <div className="container">
-            <div className="section-head" data-reveal><span className="kicker">{t.kicker.strategy}</span><h2 id="st-title">{t.strategy.title}</h2><p>{t.strategy.sub}</p></div>
-            <div className="grid grid-2" data-reveal-group>
-              {t.strategy.items.map(([h, p], i, all) => (   // an odd last card spans the row: no empty slot beside it
-                <article key={h} className={`card${i === all.length - 1 && all.length % 2 ? " span-row" : ""}`}><h3>{h}</h3><p>{p}</p></article>))}
-            </div>
-          </div>
-        </section>
-
 
         <section className="section" id="control" aria-labelledby="ctl-title">
           <div className="container">
@@ -249,17 +266,20 @@ export function App() {
             </div>
           </div>
         </section>
+        </>}
 
         <footer className="site-footer">
           <div className="container foot" data-reveal>
             <div className="foot-brand"><Mark size={32} /><span className="foot-word">EdgeCraft-StrikeCity</span><span className="foot-by">{t.footBy}</span></div>
-            <p>{t.footer.legal}</p><p>{t.footer.by} Engine {strategy.engine}.</p>
+            <p>{t.footer.legal}</p><p>{t.footer.by} Engine {info.engine}.</p>
           </div>
         </footer>
       </main>
 
       <div className="mobile-cta" hidden={!!link || heroCtaVisible}>
-        <button type="button" className="btn btn-primary btn-lg btn-block" onClick={onConnectClick}>{link ? t.dashboard : t.connectCardano}</button>
+        {strategyPage
+          ? <button type="button" className="btn btn-primary btn-lg btn-block" onClick={() => onUse(strategyPage)}>{t.catalog.use}</button>
+          : <button type="button" className="btn btn-primary btn-lg btn-block" onClick={onConnectClick}>{link ? t.dashboard : t.connectCardano}</button>}
       </div>
 
       <div className="statusbar" role="contentinfo">
