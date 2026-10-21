@@ -33,6 +33,7 @@ install -m 644 "$APP/deploy/smartflow-data.timer" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-api.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-push.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-push-qa.service" /etc/systemd/system/
+install -m 644 "$APP/deploy/smartflow-news.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-fleet.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-fleet-mainnet.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-backup.service" /etc/systemd/system/
@@ -74,6 +75,11 @@ if [ ! -f /etc/smartflow/keys.key ]; then
   (umask 027; python3 -c "import os; print(os.urandom(32).hex())" > /etc/smartflow/keys.key)
   chown root:smartflow /etc/smartflow/keys.key; chmod 640 /etc/smartflow/keys.key
 fi
+# the News Tower's data (never touches the agents); its model key, if any, in /etc/smartflow/news.env (docs/08)
+install -d -o smartflow -g smartflow -m 750 /var/lib/smartflow/news
+[ -f /etc/smartflow/news.env ] && { chown root:smartflow /etc/smartflow/news.env; chmod 640 /etc/smartflow/news.env; }
+systemctl enable smartflow-news >/dev/null 2>&1
+systemctl restart smartflow-news
 if [ -f /etc/smartflow/fleet.env ]; then   # site URL + secret + SMARTFLOW_LIVE_ACK, written from the operator's PC
   systemctl enable smartflow-fleet >/dev/null 2>&1
   systemctl restart smartflow-fleet
@@ -86,9 +92,11 @@ else
   systemctl disable --now smartflow-fleet-mainnet >/dev/null 2>&1 || true
 fi
 sleep 20
-systemctl --no-pager --lines=0 status $(for i in $PAPER; do echo "smartflow-paper@$i"; done) smartflow-api smartflow-push smartflow-push-qa smartflow-fleet smartflow-fleet-mainnet | grep -E "Loaded|Active|Main PID|Memory"
+systemctl --no-pager --lines=0 status $(for i in $PAPER; do echo "smartflow-paper@$i"; done) smartflow-api smartflow-push smartflow-push-qa smartflow-news smartflow-fleet smartflow-fleet-mainnet | grep -E "Loaded|Active|Main PID|Memory"
 echo "--- push"
 journalctl -u smartflow-push -n 3 --no-pager | cut -c1-200
+echo "--- news"
+journalctl -u smartflow-news -n 2 --no-pager | cut -c1-200
 echo "--- fleet"
 journalctl -u smartflow-fleet -n 3 --no-pager | cut -c1-200
 echo "--- api"

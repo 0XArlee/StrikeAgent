@@ -40,7 +40,7 @@ def paper_agents() -> list[str]:
 UNITS = {**{f"smartflow-paper@{p}": None for p in paper_agents()}, "smartflow-api": None,
          "smartflow-push": "/etc/smartflow/push.env", "smartflow-push-qa": "/etc/smartflow/push-qa.env",
          "smartflow-fleet": "/etc/smartflow/fleet.env", "smartflow-fleet-mainnet": "/etc/smartflow/fleet-mainnet.env",
-         "smartflow-data.timer": None, "smartflow-backup.timer": None}
+         "smartflow-news": None, "smartflow-data.timer": None, "smartflow-backup.timer": None}
 SITES = {"production": "/etc/smartflow/push.env", "QA": "/etc/smartflow/push-qa.env"}
 PUSH_STALE_MS = 15 * 60_000     # the push sends at least every 10 minutes
 REMIND_S = 6 * 3600

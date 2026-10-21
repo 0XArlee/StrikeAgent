@@ -165,7 +165,7 @@ def cmd_agent(a) -> int:
 
 def cmd_api(a) -> int:
     from .api.server import serve
-    srv = serve(Path(a.city), a.host, a.port, allow_origin=a.origin)
+    srv = serve(Path(a.city), a.host, a.port, allow_origin=a.origin, news=Path(a.news) if a.news else None)
     print(f"smartflow api on http://{a.host}:{srv.server_address[1]} (read-only: /api/health /api/info /api/city)")
     try:
         srv.serve_forever()
@@ -181,7 +181,22 @@ def cmd_push(a) -> int:
     if len(secret) < 32 or not url.startswith("https://"):
         print("set SMARTFLOW_PUSH_URL (https://...) and SMARTFLOW_PUSH_SECRET (>= 32 chars)")
         return 2
-    run(Path(a.city), url, secret, a.every, live_env=a.live_env)
+    run(Path(a.city), url, secret, a.every, live_env=a.live_env, news=Path(a.news) if a.news else None)
+    return 0
+
+
+def cmd_news(a) -> int:
+    from .news.classify import from_env
+    from .news.service import NewsService
+    from .news.store import Store
+    d = Path(a.dir)
+    svc = NewsService(Store(d / "news.db"), d / "news.json", classifier=from_env(os.environ))
+    if not svc.classifier:
+        print("ANTHROPIC_API_KEY not set: headlines are collected and measured, not scored")
+    if a.once:
+        print(json.dumps(svc.cycle()))
+        return 0
+    svc.run()
     return 0
 
 
@@ -377,6 +392,7 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--host", default="127.0.0.1")
     s.add_argument("--port", type=int, default=8787)
     s.add_argument("--origin", default="*", help="Access-Control-Allow-Origin")
+    s.add_argument("--news", help="serve this news.json (smartflow news) at /api/news")
     s.set_defaults(fn=cmd_api)
 
     s = sub.add_parser("push", help="push the city snapshot to the Strike City site (outbound, HMAC signed)")
@@ -384,7 +400,13 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--url", help="default: $SMARTFLOW_PUSH_URL")
     s.add_argument("--every", type=float, default=10.0)
     s.add_argument("--live-env", choices=["testnet", "mainnet"], help="also push the users' agents of this network's fleet")
+    s.add_argument("--news", help="also send this news.json (smartflow news) when it changes")
     s.set_defaults(fn=cmd_push)
+
+    s = sub.add_parser("news", help="the News Tower's data: headlines, model scores, reactions on Strike -> news.json")
+    s.add_argument("--dir", default="/var/lib/smartflow/news", help="its database and news.json")
+    s.add_argument("--once", action="store_true", help="one cycle and exit")
+    s.set_defaults(fn=cmd_news)
 
     s = sub.add_parser("fleet", help="run the users' agents connected with the builder code (keys stay on this host)")
     s.add_argument("--env", choices=["testnet", "mainnet"], default="testnet")

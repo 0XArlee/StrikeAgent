@@ -23,7 +23,9 @@ def test_release_times_follow_new_york_daylight_saving():
 def test_calendar_has_every_release_and_no_duplicates():
     ev = load_events()
     kinds = [k for _, k in ev]
-    assert kinds.count("fomc") == 40 and kinds.count("cpi") == 57 and kinds.count("nfp") == 57
+    past = [k for t, k in ev if t < 1792540800000]   # up to 2026-10-21 (the study); then the published schedules
+    assert past.count("fomc") == 38 and past.count("cpi") == 57 and past.count("nfp") == 57
+    assert kinds.count("fomc") == 48 and kinds.count("cpi") == 71 and kinds.count("nfp") == 71
     assert len({t for t, _ in ev}) == len(ev)
 
 

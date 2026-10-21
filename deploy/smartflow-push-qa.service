@@ -1,5 +1,6 @@
 # Smart Flow -> the QA copy of Strike City (testnet world): the same public snapshot of the official agents, so the test site
-# shows them too. Outbound HTTPS, HMAC with the QA secret; /etc/smartflow/push-qa.env (root:smartflow 0640). Install: deploy/install_ct.sh
+# shows them too, and the News Tower's news.json (smartflow-news). Outbound HTTPS, HMAC with the QA secret;
+# /etc/smartflow/push-qa.env (root:smartflow 0640). Install: deploy/install_ct.sh
 [Unit]
 Description=Smart Flow push to the QA site (outbound, signed)
 After=network-online.target
@@ -13,7 +14,7 @@ WorkingDirectory=/opt/smartflow/app
 EnvironmentFile=/etc/smartflow/push-qa.env
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONDONTWRITEBYTECODE=1
-ExecStart=/opt/smartflow/app/.venv/bin/smartflow push --city config/city.toml --live-env testnet
+ExecStart=/opt/smartflow/app/.venv/bin/smartflow push --city config/city.toml --live-env testnet --news /var/lib/smartflow/news/news.json
 Restart=always
 RestartSec=20
 NoNewPrivileges=true

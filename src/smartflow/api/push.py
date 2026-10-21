@@ -88,19 +88,51 @@ class Anchors:
             self.log(f"anchors failed: {e!r}")
 
 
+class News:
+    """The News Tower's document (news.json, written by ``smartflow news``), sent to the site's ``/api/internal/news``
+    when the file changes and at least every ``heartbeat`` seconds. A missing or unreadable file is skipped quietly:
+    the city never waits for the news."""
+
+    def __init__(self, push_url: str, secret: str, path: Path, heartbeat: float = 600, log=print):
+        self.url = push_url.rsplit("/", 1)[0] + "/news"
+        self.secret, self.path, self.heartbeat, self.log = secret, Path(path), heartbeat, log
+        self.sent_mtime, self.at = 0, 0.0
+
+    def maybe_send(self) -> None:
+        try:
+            mtime = self.path.stat().st_mtime_ns
+        except OSError:
+            return
+        if mtime == self.sent_mtime and time.time() - self.at < self.heartbeat:
+            return
+        try:
+            code, text = post(self.url, self.secret, self.path.read_bytes())
+            if code == 200:
+                self.sent_mtime, self.at = mtime, time.time()
+            else:
+                self.at = time.time() - self.heartbeat + 60   # refused: try again in a minute, not every turn
+                self.log(f"news refused: HTTP {code} {text}")
+        except Exception as e:
+            self.log(f"news push failed: {e!r}")
+
+
 def fingerprint(doc: dict) -> str:
     """What changes the city: everything except the build time."""
     return hashlib.sha256(encode({k: v for k, v in doc.items() if k != "generated"})).hexdigest()
 
 
 def run(city_toml: Path, url: str, secret: str, every: float = 30, heartbeat: float = 600, log=print,
-        live_env: str | None = None, runs_root: Path = Path("runs")) -> None:
-    """``live_env``: also the users' agents of that network's fleet (they come and go: re-read every turn)."""
+        live_env: str | None = None, runs_root: Path = Path("runs"), news: Path | None = None) -> None:
+    """``live_env``: also the users' agents of that network's fleet (they come and go: re-read every turn).
+    ``news``: also send the News Tower's news.json."""
     official = load_city(city_toml)
     last_fp, last_at, last_sig, built_at = "", 0.0, None, 0.0
     anchors = Anchors(url, secret, Path(runs_root), log)
+    tower = News(url, secret, news, heartbeat, log) if news else None
     while True:
         anchors.maybe_send()
+        if tower:
+            tower.maybe_send()
         try:
             agents = official + (load_live(runs_root, live_env) if live_env else [])
             sig = files_signature(agents)

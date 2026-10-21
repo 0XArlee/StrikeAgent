@@ -1,0 +1,17 @@
+{
+ "version": 1,
+ "about": "Free public headline feeds for the News Tower (smartflow/news): crypto media RSS and Google News searches per market. Only the headline, its source, link and time are kept, never the article. Checked from the PC 2026-10-21: all 9 answer with the day's headlines. 'markets': what a feed is about when its headlines do not say (Google News searches); empty = the whole crypto market.",
+ "every_s": 300,
+ "keep_h": 72,
+ "feeds": [
+  {"id": "coindesk", "name": "CoinDesk", "url": "https://www.coindesk.com/arc/outboundfeeds/rss/", "markets": []},
+  {"id": "cointelegraph", "name": "Cointelegraph", "url": "https://cointelegraph.com/rss", "markets": []},
+  {"id": "theblock", "name": "The Block", "url": "https://www.theblock.co/rss.xml", "markets": []},
+  {"id": "decrypt", "name": "Decrypt", "url": "https://decrypt.co/feed", "markets": []},
+  {"id": "bitcoinmagazine", "name": "Bitcoin Magazine", "url": "https://bitcoinmagazine.com/.rss/full/", "markets": ["BTC-USD"]},
+  {"id": "cryptoslate", "name": "CryptoSlate", "url": "https://cryptoslate.com/feed/", "markets": []},
+  {"id": "gn-btc", "name": "Google News", "url": "https://news.google.com/rss/search?q=bitcoin+when:1d&hl=en-US&gl=US&ceid=US:en", "markets": ["BTC-USD"]},
+  {"id": "gn-eth", "name": "Google News", "url": "https://news.google.com/rss/search?q=ethereum+when:1d&hl=en-US&gl=US&ceid=US:en", "markets": ["ETH-USD"]},
+  {"id": "gn-sol", "name": "Google News", "url": "https://news.google.com/rss/search?q=solana+crypto+when:1d&hl=en-US&gl=US&ceid=US:en", "markets": ["SOL-USD"]}
+ ]
+}

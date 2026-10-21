@@ -1,0 +1,206 @@
+// The news, quick view (the News Tower's content without entering it): one market's reading from the headlines, what
+// pushes it up and down, what would turn it, the next scheduled US releases, the scoreboard and the headlines with the
+// reaction measured on Strike. Opened from the city's dock; CityPage wraps it in its dialog.
+import { useEffect, useState } from "react";
+import type { Lang } from "../i18n";
+import { Icon } from "../components/ui";
+import { countdown, forMarket, safeUrl, type NewsDoc, type NewsItem, type Reading } from "./news";
+import { fmtPct, ticker, type CityText } from "./text";
+
+const MARKETS = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "BNB-USD", "ADA-USD", "NEAR-USD", "ZEC-USD"];
+const FIRST = 20;   // headlines shown before "show more"
+const sideOf = (v: number | null | undefined) => (v == null || Math.abs(v) < 15 ? "flat" : v > 0 ? "pos" : "neg");
+const signed = (v: number, lang: Lang) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(Math.round(v)).toLocaleString(lang === "es" ? "es-ES" : "en-US")}`;
+const modelName = (m: string | null) => (m && /haiku/i.test(m) ? "Claude Haiku" : m ?? "");
+
+type Doc = NewsDoc | null | "none" | "error";
+
+/** The top bar's way in: the word (an icon on phones) and, once scored, BTC's reading. */
+export function NewsButton({ T, lang, doc, onOpen }: { T: CityText; lang: Lang; doc: Doc; onOpen: () => void }) {
+  const N = T.news;
+  const rd = doc && typeof doc === "object" && doc.classifier.on ? doc.markets["BTC-USD"] : undefined;
+  const net = rd?.net ?? null;
+  const said = net != null && rd?.label ? `: BTC ${N.labels[rd.label]} ${signed(net, lang)}` : "";
+  return (
+    <button type="button" className="city-news-btn" aria-haspopup="dialog" aria-label={N.open + said} title={N.open} onClick={onOpen}>
+      <NewsIcon /><span className="hide-sm">{N.title}</span>
+      {net != null && <span className={`num hide-sm ${sideOf(net)}`} aria-hidden="true">BTC {signed(net, lang)}</span>}
+    </button>
+  );
+}
+
+export const NewsIcon = () => (
+  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 5h13v14H6a2 2 0 0 1-2-2z" /><path d="M17 9h3v8a2 2 0 0 1-2 2M7.5 9h6M7.5 12.5h6M7.5 16h4" />
+  </svg>
+);
+
+export function NewsView({ T, lang, doc, market, onMarket, onClose, live, inTrade }:
+  { T: CityText; lang: Lang; doc: Doc; market: string; onMarket: (m: string) => void; onClose: () => void; live: number; inTrade: number }) {
+  const N = T.news;
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => { const id = window.setInterval(() => setNow(Date.now()), 30_000); return () => window.clearInterval(id); }, []);
+
+  return (
+    <>
+      <div className="chart-head">
+        <h2 id="news-title">{N.title} · {ticker(market)}</h2>
+        <div className="chart-tabs" role="group" aria-label={N.markets}>
+          {MARKETS.map((m) => <button key={m} type="button" aria-pressed={m === market} onClick={() => onMarket(m)}>{ticker(m)}</button>)}
+        </div>
+        <button type="button" className="icon-btn" aria-label={T.card.close} data-autofocus onClick={onClose}><Icon.close /></button>
+      </div>
+      {doc === null ? <p className="news-state" role="status">{N.loading}</p>
+        : doc === "none" ? <p className="news-state" role="status">{N.empty}</p>
+        : doc === "error" ? <p className="news-state" role="status">{N.error}</p>
+        : <Body T={T} lang={lang} doc={doc} market={market} now={now} live={live} inTrade={inTrade} />}
+    </>
+  );
+}
+
+function Body({ T, lang, doc, market, now, live, inTrade }: { T: CityText; lang: Lang; doc: NewsDoc; market: string; now: number; live: number; inTrade: number }) {
+  const N = T.news;
+  const [all, setAll] = useState(false);
+  useEffect(() => setAll(false), [market]);
+  const rd = doc.markets[market];
+  const items = forMarket(doc.headlines, market);
+  const byId = new Map(doc.headlines.map((h) => [h.id, h]));
+  const shown = all ? items : items.slice(0, FIRST);
+  const board = doc.scoreboard[market];
+  const follow = doc.following.find((f) => f.follow > 0);
+  const okFeeds = doc.feeds.filter((f) => f.ok).length;
+  return (
+    <div className="news-body">
+      <div className="news-side">
+        <section className="news-read" aria-labelledby="news-read-title">
+          <h3 id="news-read-title" className="sr-only">{N.reading}</h3>
+          {!doc.classifier.on ? <p className="news-pending">{N.pending}</p>
+            : rd?.net == null ? <p className="news-pending">{market !== "BTC-USD" && rd && rd.n ? N.fewOwn(ticker(market)) : N.noReading}</p>
+            : <Reading T={T} lang={lang} rd={rd} byId={byId} />}
+          {doc.classifier.on && rd?.net != null && follow && (
+            <p className="news-follow">{N.follows(N.cats[follow.cat] ?? follow.cat, fmtPct(follow.follow, lang))}</p>
+          )}
+        </section>
+
+        <section className="news-box" aria-labelledby="news-cal-title">
+          <h3 id="news-cal-title">{N.events}</h3>
+          <ul className="news-cal">
+            {doc.events.just.map((e) => (
+              <li key={`j${e.t}`} className="just"><span>{N.evNames[e.kind] ?? e.name}</span><span className="num">{N.eventJust}</span></li>
+            ))}
+            {doc.events.next.filter((e) => e.t > now).slice(0, 4).map((e) => (
+              <li key={e.t}>
+                <span>{N.evNames[e.kind] ?? e.name}<time className="faint" dateTime={new Date(e.t).toISOString()}>
+                  {new Date(e.t).toLocaleString(lang === "es" ? "es-ES" : "en-US", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></span>
+                <span className="num">{N.inTime(countdown(e.t - now, N.units))}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="news-box" aria-labelledby="news-board-title">
+          <h3 id="news-board-title">{N.board}</h3>
+          {board && board.called ? (
+            <>
+              <p className="news-board-num"><span className="num">{Math.round((board.hits / board.called) * 100)} %</span></p>
+              <p className="small muted">{N.boardLine(board.hits, board.called)} {N.boardBase(board.up, board.readings)}</p>
+            </>
+          ) : <p className="small muted">{N.boardEmpty}</p>}
+        </section>
+
+        <p className="news-agents"><span className="city-live-dot" aria-hidden="true" />{N.agents(live, inTrade)}</p>
+      </div>
+
+      <section className="news-list" aria-labelledby="news-list-title">
+        <h3 id="news-list-title">{N.headlines} <span className="faint num">{items.length}</span></h3>
+        <ul>
+          {shown.map((h) => <Headline key={h.id} T={T} lang={lang} h={h} now={now} />)}
+        </ul>
+        {!all && items.length > FIRST && (
+          <button type="button" className="btn btn-ghost btn-block" onClick={() => setAll(true)}>{N.more(items.length - FIRST)}</button>
+        )}
+      </section>
+
+      <p className="news-note">
+        {N.note}{" "}
+        <span className="faint">{N.updated(T.ago((now - doc.generated) / 1000))} · {N.sources(okFeeds, doc.feeds.length)}
+          {doc.classifier.on && doc.classifier.model ? ` · ${N.scoredBy(modelName(doc.classifier.model))}` : ""}</span>
+        {doc.stale && <span className="news-stale"> {N.stale}</span>}
+      </p>
+    </div>
+  );
+}
+
+function Reading({ T, lang, rd, byId }: { T: CityText; lang: Lang; rd: Reading; byId: Map<string, NewsItem> }) {
+  const N = T.news;
+  const net = rd.net ?? 0;
+  const side = sideOf(net);
+  const pct = Math.max(-100, Math.min(100, net)) / 2;   // half the track each way
+  const title = (id: string | null) => {
+    const h = id ? byId.get(id) : undefined;
+    return h ? (lang === "es" && h.es ? h.es : h.title) : "";
+  };
+  return (
+    <>
+      <div className="nr-top">
+        <span className={`nr-num num ${side}`}>{signed(net, lang)}</span>
+        <div className="nr-what">
+          <span className={`nr-label ${side}`}>{rd.label ? N.labels[rd.label] : ""}</span>
+          <span className="faint small">{N.netOf(rd.n)}</span>
+        </div>
+        {rd.whipsaw && <span className="nr-whip" title={N.whipsawTip}><Icon.alert />{N.whipsaw}<span className="sr-only">: {N.whipsawTip}</span></span>}
+      </div>
+      <div className="nr-gauge" aria-hidden="true">
+        <span className={`nr-fill ${side}`} style={net >= 0 ? { left: "50%", width: `${pct}%` } : { right: "50%", width: `${-pct}%` }} />
+        <span className="nr-mark" style={{ left: `${50 + pct}%` }} />
+      </div>
+      <details className="nr-how"><summary>{N.how}</summary><p>{N.netHow}</p></details>
+      <div className="nr-drivers">
+        {([["up", N.up, rd.drivers.up], ["down", N.down, rd.drivers.down]] as const).map(([k, label, list]) => (
+          <div key={k} className={`nr-drv ${k}`}>
+            <h4>{label}</h4>
+            {list.length ? (
+              <ul>{list.map((d) => (
+                <li key={d.cat}><span className="nr-cat">{N.cats[d.cat] ?? d.cat}</span><span className={`num ${k === "up" ? "pos" : "neg"}`}>{signed(d.push, lang)}</span>
+                  {d.top && <p>{title(d.top)}</p>}</li>
+              ))}</ul>
+            ) : <p className="faint small">{N.none}</p>}
+          </div>
+        ))}
+      </div>
+      {rd.flip && (rd.flip[lang] ?? rd.flip.en).length > 0 && (
+        <div className="nr-flip"><h4>{N.flip}</h4><ul>{(rd.flip[lang] ?? rd.flip.en).map((x) => <li key={x}>{x}</li>)}</ul></div>
+      )}
+    </>
+  );
+}
+
+function Headline({ T, lang, h, now }: { T: CityText; lang: Lang; h: NewsItem; now: number }) {
+  const N = T.news;
+  const text = lang === "es" && h.es ? h.es : h.title;
+  const url = safeUrl(h.url);
+  const react = (v: number | null, label: string, due: number) => (
+    <span>{label} {v != null ? <b className={`num ${v > 0 ? "pos" : v < 0 ? "neg" : ""}`}>{fmtPct(v, lang)}</b>
+      : <span className="faint">{now < h.t + due + 10 * 60_000 ? N.measuring : "—"}</span>}</span>
+  );
+  return (
+    <li className="nl">
+      <div className="nl-meta">
+        <time dateTime={new Date(h.t).toISOString()}>{T.ago((now - h.t) / 1000)}</time>
+        <span>{h.source}</span>
+        {h.cat && <span className="nl-cat">{N.cats[h.cat] ?? h.cat}</span>}
+        {h.impact === "high" && <span className="nl-hi">{N.impact.high}</span>}
+      </div>
+      <p className="nl-title">
+        {url ? <a href={url} target="_blank" rel="noopener nofollow noreferrer">{text}<span className="sr-only">{N.newTab}</span></a> : text}
+      </p>
+      <div className="nl-nums">
+        {h.score != null && <span className={`nl-score num ${sideOf(h.score) === "flat" ? "" : sideOf(h.score)}`} title={N.score}>
+          <span className="sr-only">{N.score}: </span>{signed(h.score, lang)}</span>}
+        {h.rm && <span className="nl-react"><span className="faint">{N.reaction} ({ticker(h.rm)}):</span>
+          {react(h.r15, "15 min", 15 * 60_000)}{react(h.r60, "1 h", 60 * 60_000)}</span>}
+        {h.rejected && <span className="nl-rej">{N.rejected}</span>}
+      </div>
+    </li>
+  );
+}

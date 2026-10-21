@@ -1,4 +1,5 @@
-"""Smart Flow public API, read-only: ``/api/health``, ``/api/info``, ``/api/city``.
+"""Smart Flow public API, read-only: ``/api/health``, ``/api/info``, ``/api/city`` and ``/api/news`` (the News Tower's
+news.json, when given).
 
 Standard library only (``http.server``). It serves small JSON documents built from local files and holds no keys, so
 it can run next to the paper agents. TLS and the public hostname come from a reverse proxy or a named Cloudflare
@@ -56,7 +57,7 @@ def app_info(raw: dict, city: dict) -> dict:
     }
 
 
-def make_handler(cache: CityCache, raw: dict, allow_origin: str = "*"):
+def make_handler(cache: CityCache, raw: dict, allow_origin: str = "*", news: Path | None = None):
     class Handler(BaseHTTPRequestHandler):
         server_version = "smartflow-api"
         sys_version = ""
@@ -95,6 +96,11 @@ def make_handler(cache: CityCache, raw: dict, allow_origin: str = "*"):
             elif path == "/api/info":
                 doc, _ = cache.get()
                 self._send(200, app_info(raw, doc), "public, max-age=30")
+            elif path == "/api/news":
+                try:
+                    self._send(200, b'{"pushedAt":%d,"stale":false,' % int(time.time() * 1000) + news.read_bytes()[1:], "public, max-age=30")
+                except (OSError, AttributeError):
+                    self._send(200, {"none": True})
             elif path in CONNECT_PATHS:
                 self._not_enabled()
             else:
@@ -121,9 +127,9 @@ def make_handler(cache: CityCache, raw: dict, allow_origin: str = "*"):
 
 
 def serve(city_toml: Path, host: str = "127.0.0.1", port: int = 8787, root: Path = Path("."),
-          allow_origin: str = "*") -> ThreadingHTTPServer:
+          allow_origin: str = "*", news: Path | None = None) -> ThreadingHTTPServer:
     raw = tomllib.loads(city_toml.read_text(encoding="utf-8"))
     cache = CityCache(load_city(city_toml, root))
-    srv = ThreadingHTTPServer((host, port), make_handler(cache, raw, allow_origin))
+    srv = ThreadingHTTPServer((host, port), make_handler(cache, raw, allow_origin, news))
     srv.daemon_threads = True
     return srv

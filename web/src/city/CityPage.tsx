@@ -11,6 +11,8 @@ import { CityEngine, SCREEN_BOOK, SCREEN_CHART, STATUS_COLOR, drawIcon, type Sel
 import type { Look } from "./look";
 import { FEET, FW, HEAD_TOP, frameAt, onSheet, sheetFor } from "./sprites";
 import { BOOK_MARKET, CITY_MARKETS, CityStore, type Book } from "./store";
+import { NewsButton, NewsView } from "./NewsView";
+import { useNews } from "./news";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
 import { BUILDINGS } from "./world";
 import { PortfolioView, livePosition } from "./portfolio";
@@ -54,6 +56,8 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
   const [me, setMe] = useState(wantsMe);   // "My agent" open over the map
   const [details, setDetails] = useState(false);
   const [chart, setChart] = useState<string | null>(null);   // the market whose full chart is open
+  const [news, setNews] = useState<string | null>(null);     // the market whose news is open
+  const newsDoc = useNews(ready);                             // read once the city is drawn, then every minute
   const [tvOn, setTvOn] = useState(false);                   // TradingView's candles are drawn: show them
   const tvScreen = useRef<HTMLDivElement>(null);
   const bookScreen = useRef<HTMLDivElement>(null);
@@ -193,6 +197,7 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
           })}
         </ul>
         <div className="city-top-actions">
+          <NewsButton T={T} lang={lang} doc={newsDoc} onOpen={() => setNews("BTC-USD")} />
           <span className={`city-weather w${weather.current}`} title={T.weather.tip}>
             <WeatherIcon w={weather.current} /><span className="hide-sm">{[T.weather.calm, T.weather.breezy, T.weather.storm][weather.current]}</span>
             <span className="sr-only">. {T.weather.tip}</span>
@@ -318,6 +323,11 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
         </Modal>
       )}
       {chart && <ChartModal T={T} lang={lang} market={chart} onMarket={setChart} onClose={() => setChart(null)} />}
+      {news && (
+        <Modal onClose={() => setNews(null)} labelledBy="news-title" className="city-chart city-news">
+          <NewsView T={T} lang={lang} doc={newsDoc} market={news} onMarket={setNews} onClose={() => setNews(null)} live={totals.live} inTrade={totals.inTrade} />
+        </Modal>
+      )}
       {details && agent && <DetailsModal T={T} lang={lang} a={agent} marks={marksOf(store.prices)} onClose={() => setDetails(false)} />}
     </div>
   );
