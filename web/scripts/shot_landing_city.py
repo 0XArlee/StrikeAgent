@@ -1,7 +1,7 @@
 """Screenshots of the landing's live city section at 1440 and 390 px, and (with --poster) the poster image taken from
 the same live frame without the text.
 
-    python web/scripts/shot_landing_city.py <base_url> <out_dir> [--poster web/public/city-preview.jpg]
+    python web/scripts/shot_landing_city.py <base_url> <out_dir> [--poster web/public/city-preview.webp]
 """
 
 import sys

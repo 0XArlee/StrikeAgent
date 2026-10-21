@@ -71,8 +71,8 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
 
   useEffect(() => {
     let alive = true;
-    // the new art (?art=new) is chosen when the page loads: asked for later, the page loads again with it
-    if (/[?&]art=(new|old)/.test(location.hash) && ART2 !== /[?&]art=new/.test(location.hash)) { location.reload(); return; }
+    // the art (?art=old: the city drawn before) is chosen when the page loads: asked for later, it loads again
+    if (/[?&]art=(new|old)\b/.test(location.hash) && ART2 !== !/[?&]art=old\b/.test(location.hash)) { location.reload(); return; }
     Promise.all([store.load((k) => alive && setProgress(k)), artReady]).then(() => { if (!alive) return; store.start(); setReady(true); });
     return () => { alive = false; store.stop(); };
   }, [store]);

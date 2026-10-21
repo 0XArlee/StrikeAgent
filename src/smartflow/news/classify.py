@@ -100,6 +100,7 @@ class Haiku:
     def __init__(self, key: str, model: str = MODEL, post=None, timeout: float = 60):
         self.key, self.model, self.timeout = key, model, timeout
         self.post = post or self._post
+        self.tokens = [0, 0]   # input, output: what it has cost so far (the service logs it every cycle)
 
     def _post(self, payload: dict) -> dict:
         _, doc, _ = request_json("POST", API, body=json.dumps(payload).encode(), timeout=self.timeout, retries=2,
@@ -112,6 +113,9 @@ class Haiku:
         doc = self.post({"model": self.model, "max_tokens": max_tokens, "system": system, "tools": [tool],
                          "tool_choice": {"type": "tool", "name": tool["name"]},
                          "messages": [{"role": "user", "content": text}]})
+        u = (doc or {}).get("usage") or {}
+        self.tokens[0] += int(u.get("input_tokens") or 0)
+        self.tokens[1] += int(u.get("output_tokens") or 0)
         for block in (doc or {}).get("content", []):
             if block.get("type") == "tool_use" and block.get("name") == tool["name"]:
                 return block.get("input") or {}

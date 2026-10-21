@@ -1,25 +1,25 @@
 // Strike City layout (tile = 16 art px) and its static rendering (pre-rendered once to an offscreen canvas).
 //
-// The new art (LimeZu's Modern Exteriors, composed by web/scripts/build_city.py into art/city/base.png + glow.png and
-// city2.json): for now only with ?art=new in the city's address (kept for the tab), to compare it with the city drawn
-// here. Same map, roads, plaza and doors; its buildings are taller (their floors) and its props are where city2.json
-// says.
+// The city's art (LimeZu's Modern Exteriors, composed by web/scripts/build_city.py into art/city/base.webp + glow.webp
+// and city2.json; Edgar chose it 2026-10-21). Same map, roads, plaza and doors as the city drawn here, which stays as
+// ?art=old (kept for the tab) and as the fallback if the pictures cannot be loaded; its buildings are taller (their
+// floors) and its props are where city2.json says.
 import city2 from "./city2.json";
 
 export const ART2 = (() => {
   try {
-    if (/[?&]art=new\b/.test(location.hash + location.search)) sessionStorage.setItem("sf-art", "new");
-    if (/[?&]art=old\b/.test(location.hash + location.search)) sessionStorage.removeItem("sf-art");
-    return sessionStorage.getItem("sf-art") === "new";
-  } catch { return false; }
+    if (/[?&]art=old\b/.test(location.hash + location.search)) sessionStorage.setItem("sf-art", "old");
+    if (/[?&]art=new\b/.test(location.hash + location.search)) sessionStorage.removeItem("sf-art");
+    return sessionStorage.getItem("sf-art") !== "old";
+  } catch { return true; }
 })();
 const art: { base?: HTMLImageElement; glow?: HTMLImageElement } = {};
-/** The new art's pictures, loaded (resolves at once without the new art, or if they cannot be loaded). */
+/** The art's pictures, loaded (resolves at once with the old art, or if they cannot be loaded). */
 export const artReady: Promise<void> = !ART2 ? Promise.resolve() : Promise.all((["base", "glow"] as const).map((k) => new Promise<void>((ok) => {
   const im = new Image();
   im.onload = () => { art[k] = im; ok(); };
   im.onerror = () => ok();
-  im.src = `${import.meta.env.BASE_URL ?? "/"}art/city/${k}.png`;
+  im.src = `${import.meta.env.BASE_URL ?? "/"}art/city/${k}.webp`;
 }))).then(() => undefined);
 export const TILE = 16;
 export const COLS = 96;

@@ -235,7 +235,8 @@ class NewsService:
         changed = self.write(self.document(now, headlines, readings, cal))
         if now % (6 * H) < self.sources.get("every_s", 300) * 1000:
             self.store.prune(now)
-        return {"added": added, "classified": classified, "measured": measured, "headlines": len(headlines), "written": changed}
+        return {"added": added, "classified": classified, "measured": measured, "headlines": len(headlines), "written": changed,
+                "tokens": list(getattr(self.classifier, "tokens", [0, 0]))}
 
     def run(self) -> None:
         every = self.sources.get("every_s", 300)
@@ -243,7 +244,8 @@ class NewsService:
             try:
                 s = self.cycle()
                 self.log(f"news: +{s['added']} headlines, {s['classified']} classified, {s['measured']} measured, "
-                         f"{s['headlines']} in 72 h{', written' if s['written'] else ''}")
+                         f"{s['headlines']} in 72 h{', written' if s['written'] else ''}; model tokens since start "
+                         f"{s['tokens'][0]} in / {s['tokens'][1]} out")
             except Exception as e:   # the next cycle tries again
                 self.log(f"news cycle failed: {e!r}")
             time.sleep(every * (0.9 + 0.2 * random.random()))

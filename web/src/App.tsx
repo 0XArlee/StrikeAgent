@@ -204,7 +204,7 @@ export function App() {
                 comes right after the buttons, before the guarantees */}
             <a className="hero-city" href="#/city" ref={citySection} aria-label={t.cityPromo.label}>
               <span className="hero-city-frame">
-                <img className="city-show-poster" src="/city-preview.jpg" alt="" width={1800} height={900} decoding="async"
+                <img className="city-show-poster" src="/city-preview.webp" alt="" width={1800} height={900} decoding="async"
                      onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 {showCity && <ErrorBoundary silent><Suspense fallback={null}><CityPreview onStats={onCityStats} /></Suspense></ErrorBoundary>}
                 <span className="hero-city-scan" aria-hidden="true" />

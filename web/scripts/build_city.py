@@ -1,6 +1,6 @@
 """The city's art from LimeZu's Modern Exteriors (art/limezu, only on the PC, never in git) on Strike City's own map:
-web/public/art/city/base.png (ground, streets and buildings, as by day), web/public/art/city/glow.png (what lights up
-at night: windows, lamps) and web/src/city/city2.json (where everything is: buildings, lamps, trees, benches; the
+web/public/art/city/base.webp (ground, streets and buildings, as by day), web/public/art/city/glow.webp (what lights
+up at night: windows) and web/src/city/city2.json (where everything is: buildings, lamps, trees, benches; the
 city's walkable grid and lights are built from it).
 
 The map is the same as before (96 x 64 tiles of 16 px, the same roads, plaza and doors): every building keeps its
@@ -438,12 +438,14 @@ def main() -> None:
     decor = decorate(placed, R)
     decor.draw(img)
     OUT.mkdir(parents=True, exist_ok=True)
-    img.convert("RGB").save(OUT / "base.png", optimize=True)
-    glow.save(OUT / "glow.png", optimize=True)
+    for old in OUT.glob("*.png"):
+        old.unlink()
+    img.convert("RGB").save(OUT / "base.webp", lossless=True, method=6)   # a quarter of the PNG
+    glow.save(OUT / "glow.webp", lossless=True, method=6)
     doc = {"about": "Strike City drawn with LimeZu's Modern Exteriors by web/scripts/build_city.py. Credits: limezu.itch.io.",
            "tile": T, "cols": COLS, "rows": ROWS, "buildings": placed, "lamps": decor.lamps, "blocked": sorted(map(list, decor.blocked))}
     MANIFEST.write_text(json.dumps(doc, separators=(",", ":")) + "\n", encoding="utf-8", newline="\n")
-    size = sum(f.stat().st_size for f in OUT.glob("*.png"))
+    size = sum(f.stat().st_size for f in OUT.glob("*.webp"))
     print(f"{len(placed)} buildings, {lit} windows lit at night, {len(decor.lamps)} lamps, {len(decor.items)} props, "
           f"{len(decor.blocked)} tiles taken by props, {size / 1e6:.2f} MB -> {OUT}")
 

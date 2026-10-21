@@ -164,6 +164,12 @@ def test_haiku_answers_are_checked():
     assert got["a"]["markets"] == ["BTC-USD"] and got["a"]["score"] == 100 and got["a"]["conf"] == 1.0
     assert sent[0]["tool_choice"] == {"type": "tool", "name": "classify_headlines"} and "ETF inflows" in sent[0]["messages"][0]["content"]
 
+    def post_usage(payload):
+        return {**tool_answer([]), "usage": {"input_tokens": 1200, "output_tokens": 300}}
+    hk = Haiku("k", post=post_usage)
+    hk.classify([{"id": "a", "title": "x", "source": "S"}])
+    assert hk.tokens == [1200, 300]                           # what it costs, for the service's log
+
 
 class FakeModel:
     model = "fake"
