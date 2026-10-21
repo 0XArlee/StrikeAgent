@@ -1,25 +1,38 @@
-"""The reading of each market from its scored headlines, as in the oil trader's panel the plan copies (docs/08):
+"""The reading of each market from its news, as in the oil trader's panel the plan copies (docs/08), done the way a
+desk would do it:
 
-    weight = impact (high 1, medium 0.6, low 0.3) x 0.5 ^ (age / 6 h) x (0.3 if Strike's price went against it in 1 h)
-    NET 72h = sum(weight x score) / sum(weight)            score: -100..+100, what the model said
+- Only catalysts count: price recaps, predictions, items the model calls irrelevant, the ones it is unsure about
+  (confidence under 0.5) and the ones with no direction (|score| under 10) are shown but never move the reading (a
+  recap of a rise "predicts" the rise it describes; a news item with no direction only dilutes the ones with one).
+- One event, one vote: the headlines that tell the same story (the model's story key) count once, with the score of
+  its best source; more independent sources confirm it (x1.25 each, up to x1.75).
+- Sources by tier (config/news_sources.json): official and wires 1, serious crypto press 0.8, the rest 0.5.
+
+    weight = impact (high 1, medium 0.6, low 0.3) x tier x confirmation x 0.5 ^ (age / 6 h)
+             x 0.3 if Strike's price then went clearly the other way (at least half its normal hourly move against it)
+    NET 72h = sum(weight x score) / sum(weight)
     NET = 0.6 x NET 72h + 0.4 x NET of the last 12 h of high impact (only NET 72h when there is none)
 
-Whipsaw: high-impact headlines both ways in the last 12 h with similar weight (the smaller side at least half the
-bigger). Drivers: each category's share of the NET, up and down. Headlines about the whole market count for every
-market (in full for BTC, at half weight for the others), and a market other than BTC needs a couple of its own
-headlines to have a reading. All of it is shown to people; none of it reaches the agents.
+Whipsaw: high-impact stories both ways in the last 12 h with similar weight. Drivers: each category's share of the NET.
+Stories about the whole market count for every market (in full for BTC, at half weight for the others), and a market
+other than BTC needs a couple of its own stories to have a reading. Shown to people; none of it reaches the agents.
 """
 
 from __future__ import annotations
 
 BTC = "BTC-USD"
 IMPACT = {"high": 1.0, "medium": 0.6, "low": 0.3}
+TIER = {1: 1.0, 2: 0.8, 3: 0.5}
+NOT_CATALYSTS = {"price", "other"}
+MIN_CONF = 0.5
+MIN_SCORE = 10           # under it, no direction: the scale's "no new information" band (classify.py)
+CONFIRM, CONFIRM_MAX = 0.25, 1.75
 HALF_LIFE_H = 6.0
 REJECTED = 0.3
+AGAINST_Z = 0.5          # "clearly against": half the market's normal 1 h move, the other way
 WINDOW_H, HIGH_H = 72, 12
 BLEND = 0.6
 BROAD_ALT = 0.5
-FLAT = 0.05              # % in 1 h: smaller is no move in either direction (not a confirmation)
 MIN_OWN = 2
 LEVELS = (15, 50)        # |NET| from 15: bullish / bearish; from 50: very
 WHIP_SCORE, WHIP_RATIO = 20, 0.5
@@ -32,26 +45,51 @@ def scored(h: dict) -> bool:
     return bool(c) and c.get("relevant", True) and isinstance(c.get("score"), int) and c.get("impact") in IMPACT
 
 
-def about(h: dict, market: str) -> bool:
-    c = h["cls"]
-    return market in c["markets"] or bool(c.get("broad"))
+def catalyst(h: dict) -> bool:
+    c = h["cls"] if scored(h) else None
+    return bool(c) and c["cat"] not in NOT_CATALYSTS and c.get("conf", 1) >= MIN_CONF and abs(c["score"]) >= MIN_SCORE
 
 
-def rejected(h: dict) -> bool | None:
-    """Did the price go against the headline in the hour after it? None: not known yet, or a neutral headline."""
-    r = (h.get("react") or {}).get("r60")
-    s = h["cls"]["score"]
-    if r is None or s == 0:
+def stories(headlines: list[dict]) -> list[dict]:
+    """The catalysts grouped by event: one entry per story with its best headline (best tier, then the first out),
+    every outlet that told it, its markets and the time it first came out."""
+    groups: dict[str, list[dict]] = {}
+    for h in headlines:
+        if catalyst(h):
+            groups.setdefault(h["cls"].get("story") or h["id"], []).append(h)
+    out = []
+    for key, hs in groups.items():
+        best = min(hs, key=lambda h: (h.get("tier", 2), h["t"]))
+        c = best["cls"]
+        out.append({
+            "key": key, "id": best["id"], "best": best, "members": [h["id"] for h in hs],
+            "t": min(h["t"] for h in hs), "tier": best.get("tier", 2), "sources": len({h["source"] for h in hs}),
+            "score": c["score"], "impact": c["impact"], "cat": c["cat"],
+            "markets": sorted({m for h in hs for m in h["cls"]["markets"]}), "broad": any(h["cls"].get("broad") for h in hs),
+            "react": best.get("react"),
+        })
+    return out
+
+
+def about(s: dict, market: str) -> bool:
+    return market in s["markets"] or s["broad"]
+
+
+def against(s: dict) -> bool | None:
+    """Did the price go clearly against the story in the hour after it? None: not known yet, or a neutral story."""
+    r = s.get("react") or {}
+    z = r.get("z60")
+    if z is None or s["score"] == 0:
         return None
-    return not (abs(r) >= FLAT and (r > 0) == (s > 0))
+    return (z > 0) != (s["score"] > 0) and abs(z) >= AGAINST_Z
 
 
-def weight(h: dict, market: str, now: int) -> float:
-    c = h["cls"]
-    w = IMPACT[c["impact"]] * 0.5 ** (max(0, now - h["t"]) / H / HALF_LIFE_H)
-    if rejected(h):
+def weight(s: dict, market: str, now: int) -> float:
+    w = IMPACT[s["impact"]] * TIER.get(s["tier"], 0.5) * min(CONFIRM_MAX, 1 + CONFIRM * (s["sources"] - 1))
+    w *= 0.5 ** (max(0, now - s["t"]) / H / HALF_LIFE_H)
+    if against(s):
         w *= REJECTED
-    if market != BTC and market not in c["markets"]:
+    if market != BTC and market not in s["markets"]:
         w *= BROAD_ALT
     return w
 
@@ -69,26 +107,26 @@ def label(net: float | None) -> str | None:
     return "neutral" if a < LEVELS[0] else ("very_" + side if a >= LEVELS[1] else side)
 
 
-def reading(headlines: list[dict], market: str, now: int) -> dict:
-    rel = [h for h in headlines if scored(h) and about(h, market) and now - h["t"] <= WINDOW_H * H]
-    own = sum(1 for h in rel if market in h["cls"]["markets"])
-    ws = [(weight(h, market, now), h) for h in rel]
-    n72 = _net([(w, h["cls"]["score"]) for w, h in ws])
-    high = [(w, h) for w, h in ws if h["cls"]["impact"] == "high" and now - h["t"] <= HIGH_H * H]
-    nh = _net([(w, h["cls"]["score"]) for w, h in high])
+def reading(headlines: list[dict], market: str, now: int, groups: list[dict] | None = None) -> dict:
+    rel = [s for s in (groups if groups is not None else stories(headlines)) if about(s, market) and now - s["t"] <= WINDOW_H * H]
+    own = sum(1 for s in rel if market in s["markets"])
+    ws = [(weight(s, market, now), s) for s in rel]
+    n72 = _net([(w, s["score"]) for w, s in ws])
+    high = [(w, s) for w, s in ws if s["impact"] == "high" and now - s["t"] <= HIGH_H * H]
+    nh = _net([(w, s["score"]) for w, s in high])
     enough = n72 is not None and (market == BTC or own >= MIN_OWN)
     net = (BLEND * n72 + (1 - BLEND) * nh if nh is not None else n72) if enough else None
-    up = sum(w for w, h in high if h["cls"]["score"] >= WHIP_SCORE)
-    down = sum(w for w, h in high if h["cls"]["score"] <= -WHIP_SCORE)
+    up = sum(w for w, s in high if s["score"] >= WHIP_SCORE)
+    down = sum(w for w, s in high if s["score"] <= -WHIP_SCORE)
     total = sum(w for w, _ in ws)
     cats: dict[str, dict] = {}
-    for w, h in ws:
-        v = w * h["cls"]["score"] / total if total else 0.0
-        c = cats.setdefault(h["cls"]["cat"], {"cat": h["cls"]["cat"], "push": 0.0, "n": 0, "best": 0.0, "top": None})
+    for w, s in ws:
+        v = w * s["score"] / total if total else 0.0
+        c = cats.setdefault(s["cat"], {"cat": s["cat"], "push": 0.0, "n": 0, "best": 0.0, "top": None})
         c["push"] += v
         c["n"] += 1
         if abs(v) > abs(c["best"]):
-            c["best"], c["top"] = v, h["id"]
+            c["best"], c["top"] = v, s["id"]
     row = lambda c: {"cat": c["cat"], "push": round(c["push"], 1), "n": c["n"], "top": c["top"]}
     return {
         "net": None if net is None else round(net, 1), "net72": None if n72 is None else round(n72, 1),
@@ -102,19 +140,19 @@ def reading(headlines: list[dict], market: str, now: int) -> dict:
     }
 
 
-def following(headlines: list[dict], now: int) -> list[dict]:
-    """Which themes the price is following: per category, the average 1 h move in the headline's direction, in %
-    (positive: the market went the way those headlines said). Only headlines with a clear direction and a measured
-    reaction, and categories with a few of them."""
+def following(headlines: list[dict], now: int, groups: list[dict] | None = None) -> list[dict]:
+    """Which themes the price is following: per category, the average 1 h move in the story's direction, in multiples
+    of the market's normal 1 h move (positive: the market went the way those stories said). Stories with a clear
+    direction and a measured reaction, and categories with a few of them."""
     by: dict[str, list[float]] = {}
-    for h in headlines:
-        if not scored(h) or abs(h["cls"]["score"]) < FOLLOW_SCORE or now - h["t"] > WINDOW_H * H:
+    for s in groups if groups is not None else stories(headlines):
+        if abs(s["score"]) < FOLLOW_SCORE or now - s["t"] > WINDOW_H * H:
             continue
-        r = (h.get("react") or {}).get("r60")
-        if r is None:
+        z = (s.get("react") or {}).get("z60")
+        if z is None:
             continue
-        by.setdefault(h["cls"]["cat"], []).append(r if h["cls"]["score"] > 0 else -r)
-    out = [{"cat": k, "follow": round(sum(v) / len(v), 3), "n": len(v)} for k, v in by.items() if len(v) >= FOLLOW_MIN]
+        by.setdefault(s["cat"], []).append(z if s["score"] > 0 else -z)
+    out = [{"cat": k, "follow": round(sum(v) / len(v), 2), "n": len(v)} for k, v in by.items() if len(v) >= FOLLOW_MIN]
     return sorted(out, key=lambda x: -x["follow"])
 
 

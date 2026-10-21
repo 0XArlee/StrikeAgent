@@ -13,10 +13,13 @@ export interface Reading {
 }
 export interface NewsItem {
   id: string; t: number; title: string; source: string; url: string; markets: string[];
-  r15: number | null; r60: number | null; rm: string | null;
+  r15: number | null; r60: number | null; rm: string | null; tier?: number;
+  z15?: number | null; z60?: number | null;   // the move against the market's normal move over that time
   // scored by the model (absent until then)
   es?: string; broad?: boolean; cat?: Category; score?: number; impact?: "high" | "medium" | "low"; conf?: number;
-  rejected?: boolean | null; w?: number; skip?: boolean;
+  catalyst?: boolean;   // false: a price recap, a prediction or unclear (listed, never in the reading)
+  story?: string; sources?: number; also?: string[];   // a catalyst: its event, how many outlets told it, which others
+  against?: boolean | null; w?: number; skip?: boolean;
 }
 export interface CalEvent { t: number; kind: "fomc" | "cpi" | "nfp"; name: string }
 export interface Board { readings: number; called: number; hits: number; up: number }

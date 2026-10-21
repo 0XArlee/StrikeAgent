@@ -51,12 +51,17 @@ def _ny_utc_offset_h(day: dt.date) -> int:
     return -4 if sunday(3, 2) <= day < sunday(11, 1) else -5
 
 
-def load_events(path: Path = EVENTS_FILE) -> list[tuple[int, str]]:
-    """Every release as (UTC ms, kind), sorted."""
+STUDIED = ("fomc", "cpi", "nfp")   # the releases this study measured (the calendar also has others, for the News Tower)
+
+
+def load_events(path: Path = EVENTS_FILE, kinds: tuple[str, ...] | None = STUDIED) -> list[tuple[int, str]]:
+    """Every release (of ``kinds``; None: all of them) as (UTC ms, kind), sorted."""
     doc = json.loads(path.read_text(encoding="utf-8"))
     assert doc["timezone"] == "America/New_York", doc["timezone"]
     out = []
     for kind, days in doc["events"].items():
+        if kinds is not None and kind not in kinds:
+            continue
         hh, mm = map(int, doc["kinds"][kind]["time"].split(":"))
         for d in days:
             day = dt.date.fromisoformat(d)

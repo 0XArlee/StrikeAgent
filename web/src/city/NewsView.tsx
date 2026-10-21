@@ -133,7 +133,7 @@ function Body({ T, lang, doc, market, now, live, inTrade }: { T: CityText; lang:
             : rd?.net == null ? <p className="news-pending">{market !== "BTC-USD" && rd && rd.n ? N.fewOwn(ticker(market)) : N.noReading}</p>
             : <Reading T={T} lang={lang} rd={rd} byId={byId} />}
           {doc.classifier.on && rd?.net != null && follow && (
-            <p className="news-follow">{N.follows(N.cats[follow.cat] ?? follow.cat, fmtPct(follow.follow, lang))}</p>
+            <p className="news-follow">{N.follows(N.cats[follow.cat] ?? follow.cat, follow.follow.toLocaleString(lang === "es" ? "es-ES" : "en-US", { maximumFractionDigits: 1 }))}</p>
           )}
         </section>
 
@@ -234,27 +234,32 @@ function Headline({ T, lang, h, now }: { T: CityText; lang: Lang; h: NewsItem; n
   const N = T.news;
   const text = lang === "es" && h.es ? h.es : h.title;
   const url = safeUrl(h.url);
-  const react = (v: number | null, label: string, due: number) => (
-    <span>{label} {v != null ? <b className={`num ${v > 0 ? "pos" : v < 0 ? "neg" : ""}`}>{fmtPct(v, lang)}</b>
+  // the move, and how it compares with the market's normal move over that time (|z| under 1: nothing unusual)
+  const react = (v: number | null, z: number | null | undefined, label: string, due: number) => (
+    <span>{label} {v != null ? <><b className={`num ${v > 0 ? "pos" : v < 0 ? "neg" : ""}`}>{fmtPct(v, lang)}</b>
+      {z != null && <span className={`nl-z${Math.abs(z) >= 1 ? " big" : ""}`}>{Math.abs(z) < 1 ? N.normal : N.timesNormal(Math.abs(z).toLocaleString(lang === "es" ? "es-ES" : "en-US", { maximumFractionDigits: 1 }))}</span>}</>
       : <span className="faint">{now < h.t + due + 10 * 60_000 ? N.measuring : "—"}</span>}</span>
   );
+  const quiet = h.catalyst === false;   // a price recap, a prediction or unclear: listed, never in the reading
   return (
-    <li className="nl">
+    <li className={`nl${quiet ? " quiet" : ""}`}>
       <div className="nl-meta">
         <time dateTime={new Date(h.t).toISOString()}>{T.ago((now - h.t) / 1000)}</time>
         <span>{h.source}</span>
+        {h.sources != null && h.sources > 1 && <span className="nl-more" title={(h.also ?? []).join(", ")}>{N.moreSources(h.sources - 1)}</span>}
         {h.cat && <span className="nl-cat">{N.cats[h.cat] ?? h.cat}</span>}
         {h.impact === "high" && <span className="nl-hi">{N.impact.high}</span>}
+        {quiet && <span className="nl-quiet" title={N.notCountedTip}>{N.notCounted}</span>}
       </div>
       <p className="nl-title">
         {url ? <a href={url} target="_blank" rel="noopener nofollow noreferrer">{text}<span className="sr-only">{N.newTab}</span></a> : text}
       </p>
       <div className="nl-nums">
-        {h.score != null && <span className={`nl-score num ${sideOf(h.score) === "flat" ? "" : sideOf(h.score)}`} title={N.score}>
+        {h.score != null && !quiet && <span className={`nl-score num ${sideOf(h.score) === "flat" ? "" : sideOf(h.score)}`} title={N.score}>
           <span className="sr-only">{N.score}: </span>{signed(h.score, lang)}</span>}
         {h.rm && <span className="nl-react"><span className="faint">{N.reaction} ({ticker(h.rm)}):</span>
-          {react(h.r15, "15 min", 15 * 60_000)}{react(h.r60, "1 h", 60 * 60_000)}</span>}
-        {h.rejected && <span className="nl-rej">{N.rejected}</span>}
+          {react(h.r15, h.z15, "15 min", 15 * 60_000)}{react(h.r60, h.z60, "1 h", 60 * 60_000)}</span>}
+        {h.against && <span className="nl-rej">{N.rejected}</span>}
       </div>
     </li>
   );

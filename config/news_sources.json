@@ -1,17 +1,19 @@
 {
- "version": 1,
- "about": "Free public headline feeds for the News Tower (smartflow/news): crypto media RSS and Google News searches per market. Only the headline, its source, link and time are kept, never the article. Checked from the PC 2026-10-21: all 9 answer with the day's headlines. 'markets': what a feed is about when its headlines do not say (Google News searches); empty = the whole crypto market.",
+ "version": 2,
+ "about": "Headline feeds for the News Tower (smartflow/news), by tier (their weight: smartflow/news/score.py TIER): 1 official sources and the news wires (they move markets first), 2 serious crypto press, 3 the rest. Only the headline, its source, link, time and the feed's own summary (sent to the model, never shown) are kept, never the article. Google News searches are limited to named outlets (site:) and to headlines that carry the subject in their title (intitle:: without it, the wires search brought golf videos), never open searches: those brought mostly SEO pages and press releases (2026-10-21: most of what was shown). Blockworks' and DL News' own feeds stopped updating (January and May 2026): they come through the press search. Checked from the PC 2026-10-21. 'markets': what a feed is about when its headlines do not say; empty = the whole crypto market.",
  "every_s": 300,
  "keep_h": 72,
  "feeds": [
-  {"id": "coindesk", "name": "CoinDesk", "url": "https://www.coindesk.com/arc/outboundfeeds/rss/", "markets": []},
-  {"id": "cointelegraph", "name": "Cointelegraph", "url": "https://cointelegraph.com/rss", "markets": []},
-  {"id": "theblock", "name": "The Block", "url": "https://www.theblock.co/rss.xml", "markets": []},
-  {"id": "decrypt", "name": "Decrypt", "url": "https://decrypt.co/feed", "markets": []},
-  {"id": "bitcoinmagazine", "name": "Bitcoin Magazine", "url": "https://bitcoinmagazine.com/.rss/full/", "markets": ["BTC-USD"]},
-  {"id": "cryptoslate", "name": "CryptoSlate", "url": "https://cryptoslate.com/feed/", "markets": []},
-  {"id": "gn-btc", "name": "Google News", "url": "https://news.google.com/rss/search?q=bitcoin+when:1d&hl=en-US&gl=US&ceid=US:en", "markets": ["BTC-USD"]},
-  {"id": "gn-eth", "name": "Google News", "url": "https://news.google.com/rss/search?q=ethereum+when:1d&hl=en-US&gl=US&ceid=US:en", "markets": ["ETH-USD"]},
-  {"id": "gn-sol", "name": "Google News", "url": "https://news.google.com/rss/search?q=solana+crypto+when:1d&hl=en-US&gl=US&ceid=US:en", "markets": ["SOL-USD"]}
+  {"id": "fed", "name": "Federal Reserve", "tier": 1, "url": "https://www.federalreserve.gov/feeds/press_monetary.xml", "markets": []},
+  {"id": "sec", "name": "SEC", "tier": 1, "url": "https://www.sec.gov/news/pressreleases.rss", "markets": []},
+  {"id": "wires-crypto", "name": "Google News (wires)", "tier": 1, "markets": [], "url": "https://news.google.com/rss/search?q=%28intitle%3Abitcoin+OR+intitle%3Acrypto+OR+intitle%3Aethereum+OR+intitle%3Astablecoin+OR+intitle%3Asolana+OR+intitle%3AXRP+OR+intitle%3Atokenized%29+%28site%3Areuters.com+OR+site%3Abloomberg.com+OR+site%3Acnbc.com+OR+site%3Awsj.com+OR+site%3Aft.com+OR+site%3Aapnews.com%29+when%3A2d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "wires-macro", "name": "Google News (wires)", "tier": 1, "markets": [], "url": "https://news.google.com/rss/search?q=%28intitle%3AFed+OR+intitle%3APowell+OR+intitle%3A%22US+inflation%22+OR+intitle%3A%22U.S.+inflation%22+OR+intitle%3Apayrolls+OR+intitle%3A%22jobless+claims%22+OR+intitle%3ATreasury+OR+intitle%3Atariffs+OR+intitle%3Adollar%29+%28site%3Areuters.com+OR+site%3Abloomberg.com+OR+site%3Acnbc.com+OR+site%3Awsj.com+OR+site%3Aft.com+OR+site%3Aapnews.com%29+when%3A1d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "coindesk", "name": "CoinDesk", "tier": 2, "url": "https://www.coindesk.com/arc/outboundfeeds/rss/", "markets": []},
+  {"id": "theblock", "name": "The Block", "tier": 2, "url": "https://www.theblock.co/rss.xml", "markets": []},
+  {"id": "decrypt", "name": "Decrypt", "tier": 2, "url": "https://decrypt.co/feed", "markets": []},
+  {"id": "cointelegraph", "name": "Cointelegraph", "tier": 2, "url": "https://cointelegraph.com/rss", "markets": []},
+  {"id": "press-coins", "name": "Google News (crypto press)", "tier": 2, "markets": [], "url": "https://news.google.com/rss/search?q=%28bitcoin+OR+ethereum+OR+solana+OR+XRP+OR+cardano+OR+BNB+OR+%22NEAR+Protocol%22+OR+zcash%29+%28site%3Acoindesk.com+OR+site%3Atheblock.co+OR+site%3Adecrypt.co+OR+site%3Ablockworks.co+OR+site%3Adlnews.com%29+when%3A2d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "cryptoslate", "name": "CryptoSlate", "tier": 3, "url": "https://cryptoslate.com/feed/", "markets": []},
+  {"id": "bitcoinmagazine", "name": "Bitcoin Magazine", "tier": 3, "url": "https://bitcoinmagazine.com/.rss/full/", "markets": ["BTC-USD"]}
  ]
 }

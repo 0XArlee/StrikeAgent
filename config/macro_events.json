@@ -1,6 +1,6 @@
 {
  "version": 1,
- "about": "Scheduled US macro releases that move crypto: FOMC rate decisions (statement at 14:00 New York time on the meeting's last day), CPI and the Employment Situation (08:30 New York time). Official sources, read 2026-10-21: past releases from the release archives ('sources'), November 2026 to December 2027 from the published schedules ('schedules'); add each new year when they publish it (smartflow news warns 60 days before the dates run out). October 2025 CPI and jobs were not published (2025 lapse in federal appropriations); September 2025 came out late. Used by backtest/event_study.py and, later, the News Tower's countdown.",
+ "about": "Scheduled US macro releases that move crypto: FOMC rate decisions (statement at 14:00 New York time on the meeting's last day), CPI and the Employment Situation (08:30 New York time). Official sources, read 2026-10-21: past releases from the release archives ('sources'), November 2026 to December 2027 from the published schedules ('schedules'); add each new year when they publish it (smartflow news warns 60 days before the dates run out). October 2025 CPI and jobs were not published (2025 lapse in federal appropriations); September 2025 came out late. Used by backtest/event_study.py and, later, the News Tower's countdown. Since 2026-10-21 also, for the News Tower's countdown only (the event study keeps to the three it measured): PCE inflation (Personal Income and Outlays) and the GDP advance estimate from BEA's published schedule (through December 2026: its 2027 list was not complete yet), and the FOMC minutes, three weeks after each decision (the Fed's rule; checked on the 2026 ones already out; around holidays it can move a day).",
  "timezone": "America/New_York",
  "sources": {
   "fomc": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
@@ -10,7 +10,10 @@
  "schedules": {
   "fomc": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
   "cpi": "https://www.bls.gov/schedule/news_release/cpi.htm",
-  "nfp": "https://www.bls.gov/schedule/news_release/empsit.htm"
+  "nfp": "https://www.bls.gov/schedule/news_release/empsit.htm",
+  "pce": "https://www.bea.gov/news/schedule",
+  "gdp": "https://www.bea.gov/news/schedule",
+  "minutes": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
  },
  "kinds": {
   "fomc": {
@@ -24,6 +27,18 @@
   "nfp": {
    "name": "US jobs report",
    "time": "08:30"
+  },
+  "pce": {
+   "name": "US PCE inflation",
+   "time": "08:30"
+  },
+  "gdp": {
+   "name": "US GDP (advance)",
+   "time": "08:30"
+  },
+  "minutes": {
+   "name": "Fed minutes",
+   "time": "14:00"
   }
  },
  "events": {
@@ -222,6 +237,26 @@
    "2027-10-08",
    "2027-11-05",
    "2027-12-03"
+  ],
+  "pce": [
+   "2026-10-29",
+   "2026-11-25",
+   "2026-12-23"
+  ],
+  "gdp": [
+   "2026-10-29"
+  ],
+  "minutes": [
+   "2026-11-18",
+   "2026-12-30",
+   "2027-02-17",
+   "2027-04-07",
+   "2027-05-19",
+   "2027-06-30",
+   "2027-08-18",
+   "2027-10-06",
+   "2027-11-17",
+   "2027-12-29"
   ]
  }
 }

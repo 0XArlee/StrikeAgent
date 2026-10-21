@@ -1,7 +1,9 @@
 """Headlines from free public feeds (config/news_sources.json): crypto media RSS and Google News searches per market.
 
-Only the headline, its source, link and time are kept, never the article (the media's rights). The same story from
-two feeds is one headline: its id is the hash of the normalised title (Google News appends " - Publisher").
+Only the headline, its source, link and time are kept, never the article (the media's rights); the feed's own short
+summary is kept for the model only. The same title from two feeds is one headline: its id is the hash of the
+normalised title (Google News appends " - Publisher"); the same event told by different outlets is grouped later, by
+the model (its story key).
 """
 
 from __future__ import annotations
@@ -32,6 +34,8 @@ class Headline:
     feed: str              # the feed it came from (config id)
     published: int | None  # ms, as the feed says (None: it did not say)
     markets: list[str] = field(default_factory=list)   # what the feed or the title says it is about (before the model)
+    summary: str = ""      # the feed's own summary: only for the model, never shown (the media's rights)
+    tier: int = 2          # 1 official / wires, 2 serious crypto press, 3 the rest (config)
 
 
 def load_sources(path: Path = SOURCES) -> dict:
@@ -117,5 +121,9 @@ def parse(xml: bytes, feed: dict) -> list[Headline]:
             continue
         published = _time(e.findtext("pubDate") or e.findtext(f"{ATOM}published") or e.findtext(f"{ATOM}updated"))
         markets = list(dict.fromkeys(feed.get("markets", []) + title_markets(title)))
-        out.append(Headline(headline_id(title), title[:300], link, source[:80], feed["id"], published, markets))
+        summary = clean(e.findtext("description") or e.findtext(f"{ATOM}summary") or "")
+        if summary.startswith(title) or summary.endswith(source) and len(summary) <= len(title) + len(source) + 3:
+            summary = ""          # Google News: the summary is the title again
+        out.append(Headline(headline_id(title), title[:300], link, source[:80], feed["id"], published, markets,
+                            summary[:400], int(feed.get("tier", 2))))
     return out

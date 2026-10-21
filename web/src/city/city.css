@@ -374,3 +374,8 @@
   .news-list { margin-top: 16px; border-top: 1px solid var(--border-soft); padding-top: 12px; }
   .news-note { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
 }
+.nl.quiet .nl-title a, .nl.quiet .nl-title { color: var(--text-muted); }
+.nl-quiet { color: var(--text-faint); border: 1px solid var(--border); border-radius: 9999px; padding: 0 6px; }
+.nl-more { color: var(--primary); }
+.nl-z { margin-left: 4px; font-size: 11px; color: var(--text-faint); }
+.nl-z.big { color: var(--golden); font-weight: 600; }

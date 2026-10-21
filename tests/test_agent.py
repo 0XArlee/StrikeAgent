@@ -181,3 +181,29 @@ def test_leverage_rises_only_as_much_as_the_margin_needs(tmp_path):
     assert d2.accepted and d2.leverage == 2 and d2.qty == d1.qty and d2.margin <= 0.9 * 2000
     d3 = eng.evaluate(*ctx(available=400.0))                    # not even at 5x
     assert not d3.accepted and "exceeds 90% of available" in d3.reasons[0]
+
+
+def test_paper_stops_survive_strike_outages():
+    """Strike answering 503 or timing out while the paper stops are checked: that market waits for the next turn,
+    the others are checked, and the agent never stops (2026-10-21: it did three times)."""
+    from smartflow.agent.execution import _PaperPos
+    from smartflow.net import HttpError
+
+    class Flaky(FakeVenue):
+        down = {"BAD-USD"}
+
+        def book_ticker(self, symbol):
+            if symbol in self.down:
+                raise HttpError(503, "Service Temporarily Unavailable", "bookTicker")
+            return super().book_ticker(symbol)
+
+    venue = Flaky()
+    ex = PaperExecution(venue, 10_000)
+    ex.pos = {"BAD-USD": [_PaperPos("t1", 1, 1.0, 100.0, 99.0, None, 0.0, 0.0)],
+              "SYN-USD": [_PaperPos("t2", 1, 1.0, 100.0, 99.0, None, 0.0, 0.0)]}
+    venue.px = 98.0                                   # both stops are hit
+    events = ex.tick()
+    assert [e["symbol"] for e in events] == ["SYN-USD"] and ex.skipped == 1
+    assert "BAD-USD" in ex.pos and ex.pos["BAD-USD"]  # still open: checked on the next turn
+    venue.down = set()
+    assert [e["symbol"] for e in ex.tick()] == ["BAD-USD"]

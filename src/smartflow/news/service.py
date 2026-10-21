@@ -16,13 +16,13 @@ from pathlib import Path
 from ..backtest.event_study import EVENTS_FILE, load_events
 from . import score
 from .feeds import fetch, load_sources, parse
-from .reaction import Prices, measure
+from .reaction import NORMAL_H, Prices, measure
 from .store import Store
 
 H = 3_600_000
 MARKETS = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "BNB-USD", "ADA-USD", "NEAR-USD", "ZEC-USD"]
 SHOWN = 150                 # headlines in the document (newest first, within the window)
-CLASSIFY_PER_CYCLE = 100
+CLASSIFY_PER_CYCLE = 300   # steady state: a few dozen a cycle; this lets a fresh start catch up in a few cycles
 FLIP_EVERY_MS = H
 READ_EVERY_MS = H           # the scoreboard's readings: on the hour
 AHEAD_MS = 4 * H            # ... checked 4 h later
@@ -33,11 +33,13 @@ def calendar(now: int, path: Path = EVENTS_FILE) -> dict:
     """The next scheduled releases (and one that just came out, for 2 h), from the official calendar."""
     doc = json.loads(Path(path).read_text(encoding="utf-8"))
     names = {k: v["name"] for k, v in doc["kinds"].items()}
-    events = load_events(path)
+    events = load_events(path, kinds=None)
     nxt = [{"t": t, "kind": k, "name": names[k]} for t, k in events if t > now][:6]
     just = [{"t": t, "kind": k, "name": names[k]} for t, k in events if now - 2 * H <= t <= now][-1:]
-    last = events[-1][0] if events else 0
-    return {"next": nxt, "just": just, "until": last, "short": last - now < CALENDAR_WARN_DAYS * 86400_000}
+    ends = {k: max(t for t, kk in events if kk == k) for k in names if any(kk == k for _, kk in events)}
+    short = sorted(k for k, t in ends.items() if t - now < CALENDAR_WARN_DAYS * 86400_000)
+    last = min(ends.values()) if ends else 0
+    return {"next": nxt, "just": just, "until": last, "short": short}
 
 
 def strike_klines():
@@ -56,7 +58,7 @@ def as_of(headlines: list[dict], t: int) -> list[dict]:
         if h["t"] > t:
             continue
         if h.get("react") and h["t"] + H > t:
-            h = {**h, "react": {**h["react"], "r60": None}}
+            h = {**h, "react": {**h["react"], "r60": None, "z60": None}}
         out.append(h)
     return out
 
@@ -68,8 +70,12 @@ class NewsService:
         self.klines = klines or strike_klines()
         self.sources = sources or load_sources()
         self.fetcher, self.log, self.events_file = fetcher, log, events_file
-        self.feeds: dict[str, dict] = {f["id"]: {"id": f["id"], "name": f["name"], "ok": None, "at": None, "error": None}
+        self.feeds: dict[str, dict] = {f["id"]: {"id": f["id"], "name": f["name"], "tier": f.get("tier", 2), "ok": None, "at": None, "error": None}
                                        for f in self.sources["feeds"]}
+        self.store.retry_unclassified()   # each start gives the headlines the model could not answer another chance
+        gone = self.store.sync_feeds({f["id"]: int(f.get("tier", 2)) for f in self.sources["feeds"]})
+        if gone:
+            self.log(f"news: {gone} headlines from feeds no longer configured removed")
         self.classify_error: str | None = None
         self.last_fp = ""
         self.warned_at = 0
@@ -95,10 +101,13 @@ class NewsService:
         rows = self.store.unclassified(now - self.sources.get("keep_h", 72) * H, CLASSIFY_PER_CYCLE)
         if not rows:
             return 0
-        items = [{"id": r["id"], "title": r["title"], "source": r["source"]} for r in rows]
+        items = [{"id": r["id"], "title": r["title"], "source": r["source"], "summary": r["summary"]} for r in rows]
         try:
-            got = self.classifier.classify(items)
-            self.classify_error = None
+            got = self.classifier.classify(items, self.store.recent_stories(now - 48 * H))
+            errs = getattr(self.classifier, "errors", [])
+            self.classify_error = errs[0].split(":")[0] if errs and not got else None
+            for e in errs[:3]:
+                self.log(f"classify: {e}")
         except Exception as e:
             got = {}
             self.classify_error = type(e).__name__
@@ -116,7 +125,7 @@ class NewsService:
             if m not in MARKETS:
                 continue
             try:
-                prices.cover(m, r["t"] - 15 * 60_000, now)
+                prices.cover(m, r["t"] - (NORMAL_H * 60 + 15) * 60_000, now)   # and the day before: its normal move
             except Exception as e:
                 self.log(f"strike klines {m}: {e!r}")
                 continue
@@ -155,7 +164,7 @@ class NewsService:
                 self.store.resolve(r["t"], r["market"], 0.0)   # never measurable: counted as no move
         self.store.commit()
 
-    def flips(self, now: int, headlines: list[dict], readings: dict[str, dict], events: list[dict]) -> None:
+    def flips(self, now: int, groups: list[dict], readings: dict[str, dict], events: list[dict]) -> None:
         if not self.classifier:
             return
         for m in ("BTC-USD", "ETH-USD", "SOL-USD"):
@@ -163,8 +172,8 @@ class NewsService:
             note = self.store.note(m)
             if not rd or rd["net"] is None or (note and now - note[0] < FLIP_EVERY_MS and note[1].get("label") == rd["label"]):
                 continue
-            drivers = sorted((h for h in headlines if score.scored(h) and score.about(h, m)),
-                             key=lambda h: -score.weight(h, m, now) * abs(h["cls"]["score"]))
+            drivers = [st["best"] for st in sorted((st for st in groups if score.about(st, m)),
+                                                   key=lambda st: -score.weight(st, m, now) * abs(st["score"]))]
             try:
                 got = self.classifier.flip(m, rd, drivers, events)
             except Exception as e:
@@ -174,18 +183,38 @@ class NewsService:
                 self.store.set_note(m, now, {**got, "label": rd["label"]})
 
     # ------------------------------------------------------------------ the public document
-    def document(self, now: int, headlines: list[dict], readings: dict[str, dict], cal: dict) -> dict:
+    def document(self, now: int, headlines: list[dict], readings: dict[str, dict], cal: dict, groups: list[dict]) -> dict:
+        by_id = {h["id"]: h for h in headlines}
+        story_of = {i: g for g in groups for i in g["members"]}
+
         def view(h: dict) -> dict:
             c, r = h.get("cls"), h.get("react") or {}
-            out = {"id": h["id"], "t": h["t"], "title": h["title"], "source": h["source"], "url": h["url"],
-                   "markets": (c or {}).get("markets") or h["hint"], "r15": r.get("r15"), "r60": r.get("r60"), "rm": r.get("m")}
+            out = {"id": h["id"], "t": h["t"], "title": h["title"], "source": h["source"], "url": h["url"], "tier": h.get("tier", 2),
+                   "markets": (c or {}).get("markets") or h["hint"], "r15": r.get("r15"), "r60": r.get("r60"),
+                   "z15": r.get("z15"), "z60": r.get("z60"), "rm": r.get("m")}
             if score.scored(h):
-                m = (c["markets"] or ["BTC-USD"])[0]
                 out.update(es=c["es"], broad=c["broad"], cat=c["cat"], score=c["score"], impact=c["impact"], conf=c["conf"],
-                           rejected=score.rejected(h), w=round(score.weight(h, m, now), 3))
+                           catalyst=score.catalyst(h))
+                g = story_of.get(h["id"])
+                if g:   # a catalyst: its story, the other outlets that told it, and its weight now
+                    m = (g["markets"] or ["BTC-USD"])[0]
+                    others = [by_id[i]["source"] for i in g["members"] if i != h["id"] and i in by_id]
+                    out.update(story=g["key"], sources=g["sources"], also=list(dict.fromkeys(o for o in others if o != h["source"]))[:4],
+                               against=score.against(g), w=round(score.weight(g, m, now), 3))
             elif c:
                 out.update(es=c.get("es", ""), skip=True)   # not market news (the model said so)
             return out
+
+        # one entry per story (its best headline), then everything that is not a catalyst, newest first
+        shown, seen = [], set()
+        for h in headlines:
+            g = story_of.get(h["id"])
+            if g:
+                if g["key"] in seen:
+                    continue
+                seen.add(g["key"])
+                h = by_id[g["id"]]
+            shown.append(h)
 
         notes = {m: n[1] for m in readings if (n := self.store.note(m)) and n[1].get("label") == readings[m]["label"]}
         board = score.scoreboard(self.store.readings(now - 90 * 86400_000))
@@ -194,9 +223,10 @@ class NewsService:
             "classifier": {"on": bool(self.classifier), "model": getattr(self.classifier, "model", None), "error": self.classify_error},
             "markets": {m: {**rd, "flip": {k: v for k, v in notes[m].items() if k in ("en", "es")} if m in notes else None}
                         for m, rd in readings.items()},
-            "following": score.following(headlines, now),
-            "headlines": [view(h) for h in headlines[:SHOWN]],
-            "counts": {"72h": len(headlines), "scored": sum(1 for h in headlines if score.scored(h))},
+            "following": score.following(headlines, now, groups),
+            "headlines": [view(h) for h in shown[:SHOWN]],
+            "counts": {"72h": len(headlines), "scored": sum(1 for h in headlines if score.scored(h)),
+                       "catalysts": sum(len(g["members"]) for g in groups), "stories": len(groups)},
             "events": {"next": cal["next"], "just": cal["just"]},
             "scoreboard": board,
             "feeds": list(self.feeds.values()),
@@ -225,14 +255,15 @@ class NewsService:
         keep = self.sources.get("keep_h", 72) * H
         headlines = self.store.window(now - keep)
         self.readings(now, headlines, prices)
-        readings = {m: score.reading(headlines, m, now) for m in MARKETS}
+        groups = score.stories(headlines)
+        readings = {m: score.reading(headlines, m, now, groups) for m in MARKETS}
         cal = calendar(now, self.events_file)
-        self.flips(now, headlines, readings, cal["next"])
+        self.flips(now, groups, readings, cal["next"])
         if cal["short"] and now - self.warned_at > 24 * H:
             self.warned_at = now
-            self.log(f"the macro calendar ends {time.strftime('%Y-%m-%d', time.gmtime(cal['until'] / 1000))}: "
-                     "add the next year's dates to config/macro_events.json")
-        changed = self.write(self.document(now, headlines, readings, cal))
+            self.log(f"the macro calendar runs out soon for {', '.join(cal['short'])}: "
+                     "add the next dates from the official schedules to config/macro_events.json")
+        changed = self.write(self.document(now, headlines, readings, cal, groups))
         if now % (6 * H) < self.sources.get("every_s", 300) * 1000:
             self.store.prune(now)
         return {"added": added, "classified": classified, "measured": measured, "headlines": len(headlines), "written": changed,

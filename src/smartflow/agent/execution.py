@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Protocol
 
+from ..net import HttpError
 from ..strike.client import StrikeClient
 from ..strike.models import AccountState, MarketSpec, Order, Position
 
@@ -256,6 +257,7 @@ class PaperExecution(_StrikeMarketData):
         self.orders: dict[str, Order] = {}
         self.legs: dict[str, set[str]] = {}   # every stop a trade had (a moved stop replaces the previous one)
         self.events: list[dict] = []
+        self.skipped = 0   # stop checks put off because Strike did not answer (tick)
 
     def _fee(self, notional: float) -> float:
         return notional * (self.taker_fee + self.builder)
@@ -388,15 +390,20 @@ class PaperExecution(_StrikeMarketData):
         return None
 
     def tick(self) -> list[dict]:
-        """Check every lot's paper stop/target against the current mark price; returns exit events."""
+        """Check every lot's paper stop/target against the current mark price; returns exit events. A market whose
+        prices Strike does not give right now (a 503, a timeout) is checked again on the next turn, 30 s later: the
+        agent never stops for it (it did, three times on 2026-10-21, and systemd had to start it again)."""
         out = []
         for s in list(self.pos):
-            q = self.quote(s)
-            for p in list(self.pos.get(s, [])):
-                hit_stop = (q.mark <= p.stop) if p.dir == 1 else (q.mark >= p.stop)
-                hit_tp = p.tp is not None and ((q.mark >= p.tp) if p.dir == 1 else (q.mark <= p.tp))
-                if hit_stop or hit_tp:
-                    d = self.public.depth(s, 200)
-                    px = walk_book(d["bids"] if p.dir == 1 else d["asks"], p.qty)
-                    out.append(self._close(s, p, px, "stop" if hit_stop else "target"))
+            try:
+                q = self.quote(s)
+                for p in list(self.pos.get(s, [])):
+                    hit_stop = (q.mark <= p.stop) if p.dir == 1 else (q.mark >= p.stop)
+                    hit_tp = p.tp is not None and ((q.mark >= p.tp) if p.dir == 1 else (q.mark <= p.tp))
+                    if hit_stop or hit_tp:
+                        d = self.public.depth(s, 200)
+                        px = walk_book(d["bids"] if p.dir == 1 else d["asks"], p.qty)
+                        out.append(self._close(s, p, px, "stop" if hit_stop else "target"))
+            except HttpError:
+                self.skipped += 1
         return out

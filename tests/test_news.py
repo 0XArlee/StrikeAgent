@@ -17,6 +17,7 @@ RSS = b"""<?xml version="1.0"?><rss version="2.0"><channel><title>x</title>
 <item><title>Fed holds rates steady - Reuters</title><link>https://news.google.com/a</link>
 <pubDate>Wed, 21 Oct 2026 14:00:00 GMT</pubDate><source url="https://reuters.com">Reuters</source></item>
 <item><title><![CDATA[Solana &amp; <b>ETF</b> inflows jump]]></title><link>https://example.com/sol</link>
+<description><![CDATA[<p>Funds took in <b>$120M</b> on Tuesday.</p>]]></description>
 <pubDate>Wed, 21 Oct 2026 15:30:00 +0000</pubDate></item>
 <item><title>No link</title></item>
 <item><title>Plain http link</title><link>http://example.com/x</link></item>
@@ -26,7 +27,7 @@ ATOM = b"""<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><title
 <entry><title>Ethereum upgrade goes live</title><link href="https://example.com/eth"/><published>2026-10-21T12:00:00Z</published></entry>
 </feed>"""
 
-FEED = {"id": "gn-btc", "name": "Google News", "url": "https://news.google.com/rss/x", "markets": ["BTC-USD"]}
+FEED = {"id": "gn-btc", "name": "Google News", "url": "https://news.google.com/rss/x", "markets": ["BTC-USD"], "tier": 1}
 
 
 def test_rss_and_atom():
@@ -35,6 +36,7 @@ def test_rss_and_atom():
     assert a[0].source == "Reuters" and a[1].source == "Google News"
     assert a[0].published == 1792591200000
     assert a[1].markets == ["BTC-USD", "SOL-USD"]   # the feed's market first, then the title's
+    assert a[1].summary == "Funds took in $120M on Tuesday." and a[0].summary == "" and a[0].tier == 1
     e = parse(ATOM, {"id": "x", "name": "X", "markets": []})
     assert e[0].url == "https://example.com/eth" and e[0].markets == ["ETH-USD"] and e[0].published == 1792584000000
 
@@ -87,19 +89,63 @@ def test_reaction():
     assert len(calls) == 3
 
 
-def item(id_, age_h, s, impact="high", cat="macro", markets=("BTC-USD",), broad=False, r60=None):
-    return {"id": id_, "t": NOW - int(age_h * H), "title": id_, "hint": [], "react": {"r60": r60} if r60 is not None else None,
-            "cls": {"markets": list(markets), "broad": broad, "cat": cat, "score": s, "impact": impact, "conf": 0.8, "relevant": True, "es": id_}}
+def test_reaction_against_the_normal_move():
+    import math
+    t0 = NOW - 2 * H
+    wave = lambda o: 100.0 * (1 + 0.002 * math.sin(o / MIN / 37.0))      # the market's usual swings
+    k, _ = fake_klines({"BTC-USD": lambda o: wave(o) * (1.01 if o >= t0 else 1.0)})   # +1 % right after the headline
+    p = Prices(k)
+    p.cover("BTC-USD", t0 - 25 * H, NOW)
+    r = measure(p, "BTC-USD", t0, NOW)
+    assert r["z60"] is not None and r["z60"] > 2               # far bigger than its normal hourly move
+    calm, _ = fake_klines({"BTC-USD": wave})
+    q = Prices(calm)
+    q.cover("BTC-USD", t0 - 25 * H, NOW)
+    assert abs(measure(q, "BTC-USD", t0, NOW)["z60"]) < 2       # an ordinary hour
+
+
+def item(id_, age_h, s, impact="high", cat="macro", markets=("BTC-USD",), broad=False, z60=None, tier=1, source=None, story=None, conf=0.8):
+    return {"id": id_, "t": NOW - int(age_h * H), "title": id_, "hint": [], "tier": tier, "source": source or f"src-{id_}",
+            "react": {"r60": z60, "z60": z60} if z60 is not None else None,
+            "cls": {"markets": list(markets), "broad": broad, "cat": cat, "score": s, "impact": impact, "conf": conf, "relevant": True,
+                    "story": story, "es": id_}}
+
+
+def one(x):
+    return score.stories([x])[0]
 
 
 def test_weights():
-    a = item("a", 6, 50)
-    assert abs(score.weight(a, "BTC-USD", NOW) - 0.5) < 1e-9               # one half-life
-    assert abs(score.weight(item("b", 0, 50, "low"), "BTC-USD", NOW) - 0.3) < 1e-9
-    assert abs(score.weight(item("c", 0, 50, r60=-0.4), "BTC-USD", NOW) - 0.3) < 1e-9   # the market went against it
-    assert score.weight(item("d", 0, 50, r60=0.02), "BTC-USD", NOW) == 0.3             # flat is no confirmation
-    assert score.weight(item("e", 0, 50, r60=0.3), "BTC-USD", NOW) == 1.0
-    assert score.weight(item("f", 0, 50, markets=(), broad=True), "ETH-USD", NOW) == 0.5   # the whole market, for an alt
+    assert abs(score.weight(one(item("a", 6, 50)), "BTC-USD", NOW) - 0.5) < 1e-9          # one half-life
+    assert abs(score.weight(one(item("b", 0, 50, "low")), "BTC-USD", NOW) - 0.3) < 1e-9
+    assert abs(score.weight(one(item("c", 0, 50, z60=-1.0)), "BTC-USD", NOW) - 0.3) < 1e-9   # the market went clearly against it
+    assert score.weight(one(item("d", 0, 50, z60=-0.3)), "BTC-USD", NOW) == 1.0           # a move within the noise is no verdict
+    assert score.weight(one(item("e", 0, 50, z60=1.2)), "BTC-USD", NOW) == 1.0
+    assert score.weight(one(item("f", 0, 50, markets=(), broad=True)), "ETH-USD", NOW) == 0.5   # the whole market, for an alt
+    assert score.weight(one(item("g", 0, 50, tier=2)), "BTC-USD", NOW) == 0.8               # crypto press
+    assert score.weight(one(item("h", 0, 50, tier=3)), "BTC-USD", NOW) == 0.5               # the rest
+
+
+def test_only_catalysts_count():
+    noise = [item("recap", 1, 60, cat="price"), item("misc", 1, 60, cat="other"), item("unsure", 1, 60, conf=0.4),
+             item("flat", 1, 5)]
+    irrelevant = item("ad", 1, 90)
+    irrelevant["cls"]["relevant"] = False
+    assert score.stories(noise + [irrelevant]) == []
+    assert score.reading(noise + [irrelevant], "BTC-USD", NOW)["net"] is None   # a recap of a rise never "predicts" it
+
+
+def test_one_event_counts_once():
+    xs = [item("cd", 2, 40, tier=2, source="CoinDesk", story="etf-approval"), item("rt", 1, 60, tier=1, source="Reuters", story="etf-approval"),
+          item("tb", 1.5, 50, tier=2, source="The Block", story="etf-approval")]
+    [st] = score.stories(xs)
+    assert st["id"] == "rt" and st["score"] == 60 and st["sources"] == 3   # the best source speaks for the story
+    assert st["t"] == NOW - 2 * H                                            # from when it first came out
+    w = score.weight(st, "BTC-USD", NOW)
+    assert abs(w - 1.5 * 0.5 ** (2 / 6)) < 1e-9                               # three outlets: x1.5
+    assert score.reading(xs, "BTC-USD", NOW)["n"] == 1
+    many = [item(f"s{i}", 0, 40, source=f"S{i}", story="x") for i in range(6)]
+    assert score.weight(one(many[0]), "BTC-USD", NOW) == 1.0 and score.weight(score.stories(many)[0], "BTC-USD", NOW) == 1.75   # capped
 
 
 def test_reading_blend_and_labels():
@@ -118,30 +164,27 @@ def test_whipsaw_and_alts():
     assert score.reading(xs, "BTC-USD", NOW)["whipsaw"]
     assert not score.reading([item("a", 1, 70), item("b", 2, -10)], "BTC-USD", NOW)["whipsaw"]
     eth = score.reading(xs, "ETH-USD", NOW)
-    assert eth["net"] is None and eth["own"] == 1                     # an alt needs a couple of its own headlines
+    assert eth["net"] is None and eth["own"] == 1                     # an alt needs a couple of its own stories
     eth = score.reading(xs + [item("d", 1, 40, markets=("ETH-USD",))], "ETH-USD", NOW)
     assert eth["net"] is not None and eth["own"] == 2
-    skip = item("z", 1, 90)
-    skip["cls"]["relevant"] = False
-    assert score.reading([skip], "BTC-USD", NOW)["net"] is None
 
 
 def test_following_and_scoreboard():
-    xs = [item(f"m{i}", 1, 50, cat="macro", r60=0.4) for i in range(3)] + [item(f"r{i}", 1, -50, cat="regulation", r60=0.2) for i in range(3)]
+    xs = [item(f"m{i}", 1, 50, cat="macro", z60=0.4) for i in range(3)] + [item(f"r{i}", 1, -50, cat="regulation", z60=0.2) for i in range(3)]
     f = score.following(xs, NOW)
-    assert f[0] == {"cat": "macro", "follow": 0.4, "n": 3} and f[1]["follow"] == -0.2
+    assert f[0] == {"cat": "macro", "follow": 0.4, "n": 3} and f[1]["follow"] == -0.2   # in multiples of the normal move
     rows = [{"market": "BTC-USD", "net": 30, "ret4": 0.5}, {"market": "BTC-USD", "net": -40, "ret4": 0.2},
             {"market": "BTC-USD", "net": 5, "ret4": -0.1}]
     assert score.scoreboard(rows)["BTC-USD"] == {"readings": 3, "called": 2, "hits": 1, "up": 2}
 
 
 def test_as_of_hides_later_reactions():
-    xs = [item("a", 0.5, 50, r60=0.3), item("b", 3, 50, r60=0.3)]
+    xs = [item("a", 0.5, 50, z60=0.3), item("b", 3, 50, z60=0.3)]
     xs[0]["t"] = NOW - 30 * MIN
     known = as_of(xs, NOW)
-    assert known[0]["react"]["r60"] is None and known[1]["react"]["r60"] == 0.3
-    assert xs[0]["react"]["r60"] == 0.3                      # the original is untouched
-    assert as_of(xs, NOW - H) == [xs[1]] or as_of(xs, NOW - H)[0]["id"] == "b"
+    assert known[0]["react"]["r60"] is None and known[0]["react"]["z60"] is None and known[1]["react"]["z60"] == 0.3
+    assert xs[0]["react"]["z60"] == 0.3                      # the original is untouched
+    assert [x["id"] for x in as_of(xs, NOW - H)] == ["b"]
 
 
 def tool_answer(items):
@@ -164,17 +207,27 @@ def test_haiku_answers_are_checked():
     assert got["a"]["markets"] == ["BTC-USD"] and got["a"]["score"] == 100 and got["a"]["conf"] == 1.0
     assert sent[0]["tool_choice"] == {"type": "tool", "name": "classify_headlines"} and "ETF inflows" in sent[0]["messages"][0]["content"]
 
+    def post_story(payload):
+        sent.append(payload)
+        return tool_answer([{"id": "a", "markets": ["BTC"], "broad": False, "category": "etf", "score": 40, "impact": "medium",
+                             "confidence": 0.8, "relevant": True, "story": "Spot ETF: Record Inflows!", "es": "x"}])
+    got = Haiku("k", post=post_story).classify([{"id": "a", "title": "ETF inflows", "source": "S", "summary": "Funds took in $1B."}],
+                                               [("spot-etf-record-inflows", "ETF inflows hit a record")])
+    text = sent[-1]["messages"][0]["content"]
+    assert "spot-etf-record-inflows: ETF inflows hit a record" in text and "Funds took in $1B." in text
+    assert got["a"]["story"] == "spot-etf-record-inflows"
+
     def post_usage(payload):
         return {**tool_answer([]), "usage": {"input_tokens": 1200, "output_tokens": 300}}
     hk = Haiku("k", post=post_usage)
     hk.classify([{"id": "a", "title": "x", "source": "S"}])
-    assert hk.tokens == [1200, 300]                           # what it costs, for the service's log
+    assert hk.tokens == [2400, 600]                           # what it costs (an empty answer is asked again once)
 
 
 class FakeModel:
     model = "fake"
 
-    def classify(self, items):
+    def classify(self, items, stories=()):
         return {i["id"]: {"markets": ["BTC-USD"], "broad": False, "cat": "etf", "score": 60, "impact": "high", "conf": 0.9,
                           "relevant": True, "es": "es: " + i["title"], "model": "fake"} for i in items}
 
@@ -254,11 +307,54 @@ def test_old_reactions_are_measured_again(tmp_path):
     s.set_react(headline_id("A headline about bitcoin"), {"m": "BTC-USD", "p0": 1, "r15": 0.0, "r60": 0.0, "done": True})
     s.add_reading(NOW - H, "BTC-USD", 20, 100)
     s.commit()
+    s.db.execute("UPDATE items SET cls = '{}'")
     s.db.execute("PRAGMA user_version = 0")   # as the first version left it (last-trade price)
     s.db.commit(); s.close()
     s = Store(db)
-    assert s.window(NOW - 72 * H)[0]["react"] is None and s.last_reading_t() is None
-    assert s.db.execute("PRAGMA user_version").fetchone()[0] == 1
+    row = s.window(NOW - 72 * H)[0]
+    assert row["react"] is None and row["cls"] is None and s.last_reading_t() is None   # measured and classified again
+    assert row["tier"] == 2 and row["summary"] == "" and s.db.execute("PRAGMA user_version").fetchone()[0] == 2
     s.set_react(headline_id("A headline about bitcoin"), {"done": True}); s.commit(); s.close()
     assert Store(db).window(NOW - 72 * H)[0]["react"] == {"done": True}   # only once
     sqlite3.connect(db).close()
+
+
+def test_feeds_no_longer_configured_go():
+    s = Store(":memory:")
+    s.add([h("From an old search", NOW - H, feed="gn-old"), h("From CoinDesk", NOW - H, feed="coindesk")], NOW, 72 * H)
+    assert s.sync_feeds({"coindesk": 2, "reuters": 1}) == 1
+    [row] = s.window(NOW - 72 * H)
+    assert row["feed"] == "coindesk" and row["tier"] == 2
+
+
+def test_a_failed_batch_loses_only_its_own():
+    import smartflow.news.classify as cl
+    calls = []
+
+    def post(payload):
+        calls.append(payload)
+        if len(calls) == 1:
+            return {"content": [], "stop_reason": "max_tokens"}      # the first batch is cut with nothing usable
+        ids = [json.loads(line)["id"] for line in payload["messages"][0]["content"].splitlines()[1:]]
+        return tool_answer([{"id": i, "markets": [], "broad": True, "category": "macro", "score": 20, "impact": "medium",
+                             "confidence": 0.7, "relevant": True, "story": i, "es": i} for i in ids])
+    hk = Haiku("k", post=post)
+    items = [{"id": f"h{i}", "title": f"t{i}", "source": "S"} for i in range(cl.BATCH + 3)]
+    got = hk.classify(items)
+    assert len(calls) == 2 and set(got) == {f"h{i}" for i in range(cl.BATCH, cl.BATCH + 3)}
+    assert hk.errors and "max_tokens" in hk.errors[0]
+
+
+def test_items_left_out_are_asked_again():
+    calls = []
+
+    def post(payload):
+        calls.append(payload)
+        ids = [json.loads(line)["id"] for line in payload["messages"][0]["content"].splitlines()[1:]]
+        answer = ids[:1] if len(calls) == 1 else ids                 # first it answers one and shortens the rest
+        return tool_answer([{"id": i, "markets": [], "broad": True, "category": "macro", "score": 20, "impact": "medium",
+                             "confidence": 0.7, "relevant": True, "story": i, "es": i} for i in answer])
+    hk = Haiku("k", post=post)
+    got = hk.classify([{"id": f"h{i}", "title": f"t{i}", "source": "S"} for i in range(5)])
+    assert set(got) == {f"h{i}" for i in range(5)} and len(calls) == 2
+    assert "return exactly 4 items" in calls[1]["messages"][0]["content"] and not hk.errors
