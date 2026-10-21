@@ -7,13 +7,14 @@ import "./city.css";
 import type { Lang } from "../i18n";
 import { Icon, Mark } from "../components/ui";
 import { nowDecision, stats, type AgentView, type FeedItem, type Status } from "./agents";
-import { CityEngine, STATUS_COLOR, drawIcon, type Sel } from "./engine";
+import { CityEngine, SCREEN_BOOK, SCREEN_CHART, STATUS_COLOR, drawIcon, type Sel } from "./engine";
 import type { Look } from "./look";
 import { spritesFor } from "./sprites";
-import { CITY_MARKETS, CityStore } from "./store";
+import { BOOK_MARKET, CITY_MARKETS, CityStore, type Book } from "./store";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
 import { BUILDINGS } from "./world";
 import { PortfolioView, livePosition } from "./portfolio";
+import { TradingViewChart } from "./tradingview";
 
 type Panel = "agents" | "ranks" | "feed" | "markets" | "guide";
 
@@ -28,6 +29,11 @@ const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-r
 const isSmall = () => window.matchMedia("(max-width: 760px)").matches;
 
 const wantsMe = () => /[?&]me\b/.test(location.hash);
+// the markets the full chart offers (the ones agents can trade)
+const CHART_MARKETS = [...CITY_MARKETS, "NEAR-USD", "ZEC-USD"];
+// TradingView's screen chart is laid out at this many CSS px per world px and scaled with the map: zooming only
+// transforms it (no new layout inside the iframe), and its text stays readable from the default zoom
+const TV_K = 2.5;
 
 function readDeepLink(): string | null {
   const m = /[?&]agent=([\w-]+)/.exec(location.hash);
@@ -46,6 +52,10 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
   const [panel, setPanel] = useState<Panel | null>(null);
   const [me, setMe] = useState(wantsMe);   // "My agent" open over the map
   const [details, setDetails] = useState(false);
+  const [chart, setChart] = useState<string | null>(null);   // the market whose full chart is open
+  const [showTv, setShowTv] = useState(false);               // TradingView on the exchange's screen (after the city)
+  const tvScreen = useRef<HTMLDivElement>(null);
+  const bookScreen = useRef<HTMLDivElement>(null);
   const [welcome, setWelcome] = useState(() => { try { return localStorage.getItem("sf-city-welcome") !== "1"; } catch { return true; } });
   const [, force] = useState(0);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -64,8 +74,25 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
     if (!ready || !canvas.current) return;
     const e = new CityEngine(canvas.current, {
       getAgents: () => store.agents, getPrices: () => store.prices, getHistory: (m) => store.hist[m] ?? [],
-      getHeadline: () => headline.current, getWeather: () => weather.current, reducedMotion: !!reduced,
+      getHeadline: () => headline.current, getWeather: () => weather.current, reducedMotion: !!reduced, getBook: () => store.book,
       onSelect: (s) => { setSel(s); setDetails(false); if (s && isSmall()) setPanel(null); },
+      onChart: (m) => setChart(m),
+      // TradingView's chart and Strike's book follow the screen as the map moves: one transform each, written only
+      // when it changes
+      onScreen: (x, y, z) => {
+        const c = canvas.current;
+        if (!c) return;
+        for (const [el, r] of [[tvScreen.current, SCREEN_CHART], [bookScreen.current, SCREEN_BOOK]] as const) {
+          if (!el) continue;
+          const sx = x + (r.x - SCREEN_CHART.x) * z, sy = y + (r.y - SCREEN_CHART.y) * z;
+          const k = `${sx.toFixed(1)},${sy.toFixed(1)},${z.toFixed(4)}`;
+          if (el.dataset.k === k) continue;
+          el.dataset.k = k;
+          const on = sx + r.w * z > 0 && sy + r.h * z > 0 && sx < c.clientWidth && sy < c.clientHeight;
+          el.style.transform = `translate3d(${sx}px, ${sy}px, 0) scale(${z / TV_K})`;
+          el.style.visibility = on ? "" : "hidden";
+        }
+      },
     });
     engine.current = e;
     e.start();
@@ -73,6 +100,12 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
     if (deep && store.agent(deep)) { e.select({ kind: "agent", id: deep }, false); setSel({ kind: "agent", id: deep }); }
     return () => { e.stop(); engine.current = null; };
   }, [ready, store]);
+  // TradingView loads once the city is up and the browser has a moment: the city comes first
+  useEffect(() => {
+    if (!ready) return;
+    const id = window.setTimeout(() => setShowTv(true), 1200);
+    return () => clearTimeout(id);
+  }, [ready]);
 
   // keep the followed agent visible beside the side panel (desktop) or above the bottom card (mobile)
   useEffect(() => {
@@ -158,8 +191,9 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
           {["BTC-USD", "ETH-USD", "SOL-USD"].map((m) => {
             const p = store.prices[m];
             return p ? (
-              <li key={m}><span className="tk">{ticker(m)}</span><span className="num">{fmtPrice(p.price, lang)}</span>
-                <span className={`num ${p.change >= 0 ? "pos" : "neg"}`}>{fmtPct(p.change, lang)}</span></li>
+              <li key={m}><button type="button" className="city-tk-btn" title={T.chart.open} onClick={() => setChart(m)}>
+                <span className="sr-only">{T.chart.open}: </span><span className="tk">{ticker(m)}</span><span className="num">{fmtPrice(p.price, lang)}</span>
+                <span className={`num ${p.change >= 0 ? "pos" : "neg"}`}>{fmtPct(p.change, lang)}</span></button></li>
             ) : null;
           })}
         </ul>
@@ -178,6 +212,18 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
       <div className="city-stage">
         <canvas ref={canvas} className="city-canvas" tabIndex={0} role="application" aria-roledescription="map"
                 aria-label={T.canvas(totals.live, totals.inTrade)} />
+        {ready && showTv && (
+          <div ref={tvScreen} className="city-tv" aria-hidden="true"
+               style={{ width: SCREEN_CHART.w * TV_K, height: SCREEN_CHART.h * TV_K, visibility: "hidden" }}>
+            <TradingViewChart market="BTC-USD" lang={lang} title={T.chart.screen} />
+          </div>
+        )}
+        {ready && store.book && (
+          <div ref={bookScreen} className="city-book" aria-hidden="true"
+               style={{ width: SCREEN_BOOK.w * TV_K, height: SCREEN_BOOK.h * TV_K, visibility: "hidden" }}>
+            <BookRows book={store.book} lang={lang} />
+          </div>
+        )}
 
         {!me && <SwarmScale T={T} n={totals.total} />}
 
@@ -226,6 +272,9 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
             </div>
             <p className="muted city-card-text">{T.buildings[bld.id]}</p>
             <p className="small faint">{T.building.agentsHere(store.agents.filter((a) => a.target === bld.id && !a.path.length).length)}</p>
+            {(bld.market || bld.id === "exchange") && (
+              <button type="button" className="btn btn-ghost btn-block city-card-chart" onClick={() => setChart(bld.market ?? "BTC-USD")}>{T.chart.open}</button>
+            )}
           </aside>
         )}
 
@@ -271,6 +320,7 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
           <div className="actions"><button type="button" className="btn btn-primary btn-lg btn-block" data-autofocus onClick={closeWelcome}>{T.welcome.enter}</button></div>
         </Modal>
       )}
+      {chart && <ChartModal T={T} lang={lang} market={chart} onMarket={setChart} onClose={() => setChart(null)} />}
       {details && agent && <DetailsModal T={T} lang={lang} a={agent} marks={marksOf(store.prices)} onClose={() => setDetails(false)} />}
     </div>
   );
@@ -670,6 +720,53 @@ function DetailsModal({ T, lang, a, marks, onClose }: { T: CityText; lang: Lang;
 }
 
 /** Native modal dialog: the browser traps focus and makes the page behind inert; Esc and a backdrop click close it. */
+/** Strike's real order book on the exchange's screen: the 4 best asks over the 4 best bids, the spread between them;
+ *  each bar is a level's size against the biggest shown, and slides to every new reading. */
+function BookRows({ book, lang }: { book: Book; lang: Lang }) {
+  const asks = book.asks.slice(0, 4), bids = book.bids.slice(0, 4);
+  if (!asks.length || !bids.length) return null;
+  const top = Math.max(...asks.map((l) => l[1]), ...bids.map((l) => l[1]));
+  const loc = lang === "es" ? "es-ES" : "en-US";
+  const size = (q: number) => q.toLocaleString(loc, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  // rows keyed by their place (not their price): the same row takes each new reading, so its bar slides
+  const row = ([p, q]: [number, number], side: "ask" | "bid", i: number) => (
+    <div key={`${side}${i}`} className={`bk-row ${side}`}>
+      <span className="bk-bar" style={{ transform: `scaleX(${q / top})` }} />
+      <span className="bk-px">{fmtPrice(p, lang)}</span><span className="bk-q">{size(q)}</span>
+    </div>
+  );
+  const spread = asks[0][0] - bids[0][0];
+  return (
+    <div className="bk">
+      <div className="bk-head"><span>Strike</span><span>{BOOK_MARKET}</span></div>
+      {[...asks].reverse().map((l, i) => row(l, "ask", i))}
+      <div className="bk-mid"><span>{fmtPrice((asks[0][0] + bids[0][0]) / 2, lang)}</span><span>spread {spread.toLocaleString(loc, { maximumFractionDigits: 2 })}</span></div>
+      {bids.map((l, i) => row(l, "bid", i))}
+    </div>
+  );
+}
+
+/** TradingView's full chart of a market, over the city: drawing tools, indicators, timeframes; tabs for the markets. */
+function ChartModal({ T, lang, market, onMarket, onClose }: { T: CityText; lang: Lang; market: string; onMarket: (m: string) => void; onClose: () => void }) {
+  return (
+    <Modal onClose={onClose} labelledBy="chart-title" className="city-chart">
+      <div className="chart-head">
+        <h2 id="chart-title">{ticker(market)} · {T.chart.title}</h2>
+        <div className="chart-tabs" role="group" aria-label={T.chart.markets}>
+          {CHART_MARKETS.map((m) => (
+            <button key={m} type="button" aria-pressed={m === market} onClick={() => onMarket(m)}>{ticker(m)}</button>
+          ))}
+        </div>
+        <button type="button" className="icon-btn" aria-label={T.card.close} data-autofocus onClick={onClose}><Icon.close /></button>
+      </div>
+      <div className="chart-body">
+        <TradingViewChart market={market} lang={lang} full title={T.chart.frame.replace("{m}", ticker(market))} />
+      </div>
+      <p className="chart-note">{T.chart.note} <a href="https://www.tradingview.com/" target="_blank" rel="noopener nofollow">TradingView<span className="sr-only"> (opens in a new tab)</span></a></p>
+    </Modal>
+  );
+}
+
 function Modal({ onClose, labelledBy, className, children }: { onClose: () => void; labelledBy: string; className?: string; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {

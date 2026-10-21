@@ -232,3 +232,54 @@
 .city-tag.testnet { color: #93c5fd; background: rgba(147, 197, 253, .10); border: 1px solid rgba(147, 197, 253, .35); }
 .city-tag.test { margin-left: 6px; color: #93c5fd; background: rgba(147, 197, 253, .10); border: 1px solid rgba(147, 197, 253, .35); }
 .city-card-status .city-tag + .city-tag { margin-left: 4px; }
+
+/* ---------- TradingView (city/tradingview.tsx) ---------- */
+/* on the exchange's screen: laid over the map, moved and scaled with it (CityPage onScreen); presses go through to the
+   map, which opens the full chart */
+.city-tv { position: absolute; left: 0; top: 0; z-index: 1; transform-origin: 0 0; pointer-events: none; overflow: hidden;
+  background: #020806; will-change: transform; contain: strict; }
+.city-tv .tradingview-widget-container, .city-tv iframe { display: block; width: 100%; height: 100%; border: 0; }
+/* the prices at the top open their chart */
+.city-tk-btn { all: unset; display: flex; gap: 6px; align-items: baseline; cursor: pointer; border-radius: 4px; }
+.city-tk-btn:hover .tk { color: var(--primary); }
+.city-tk-btn:focus-visible { box-shadow: var(--focus); }
+.city-card-chart { margin-top: 10px; }
+/* the full chart, with TradingView's tools */
+.city-dialog.city-chart { width: min(1280px, calc(100% - 32px)); max-width: none; height: min(860px, calc(100dvh - 32px)); }
+.city-chart .city-dialog-inner { height: 100%; padding: 0; display: flex; flex-direction: column; }
+.chart-head { display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 18px; border-bottom: 1px solid var(--border-soft); }
+.chart-head h2 { font-size: 16px; white-space: nowrap; }
+.chart-tabs { display: flex; gap: 4px; margin-left: auto; overflow-x: auto; scrollbar-width: none; }
+.chart-tabs button { font: inherit; font-size: 13px; font-weight: 600; color: var(--text-muted); background: transparent;
+  border: 1px solid transparent; border-radius: var(--radius-sm); min-height: 34px; padding: 0 10px; cursor: pointer; white-space: nowrap; }
+.chart-tabs button:hover { color: var(--text); background: var(--surface-3); }
+.chart-tabs button[aria-pressed="true"] { color: var(--primary); background: var(--primary-10); border-color: var(--primary-30); }
+.chart-tabs button:focus-visible { box-shadow: var(--focus); }
+.chart-body { flex: 1; min-height: 0; background: #0a0a0a; }
+.chart-body .tradingview-widget-container, .chart-body iframe { display: block; width: 100%; height: 100%; border: 0; }
+.chart-note { padding: 8px 18px 10px; font-size: 12px; color: var(--text-faint); border-top: 1px solid var(--border-soft); }
+@media (max-width: 760px) {
+  .city-dialog.city-chart { width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
+  .chart-head { flex-wrap: wrap; gap: 6px 12px; padding: 6px 6px 8px 14px; }
+  .chart-tabs { order: 3; width: 100%; margin-left: 0; }
+  .chart-tabs button { min-height: 40px; }
+  .chart-head .icon-btn { margin-left: auto; }
+}
+/* Strike's real order book beside it (BookRows): same transform as the chart; bars slide to each new reading */
+.city-book { position: absolute; left: 0; top: 0; z-index: 1; transform-origin: 0 0; pointer-events: none; overflow: hidden;
+  background: #020806; will-change: transform; contain: strict; }
+.bk { display: grid; grid-template-rows: repeat(10, 1fr); height: 100%; padding: 2px 6px; font-family: var(--mono);
+  font-size: 10px; line-height: 1; font-variant-numeric: tabular-nums; }
+.bk-head, .bk-mid, .bk-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; position: relative; }
+.bk-head { color: var(--text-faint); font-size: 9px; letter-spacing: .04em; }
+.bk-head span:first-child { color: var(--primary); font-weight: 700; }
+.bk-mid { color: var(--text); font-weight: 700; border-top: 1px solid rgba(78, 250, 176, .15); border-bottom: 1px solid rgba(78, 250, 176, .15); }
+.bk-mid span:last-child { color: var(--text-faint); font-weight: 600; font-size: 9px; }
+.bk-row span { position: relative; }
+.bk-bar { position: absolute !important; inset: 1px 0; transform-origin: right center; transition: transform .6s cubic-bezier(.2, .8, .2, 1); }
+.bk-row.ask .bk-bar { background: rgba(244, 63, 94, .22); }
+.bk-row.bid .bk-bar { background: rgba(78, 250, 176, .2); }
+.bk-row.ask .bk-px { color: #fb7185; }
+.bk-row.bid .bk-px { color: var(--primary); }
+.bk-q { color: #d4d4d4; }
+@media (prefers-reduced-motion: reduce) { .bk-bar { transition: none; } }

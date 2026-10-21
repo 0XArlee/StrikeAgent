@@ -2,17 +2,27 @@
 import type { AgentView, Prices, Status } from "./agents";
 import { isActive, step } from "./agents";
 import { spritesFor } from "./sprites";
+import type { Book } from "./store";
 import { BUILDINGS, FOUNTAIN, H, SCREEN, TILE, W, footprint, renderGlow, renderLight, renderStatic } from "./world";
 
 export type Sel = { kind: "agent" | "building"; id: string };
+type Hit = Sel | { kind: "screen"; id: string };
+
+/** The chart on the exchange's screen (world px): TradingView's live chart is laid over it (city/tradingview.tsx). */
+export const SCREEN_CHART = { x: SCREEN.x + 2, y: SCREEN.y + 2, w: Math.round(SCREEN.w * 0.64) - 2, h: SCREEN.h - 16 };
+/** And the order book beside it: Strike's real BTC-USD book (the city lays its prices and sizes over it). */
+export const SCREEN_BOOK = { x: SCREEN.x + Math.round(SCREEN.w * 0.66), y: SCREEN.y + 2, w: SCREEN.w - Math.round(SCREEN.w * 0.66) - 2, h: SCREEN.h - 16 };
 
 export interface EngineOpts {
   getAgents: () => AgentView[];
   getPrices: () => Prices;
   getHistory: (market: string) => number[];
   getHeadline: () => string;
+  getBook?: () => Book | null;                         // Strike's order book for the exchange's screen
   getWeather: () => 0 | 1 | 2;   // calm · breezy · storm
   onSelect: (sel: Sel | null) => void;
+  onChart?: (market: string) => void;                  // the exchange's screen was pressed: open that market's chart
+  onScreen?: (x: number, y: number, zoom: number) => void;   // every frame: where SCREEN_CHART's corner is (CSS px)
   reducedMotion: boolean;
   interactive?: boolean;                               // false: a picture of the city (landing): no input at all
   view?: { cx: number; cy: number; zoom: number };     // fixed camera for wide frames (desktop)
@@ -72,6 +82,7 @@ export class CityEngine {
   private t0 = performance.now();
   private placed: { x: number; y: number; w: number; h: number }[] = [];   // bubbles already drawn this frame
   private few = true;
+  private bookW = new Array<number>(10).fill(0);   // the book's bars (5 asks, 5 bids), easing to each new reading
 
   constructor(private canvas: HTMLCanvasElement, private o: EngineOpts) {
     this.ctx = canvas.getContext("2d", { alpha: false })!;
@@ -181,7 +192,10 @@ export class CityEngine {
     const up = ((e: PointerEvent) => {
       this.pointers.delete(e.pointerId);
       if (this.pointers.size < 2) this.pinch = null;
-      if (this.drag && !this.drag.moved) this.select(this.pick(e.offsetX, e.offsetY));
+      if (this.drag && !this.drag.moved) {
+        const hit = this.pick(e.offsetX, e.offsetY);
+        if (hit?.kind === "screen") this.o.onChart?.(hit.id); else this.select(hit);
+      }
       this.drag = null;
       c.style.cursor = "grab";
     }) as EventListener;
@@ -204,7 +218,7 @@ export class CityEngine {
   }
   private unbind() { for (const [t, e, f] of this.handlers) t.removeEventListener(e, f); this.handlers = []; }
 
-  private pick(sx: number, sy: number): Sel | null {
+  private pick(sx: number, sy: number): Hit | null {
     const w = this.toWorld(sx, sy);
     let best: string | null = null, bd = 22 / this.zoom + 6;   // generous hit area, at least ~22 screen px
     for (const a of this.o.getAgents()) {
@@ -212,6 +226,7 @@ export class CityEngine {
       if (d < bd) { bd = d; best = a.id; }
     }
     if (best) return { kind: "agent", id: best };
+    if (this.o.onChart && w.x >= SCREEN.x && w.x < SCREEN.x + SCREEN.w && w.y >= SCREEN.y && w.y < SCREEN.y + SCREEN.h) return { kind: "screen", id: "BTC-USD" };
     for (const b of BUILDINGS) {
       const f = footprint(b);
       if (w.x >= f.x0 * TILE && w.x < f.x1 * TILE && w.y >= f.y0 * TILE && w.y < f.y1 * TILE) return { kind: "building", id: b.id };
@@ -257,7 +272,8 @@ export class CityEngine {
     g.drawImage(this.staticLayer, 0, 0);
     const time = this.o.reducedMotion ? 0 : (now - this.t0) / 1000;
     this.drawFountain(g, time);
-    this.drawScreen(g, time);
+    this.drawScreen(g, time, dt);
+    if (this.o.onScreen) { const p = this.toScreen(SCREEN_CHART.x, SCREEN_CHART.y); this.o.onScreen(p.x, p.y, this.zoom); }
     this.drawCars(g, dt);
     if (this.selected?.kind === "building") this.drawBuildingFocus(g, this.selected.id, time);
     const sorted = [...agents].sort((a, b) => a.y - b.y);
@@ -322,7 +338,7 @@ export class CityEngine {
     g.globalAlpha = 1;
   }
 
-  private drawScreen(g: CanvasRenderingContext2D, t: number) {
+  private drawScreen(g: CanvasRenderingContext2D, t: number, dt: number) {
     const { x, y, w, h } = SCREEN;
     g.fillStyle = "#020806"; g.fillRect(x, y, w, h);
     g.strokeStyle = "rgba(78,250,176,0.6)"; g.lineWidth = 1; g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
@@ -347,13 +363,21 @@ export class CityEngine {
       g.textBaseline = "top"; g.textAlign = "left";
       g.fillText("BTC-USD · 48H", x + 6, y + 4);
     }
-    // order book (right third): asks above, bids below, gently animated
+    // order book (right third): Strike's real one, asks above and bids below, the best ones in the middle; each bar is
+    // a level's size against the biggest shown, and eases to every new reading (store.refreshBook, every 2.5 s)
     const bx = x + w * 0.66, bw = w * 0.32;
+    const book = this.o.getBook?.();
+    const want = new Array<number>(10).fill(0);
+    if (book?.asks.length && book.bids.length) {
+      const top = Math.max(...book.asks.slice(0, 5).map((l) => l[1]), ...book.bids.slice(0, 5).map((l) => l[1]));
+      for (let i = 0; i < 5; i++) { want[i] = (book.asks[i]?.[1] ?? 0) / top; want[5 + i] = (book.bids[i]?.[1] ?? 0) / top; }
+    }
+    const k = this.o.reducedMotion ? 1 : Math.min(1, dt * 5);
+    for (let i = 0; i < 10; i++) this.bookW[i] += (want[i] - this.bookW[i]) * k;
     for (let i = 0; i < 5; i++) {
-      const a = 0.3 + 0.7 * Math.abs(Math.sin(t * 0.7 + i * 1.3));
-      const b = 0.3 + 0.7 * Math.abs(Math.cos(t * 0.6 + i * 1.7));
-      g.fillStyle = "rgba(244,63,94,0.75)"; g.fillRect(bx + bw - a * bw * 0.9, y + 4 + i * 4, a * bw * 0.9, 3);
-      g.fillStyle = "rgba(78,250,176,0.75)"; g.fillRect(bx + bw - b * bw * 0.9, y + chartH - 7 - i * 4 + 4, b * bw * 0.9, 3);
+      const a = this.bookW[i] * bw * 0.9, b = this.bookW[5 + i] * bw * 0.9;
+      g.fillStyle = "rgba(244,63,94,0.75)"; g.fillRect(bx + bw - a, y + 4 + (4 - i) * 4, a, 3);
+      g.fillStyle = "rgba(78,250,176,0.75)"; g.fillRect(bx + bw - b, y + chartH - 3 - (4 - i) * 4, b, 3);
     }
     // news strip
     const ny = y + h - 12;

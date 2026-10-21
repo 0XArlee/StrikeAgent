@@ -80,6 +80,7 @@ const en = {
       ["Why is an agent standing still?", "Because it is waiting for its setup. Smart Flow only looks at the market at each candle close (every 4 hours by default), so in between there is nothing to do. Agents only walk when something real happens: a candle close sends them to the Signal Lab, an order to the Exchange, a closed trade to the Cafe (or Liquidation Alley if its stop was hit), a rejected signal to the Risk Office."],
       ["What do the buildings mean?", "Plaza: agents waiting for a setup. Signal Lab: analysis at each candle close. Market towers: agents with an open trade in that market. Strike Exchange: where an agent goes when it sends an order. Risk Office: where it goes when the risk engine rejects a signal. Funding Cafe: after a trade closes; Liquidation Alley: when it closed at its stop. Agent Homes: paused or offline agents, and those waiting for a deposit."],
       ["Why does an agent say \"Waiting for a deposit\"?", "Its owner connected it to Strike, but the Strike account has no balance yet. It sends no order and pays nothing; as soon as a deposit arrives it takes the next signals by itself, without restarting anything. A deposit never counts as part of its result."],
+      ["What is the chart on the exchange?", "TradingView's live chart of BTC. Press the screen (or a price at the top, or a market tower) to open it big, with TradingView's drawing tools, indicators and timeframes, for any market of the city. It is only for you to look and analyse: the agents never read it."],
       ["What does the fountain show?", "The colour follows BTC funding on Strike: mint when longs pay shorts, red when shorts pay longs."],
       ["Are these agents real?", "Yes. Smart Flow's own agents run 24/7 on paper with Strike prices: the two strategies users can pick (Smart Flow and Smart Flow Pyramid) and the variants under test. The others belong to Strike users who chose to show theirs; the ones labelled Real trade their own Strike account. Everything they show comes from their journals and, for real ones, from their Strike account."],
       ["Can I add my agent?", "Yes: press \"Put your own agent in the city\" in Ranks, connect your Cardano wallet, make your character, pick the strategy and sign Strike's message. Your agent trades your own Strike account with a stop on every trade; tick \"Show my agent in EdgeCraft-StrikeCity\" to appear here with the name you choose."],
@@ -97,6 +98,14 @@ const en = {
   zoomIn: "Zoom in", zoomOut: "Zoom out", recenter: "Recenter", canvas: (live: number, trade: number) =>
     `Map of EdgeCraft-StrikeCity with ${live} agents online, ${trade} in a trade. Use the arrow keys to move and + or − to zoom. The Agents and Feed panels list the same information.`,
   building: { agentsHere: (n: number) => `${n} agents here`, close: "Close" },
+  chart: {
+    title: "live chart",
+    open: "Open the live chart",
+    markets: "Markets",
+    screen: "TradingView chart of BTC on the exchange's screen",
+    frame: "TradingView chart of {m}",
+    note: "TradingView's live chart, on 4h candles like the agents. Its drawing tools, indicators and timeframes are only for you to analyse: nothing you do here changes what the agents do.",
+  },
   buildings: {
     lab: "Agents come here at each candle close to analyse the charts: range, displacement, volume and the daily trend.",
     btc: "Agents with an open BTC-USD trade stand here. The sign shows the live Strike price.",
@@ -242,6 +251,7 @@ const es: CityText = {
       ["¿Por qué un agente está quieto?", "Porque está esperando su setup. Smart Flow solo mira el mercado al cierre de cada vela (cada 4 horas por defecto), así que entre medias no hay nada que hacer. Los agentes solo caminan cuando pasa algo real: el cierre de una vela los lleva al Signal Lab, una orden al Exchange, una operación cerrada al Cafe (o al Liquidation Alley si saltó su stop) y una señal rechazada a la Risk Office."],
       ["¿Qué significan los edificios?", "Plaza: agentes esperando un setup. Signal Lab: el análisis al cierre de cada vela. Torres de mercado: agentes con una operación abierta en ese mercado. Strike Exchange: adonde va un agente cuando envía una orden. Risk Office: adonde va cuando el motor de riesgo rechaza una señal. Funding Cafe: tras cerrar una operación; Liquidation Alley: si se cerró en su stop. Agent Homes: agentes en pausa o desconectados, y los que esperan un depósito."],
       ["¿Por qué un agente dice \"Esperando un depósito\"?", "Su dueño lo conectó a Strike, pero la cuenta de Strike todavía no tiene saldo. No envía órdenes ni paga nada; en cuanto llega un depósito toma las siguientes señales él solo, sin reiniciar nada. Un depósito nunca cuenta como parte de su resultado."],
+      ["¿Qué es el gráfico de la bolsa?", "El gráfico en vivo de BTC de TradingView. Pulsa la pantalla (o un precio de arriba, o la torre de un mercado) para abrirlo en grande, con las herramientas de dibujo, los indicadores y las temporalidades de TradingView, en cualquier mercado de la ciudad. Es solo para mirar y analizar: los agentes nunca lo leen."],
       ["¿Qué muestra la fuente?", "El color sigue el funding de BTC en Strike: menta cuando los largos pagan a los cortos, rojo cuando los cortos pagan a los largos."],
       ["¿Son reales estos agentes?", "Sí. Los agentes de Smart Flow funcionan 24/7 en papel con precios de Strike: las dos estrategias que pueden elegir los usuarios (Smart Flow y Smart Flow Pyramid) y las variantes en prueba. Los demás son de usuarios de Strike que han querido mostrar el suyo; los que llevan la etiqueta Real operan su propia cuenta de Strike. Todo lo que muestran sale de sus diarios y, en los reales, de su cuenta de Strike."],
       ["¿Puedo añadir mi agente?", "Sí: pulsa \"Pon tu propio agente en la ciudad\" en Ranking, conecta tu wallet de Cardano, crea tu personaje, elige la estrategia y firma el mensaje de Strike. Tu agente opera tu propia cuenta de Strike con un stop en cada operación; marca \"Mostrar mi agente en EdgeCraft-StrikeCity\" para aparecer aquí con el nombre que elijas."],
@@ -259,6 +269,14 @@ const es: CityText = {
   zoomIn: "Acercar", zoomOut: "Alejar", recenter: "Centrar", canvas: (live: number, trade: number) =>
     `Mapa de EdgeCraft-StrikeCity con ${live} agentes en línea, ${trade} en operación. Usa las flechas para moverte y + o − para el zoom. Los paneles Agentes y Actividad muestran la misma información.`,
   building: { agentsHere: (n: number) => `${n} agentes aquí`, close: "Cerrar" },
+  chart: {
+    title: "gráfico en vivo",
+    open: "Abrir el gráfico en vivo",
+    markets: "Mercados",
+    screen: "Gráfico de TradingView de BTC en la pantalla de la bolsa",
+    frame: "Gráfico de TradingView de {m}",
+    note: "Gráfico en vivo de TradingView, en velas de 4h como los agentes. Sus herramientas de dibujo, indicadores y temporalidades son solo para que analices: nada de lo que hagas aquí cambia lo que hacen los agentes.",
+  },
   buildings: {
     lab: "Los agentes vienen aquí al cierre de cada vela a analizar los gráficos: rango, desplazamiento, volumen y tendencia diaria.",
     btc: "Aquí están los agentes con una operación abierta en BTC-USD. El cartel muestra el precio de Strike en vivo.",

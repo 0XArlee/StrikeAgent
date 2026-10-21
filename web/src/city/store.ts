@@ -11,6 +11,9 @@ const CITY_API = (import.meta.env.VITE_CITY_API as string | undefined) ?? "";   
 const toBinance = (m: string) => m.replace("-USD", "USDT");
 
 export type PriceSource = "strike" | "binance" | "offline";
+/** Strike's real BTC-USD order book (public depth): best levels first, [price, size in BTC]. */
+export interface Book { bids: [number, number][]; asks: [number, number][]; at: number }
+export const BOOK_MARKET = "BTC-USD";
 
 async function getJson(url: string, ms = 8000): Promise<unknown> {
   const ctl = new AbortController();
@@ -56,6 +59,12 @@ async function history(source: PriceSource, m: string): Promise<number[]> {
   return rows.map((k) => +k[4]).filter((v) => Number.isFinite(v) && v > 0);
 }
 
+async function strikeBook(): Promise<Book> {
+  const d = (await getJson(`${STRIKE}/depth?symbol=${BOOK_MARKET}&limit=10`, 5000)) as { bids: string[][]; asks: string[][]; T?: number };
+  const lv = (x: string[][]) => x.map(([p, q]) => [+p, +q] as [number, number]).filter(([p, q]) => p > 0 && q > 0);
+  return { bids: lv(d.bids ?? []), asks: lv(d.asks ?? []), at: d.T ?? Date.now() };
+}
+
 function tone(d: Decision): FeedItem["tone"] {
   if (d.kind === "order") return d.args?.side === "short" ? "neg" : "pos";
   if (d.kind === "exit") return Number(d.args?.r) > 0 ? "pos" : "neg";
@@ -79,6 +88,7 @@ export class CityStore {
   apiOk = false;                     // the API answered at least once
   prices: Prices = {};
   hist: Record<string, number[]> = {};
+  book: Book | null = null;          // Strike's BTC-USD order book, every few seconds (the exchange's screen)
   source: PriceSource = "offline";
   updatedAt = 0;
   cityAt = 0;                        // when the API built the last snapshot
@@ -107,6 +117,12 @@ export class CityStore {
     progress(1);
     this.ready = true;
     this.emit();
+  }
+
+  /** Strike's order book; only while the page is in view (a failure keeps the last one, which then ages out). */
+  async refreshBook(): Promise<void> {
+    if (document.hidden) return;
+    try { this.book = await strikeBook(); this.dirty = true; } catch { if (this.book && Date.now() - this.book.at > 60_000) { this.book = null; this.dirty = true; } }
   }
 
   async refreshPrices(): Promise<void> {
@@ -157,6 +173,8 @@ export class CityStore {
     }, 400));
     this.timers.push(window.setInterval(() => { void this.refreshPrices(); }, 15_000));
     this.timers.push(window.setInterval(() => { void this.refreshCity(); }, 10_000));   // the host pushes within ~10 s
+    void this.refreshBook();
+    this.timers.push(window.setInterval(() => { void this.refreshBook(); }, 2500));
     // the UI re-renders at most once per second
     this.timers.push(window.setInterval(() => { if (this.dirty) { this.dirty = false; this.emit(); } }, 1000));
   }
