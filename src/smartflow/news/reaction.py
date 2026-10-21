@@ -1,5 +1,6 @@
-"""How the price moved after each headline, measured on Strike (1 minute candles, public API): from the last close
-before it came out to 15 minutes and 1 hour later, in %. The model never says this: it is read from the price.
+"""How the price moved after each headline, measured on Strike (1 minute candles of its mark price, public API): from
+the last close before it came out to 15 minutes and 1 hour later, in %. The model never says this: it is read from the
+price.
 
 Strike's klines by end time return exactly the ``limit`` candles up to it (checked 2026-10-21: by start time they
 begin 2-19 minutes late), so the closes are fetched backwards from now, 1500 minutes (25 h) per request.

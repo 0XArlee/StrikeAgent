@@ -41,9 +41,11 @@ def calendar(now: int, path: Path = EVENTS_FILE) -> dict:
 
 
 def strike_klines():
+    """Strike's 1 m candles of the MARK price: its last-trade price stays flat most minutes (no trade in them: 84 % of
+    BTC's minutes, 62-89 % of the others', measured 2026-10-21), which would read as "the market did not move"."""
     from ..strike.client import StrikeClient
     c = StrikeClient()
-    return lambda market, end, limit: c.klines(market, "1m", end_ms=end, limit=limit)
+    return lambda market, end, limit: c.klines(market, "1m", end_ms=end, limit=limit, price_type="mark")
 
 
 def as_of(headlines: list[dict], t: int) -> list[dict]:

@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS readings (
   t INTEGER NOT NULL, market TEXT NOT NULL, net REAL NOT NULL, price REAL NOT NULL, ret4 REAL, PRIMARY KEY (t, market));
 CREATE TABLE IF NOT EXISTS notes (market TEXT PRIMARY KEY, t INTEGER NOT NULL, body TEXT NOT NULL);
 """
+VERSION = 1
 KEEP_ITEMS_MS = 14 * 86400_000
 KEEP_READINGS_MS = 365 * 86400_000
 SAME_STORY = 0.8          # two titles sharing this share of their words (in a day) are the same story
@@ -39,6 +40,12 @@ class Store:
         self.db = sqlite3.connect(str(path))
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
+        if self.db.execute("PRAGMA user_version").fetchone()[0] < VERSION:
+            # 1: reactions on Strike's mark price (the first ones, on its last-trade price, are measured again)
+            self.db.execute("UPDATE items SET react = NULL")
+            self.db.execute("DELETE FROM readings")
+            self.db.execute(f"PRAGMA user_version = {VERSION}")
+            self.db.commit()
         self._recent: list[tuple[int, set[str]]] | None = None
 
     def close(self) -> None:

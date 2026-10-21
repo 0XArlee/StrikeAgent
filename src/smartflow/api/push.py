@@ -96,24 +96,27 @@ class News:
     def __init__(self, push_url: str, secret: str, path: Path, heartbeat: float = 600, log=print):
         self.url = push_url.rsplit("/", 1)[0] + "/news"
         self.secret, self.path, self.heartbeat, self.log = secret, Path(path), heartbeat, log
-        self.sent_mtime, self.at = 0, 0.0
+        self.sent_mtime, self.at, self.retry_at = 0, 0.0, 0.0
 
     def maybe_send(self) -> None:
+        now = time.time()
+        if now < self.retry_at:
+            return
         try:
             mtime = self.path.stat().st_mtime_ns
         except OSError:
             return
-        if mtime == self.sent_mtime and time.time() - self.at < self.heartbeat:
+        if mtime == self.sent_mtime and now - self.at < self.heartbeat:
             return
         try:
             code, text = post(self.url, self.secret, self.path.read_bytes())
             if code == 200:
-                self.sent_mtime, self.at = mtime, time.time()
-            else:
-                self.at = time.time() - self.heartbeat + 60   # refused: try again in a minute, not every turn
-                self.log(f"news refused: HTTP {code} {text}")
+                self.sent_mtime, self.at = mtime, now
+                return
+            self.log(f"news refused: HTTP {code} {text}")
         except Exception as e:
             self.log(f"news push failed: {e!r}")
+        self.retry_at = now + 60   # refused or failed: again in a minute, not every turn of the loop
 
 
 def fingerprint(doc: dict) -> str:

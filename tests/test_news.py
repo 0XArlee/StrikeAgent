@@ -222,3 +222,37 @@ def test_push_sends_news_when_it_changes(tmp_path, monkeypatch):
     os.utime(f, ns=(f.stat().st_mtime_ns + 10**9, f.stat().st_mtime_ns + 10**9))
     n.maybe_send()
     assert len(sent) == 2
+
+
+def test_push_news_refused_waits_a_minute(tmp_path, monkeypatch):
+    from smartflow.api import push
+    calls = []
+    clock = [1000.0]
+    monkeypatch.setattr(push, "post", lambda url, secret, body: (calls.append(1), (404, "not found"))[1])
+    monkeypatch.setattr(push.time, "time", lambda: clock[0])
+    f = tmp_path / "news.json"
+    f.write_text("{}", encoding="utf-8")
+    n = push.News("https://site/api/internal/push", "s" * 32, f, log=lambda *a: None)
+    n.maybe_send(); clock[0] += 10; n.maybe_send(); clock[0] += 10; n.maybe_send()
+    assert len(calls) == 1                           # not every turn of the loop
+    clock[0] += 60
+    n.maybe_send()
+    assert len(calls) == 2
+
+
+def test_old_reactions_are_measured_again(tmp_path):
+    import sqlite3
+    db = tmp_path / "n.db"
+    s = Store(db)
+    s.add([h("A headline about bitcoin", NOW - 2 * H)], NOW, 72 * H)
+    s.set_react(headline_id("A headline about bitcoin"), {"m": "BTC-USD", "p0": 1, "r15": 0.0, "r60": 0.0, "done": True})
+    s.add_reading(NOW - H, "BTC-USD", 20, 100)
+    s.commit()
+    s.db.execute("PRAGMA user_version = 0")   # as the first version left it (last-trade price)
+    s.db.commit(); s.close()
+    s = Store(db)
+    assert s.window(NOW - 72 * H)[0]["react"] is None and s.last_reading_t() is None
+    assert s.db.execute("PRAGMA user_version").fetchone()[0] == 1
+    s.set_react(headline_id("A headline about bitcoin"), {"done": True}); s.commit(); s.close()
+    assert Store(db).window(NOW - 72 * H)[0]["react"] == {"done": True}   # only once
+    sqlite3.connect(db).close()
