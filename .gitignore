@@ -43,3 +43,6 @@ smartflow.tgz
 
 # Strike API key files downloaded from the app (contain the private key)
 strike-api-key*.json
+
+# third-party art packs (LimeZu): licensed for use, not for redistribution; only the pieces we use go in the web
+art/limezu/
