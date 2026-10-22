@@ -79,7 +79,7 @@ def test_document_for_the_city(tmp_path):
     assert sorted(ids) == ["0xhl", "s1"]                             # "none" direction is not offered
     s1 = next(x for x in doc["traders"] if x["id"] == "s1")
     hl1 = next(x for x in doc["traders"] if x["id"] == "0xhl")
-    assert s1["walks"] and s1["city"] is not None and s1["metrics"]["days"] == 0
+    assert s1["walks"] and s1["city"] is not None and s1["metrics"]["days"] == 0 and set(s1["parts"]) == {"strike", "copiers", "fall", "record", "size"}
     assert s1["copiers"]["active"] == 1 and s1["positions"][0] == {"market": "BTC-USD", "side": "short", "size": 0.5, "entry": 80000,
                                                                    "upnl": 12, "leverage": 5}
     assert s1["recommended"] == 1000 and s1["url"].endswith("/public-portfolio/addr1s1")
@@ -105,7 +105,18 @@ def test_drawdown_and_up_days_come_from_every_day_kept():
 
 
 def test_city_score_weighs_what_copiers_made():
-    good = CopyService.city_score(90, {"n": 10, "won": 9}, {"dd": 0.05})
-    bad = CopyService.city_score(90, {"n": 10, "won": 1}, {"dd": 0.05})
-    unknown = CopyService.city_score(90, {"n": 1, "won": 0}, {"dd": None})
-    assert good > unknown > bad and CopyService.city_score(None, {}, {}) is None
+    score = lambda copiers, metrics, value=None: CopyService.city_score(CopyService.score_parts(90, copiers, metrics, value))
+    good = score({"n": 10, "won": 9}, {"dd": 0.05, "days": 30})
+    bad = score({"n": 10, "won": 1}, {"dd": 0.05, "days": 30})
+    unknown = score({"n": 1, "won": 0}, {"dd": 0.05, "days": 30})
+    assert good > unknown > bad and CopyService.city_score(CopyService.score_parts(None, {}, {}, None)) is None
+
+
+def test_city_score_trusts_long_records_and_real_accounts_more():
+    parts = CopyService.score_parts(80, {"n": 0, "won": 0}, {"dd": 0.0, "days": 7}, 762.0)
+    assert parts["copiers"] is None and parts["size"] == 0 and parts["record"] == round(100 * 7 / 60, 1)
+    tiny_new = CopyService.city_score(parts)
+    big_old = CopyService.city_score(CopyService.score_parts(80, {"n": 0, "won": 0}, {"dd": 0.0, "days": 60}, 250_000.0))
+    assert big_old > tiny_new
+    # a part not known yet is left out: the others share its weight
+    assert CopyService.city_score({"strike": 80, "copiers": None, "fall": None, "record": None, "size": None}) == 80

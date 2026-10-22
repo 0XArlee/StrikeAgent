@@ -6,17 +6,20 @@ import "@fontsource/ibm-plex-mono/700.css";
 import "./city.css";
 import type { Lang } from "../i18n";
 import { Icon, Mark } from "../components/ui";
-import { atWork, lastChecks, nowDecision, stats, type AgentView, type FeedItem, type Prices, type Status } from "./agents";
+import { atWork, lastChecks, leadTick, leadView, mulberry, nowDecision, stats, type AgentView, type FeedItem, type Prices, type Status } from "./agents";
 import { CityEngine, SCREEN_BOOK, SCREEN_CHART, STATUS_COLOR, drawIcon, type Sel } from "./engine";
 import type { Look } from "./look";
 import { FEET, FW, HEAD_TOP, frameAt, onSheet, sheetFor } from "./sprites";
 import { BOOK_MARKET, CITY_MARKETS, CityStore, type Book } from "./store";
 import { EventSoon, NewsButton, NewsView, contextLine, signed, tapeLine } from "./NewsView";
 import { TowerView } from "./TowerView";
+import { ArenaView } from "./ArenaView";
 import { dict } from "../i18n";
 import { voiceLine } from "../components/PersonaPicker";
 import { TEMPER_COLOR } from "./persona";
 import { useNews } from "./news";
+import { useCopy } from "./copy";
+import { CopyChooser, LeadCard } from "./CopyView";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
 import { ART2, BUILDINGS, artReady } from "./world";
 import { PortfolioView, livePosition } from "./portfolio";
@@ -47,6 +50,8 @@ function readDeepLink(): string | null {
   const m = /[?&]agent=([\w-]+)/.exec(location.hash);
   return m ? m[1] : null;
 }
+/** #/city?lead=<account>: a lead of Strike's copy trading, selected and followed once the city has it. */
+const readLeadLink = () => /[?&]lead=([\w-]+)/.exec(location.hash)?.[1] ?? null;
 
 export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent, owner }: Props) {
   const T = cityText[lang];
@@ -63,7 +68,13 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   const [chart, setChart] = useState<string | null>(null);   // the market whose full chart is open
   const [news, setNews] = useState<string | null>(null);     // the market whose news is open
   const [tower, setTower] = useState<null | "walking" | "inside">(null);   // the News Tower: your agent on its way, or inside
+  const [arena, setArena] = useState<null | "walking" | "inside">(null);   // the Copy Arena, the same way
   const newsDoc = useNews(ready);                             // read once the city is drawn, then every minute
+  const copyDoc = useCopy(ready);                             // Strike's copy trading, the same way
+  const [copy, setCopy] = useState<{ open: string | null } | null>(null);   // the chooser of whom to copy (a profile open)
+  const leads = useRef<AgentView[]>([]);   // the leads walking the city with their copiers: never in the agents' lists or totals
+  const leadR = useMemo(() => mulberry(0x1ead), []);
+  const leadLink = useRef(readLeadLink());
   const [tvOn, setTvOn] = useState(false);                   // TradingView's candles are drawn: show them
   const tvScreen = useRef<HTMLDivElement>(null);
   const bookScreen = useRef<HTMLDivElement>(null);
@@ -79,6 +90,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   const weather = useRef<0 | 1 | 2>(0);
   const deepLink = useRef(readDeepLink());   // read before the hash is rewritten below
   const towerLink = useRef(/[?&]tower\b/.test(location.hash));   // #/city?tower: straight into the News Tower
+  const arenaLink = useRef(/[?&]arena\b/.test(location.hash));   // #/city?arena: straight into the Copy Arena
 
   useEffect(() => {
     let alive = true;
@@ -91,7 +103,8 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   useEffect(() => {
     if (!ready || !canvas.current) return;
     const e = new CityEngine(canvas.current, {
-      getAgents: () => store.agents, getPrices: () => store.prices, getHistory: (m) => store.hist[m] ?? [],
+      getAgents: () => (leads.current.length ? store.agents.concat(leads.current) : store.agents),
+      getPrices: () => store.prices, getHistory: (m) => store.hist[m] ?? [],
       getHeadline: () => headline.current, getNewsTape: () => newsTape.current,
       getJobLabel: (a) => jobLabel(a, newsRef.current, store.prices, langRef.current), getWeather: () => weather.current, reducedMotion: !!reduced, getBook: () => store.book,
       onSelect: (s) => { setSel(s); setDetails(false); if (s && isSmall()) setPanel(null); },
@@ -120,6 +133,26 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
     return () => { e.stop(); engine.current = null; };
   }, [ready, store]);
 
+  // the leads: one walker per lead Strike City follows, kept across readings (a new move on Strike sends it to the
+  // exchange); they only move when their account does something
+  useEffect(() => {
+    if (!copyDoc || typeof copyDoc !== "object") return;
+    const prev = new Map(leads.current.map((a) => [a.id, a]));
+    leads.current = copyDoc.traders.filter((t) => t.walks).map((t) => leadView(t, prev.get(`lead:${t.id}`), leadR));
+    const id = leadLink.current;
+    if (id && engine.current && leads.current.some((a) => a.id === `lead:${id}`)) {
+      leadLink.current = null;
+      choose({ kind: "agent", id: `lead:${id}` });
+      engine.current.setFollow(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [copyDoc, leadR]);
+  useEffect(() => {
+    if (!ready) return;
+    const id = window.setInterval(() => { const now = performance.now(); for (const a of leads.current) leadTick(a, now, leadR); }, 400);
+    return () => window.clearInterval(id);
+  }, [ready, leadR]);
+
   // keep the followed agent visible beside the side panel (desktop) or above the bottom card (mobile)
   useEffect(() => {
     const small = isSmall();
@@ -131,9 +164,9 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   useEffect(() => {
     if (!ready) return;
     const base = "#/city";
-    const want = me ? `${base}?me` : sel?.kind === "agent" ? `${base}?agent=${sel.id}` : base;
+    const want = me ? `${base}?me` : arena === "inside" ? `${base}?arena` : sel?.kind === "agent" ? (sel.id.startsWith("lead:") ? `${base}?lead=${sel.id.slice(5)}` : `${base}?agent=${sel.id}`) : base;
     if (location.hash !== want) history.replaceState(null, "", want);
-  }, [sel, ready, me]);
+  }, [sel, ready, me, arena]);
 
   const choose = (s: Sel | null) => {
     engine.current?.select(s, false);
@@ -153,8 +186,8 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
     const e = engine.current;
     if (!e) return;
     // only this page stops drawing the city: the agents keep trading and everyone else sees the city as always
-    if (me || tower === "inside") e.pause(); else e.start();
-  }, [me, ready, tower]);
+    if (me || tower === "inside" || arena === "inside") e.pause(); else e.start();
+  }, [me, ready, tower, arena]);
 
   // the News Tower: your agent runs to its door (the camera follows it) and you go in with it; without an agent of
   // your own you go in as a visitor
@@ -191,6 +224,38 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
     return () => window.clearInterval(id);
   }, [tower, mine]);
 
+  // the Copy Arena: the same walk to its door (the agent runs there, the camera follows), then inside
+  const enterArena = () => {
+    const a = mine;
+    if (!a || reduced) { setArena("inside"); return; }
+    a.trip = { to: "arena", until: performance.now() + 10 * 60_000 };
+    a.rush = true; a.nextAt = 0; a.path = [];
+    choose({ kind: "agent", id: a.id });
+    engine.current?.setFollow(true);
+    setArena("walking");
+  };
+  const leaveArena = () => {
+    const a = mine;
+    if (a?.trip?.to === "arena") { a.trip = undefined; a.rush = false; a.nextAt = 0; }
+    setArena(null);
+    canvas.current?.focus();
+  };
+  useEffect(() => {
+    if (!ready || !arenaLink.current) return;
+    arenaLink.current = false;
+    enterArena();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, version]);
+  useEffect(() => {
+    if (arena !== "walking") return;
+    const t0 = Date.now();
+    const id = window.setInterval(() => {
+      const a = mine;
+      if (!a || (a.target === "arena" && !a.path.length) || Date.now() - t0 > 15_000) { window.clearInterval(id); setArena("inside"); }
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [arena, mine]);
+
   // the hash changes inside the city (e.g. right after creating your agent): select it as soon as the city has it
   const pending = useRef<string | null>(null);
   useEffect(() => {
@@ -226,7 +291,15 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
     : btc ? `EDGECRAFT-STRIKECITY · BTC ${fmtPrice(btc.price, lang)} ${fmtPct(btc.change, lang)}` : "EDGECRAFT-STRIKECITY")
     + (tape ? `      ${tape}` : "");
   const agent = sel?.kind === "agent" ? store.agent(sel.id) : undefined;
+  const lead = sel?.kind === "agent" && sel.id.startsWith("lead:") ? leads.current.find((a) => a.id === sel.id) : undefined;
   const bld = sel?.kind === "building" ? BUILDINGS.find((b) => b.id === sel.id) : undefined;
+  // from the chooser: the lead walking the city, selected and followed
+  const followLead = (id: string) => {
+    setCopy(null);
+    if (!leads.current.some((a) => a.id === `lead:${id}`)) return;
+    choose({ kind: "agent", id: `lead:${id}` });
+    engine.current?.setFollow(true);
+  };
   void version;
 
   return (
@@ -329,6 +402,11 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
                      context={agent.position ? contextLine(newsDoc, agent.position.market, T, lang, Date.now()) : null}
                      job={jobLabel(agent, newsDoc, store.prices, lang)} />
         )}
+        {lead?.lead && !me && !(panel && isSmall()) && (
+          <LeadCard T={T} lang={lang} t={lead.lead} following={engine.current?.following === lead.id} followIcon={<Ico.target />}
+                    onFollow={() => { engine.current?.setFollow(engine.current.following !== lead.id); force((x) => x + 1); }}
+                    onProfile={() => setCopy({ open: lead.lead!.id })} onClose={() => choose(null)} />
+        )}
         {bld && !me && !(panel && isSmall()) && (
           <aside className="city-card" aria-labelledby="bld-title">
             <div className="city-card-head">
@@ -338,8 +416,15 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
             </div>
             <p className="muted city-card-text">{T.buildings[bld.id]}</p>
             <p className="small faint">{T.building.agentsHere(store.agents.filter((a) => a.target === bld.id && !a.path.length).length)}</p>
+            {bld.id === "arena" && leads.current.length > 0 && <p className="small faint">{T.copy.inCity(leads.current.length)}</p>}
             {(bld.market || bld.id === "exchange") && (
               <button type="button" className="btn btn-ghost btn-block city-card-chart" onClick={() => setChart(bld.market ?? "BTC-USD")}>{T.chart.open}</button>
+            )}
+            {bld.id === "arena" && (
+              <div className="city-card-actions">
+                <button type="button" className="btn btn-primary btn-block" onClick={enterArena}>{T.copy.enter}</button>
+                <button type="button" className="btn btn-ghost btn-block" onClick={() => setCopy({ open: null })}>{T.copy.quick}</button>
+              </div>
             )}
             {bld.id === "news" && (
               <div className="city-card-actions">
@@ -355,6 +440,14 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
             <p>{T.tower.entering(mine.name)}</p>
             <button type="button" className="btn btn-primary" onClick={() => setTower("inside")}>{T.tower.enterNow}</button>
             <button type="button" className="icon-btn" aria-label={T.card.close} onClick={leaveTower}><Icon.close /></button>
+          </div>
+        )}
+
+        {arena === "walking" && mine && (
+          <div className="city-toast" role="status">
+            <p>{T.copy.entering(mine.name)}</p>
+            <button type="button" className="btn btn-primary" onClick={() => setArena("inside")}>{T.tower.enterNow}</button>
+            <button type="button" className="icon-btn" aria-label={T.card.close} onClick={leaveArena}><Icon.close /></button>
           </div>
         )}
 
@@ -408,6 +501,19 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
       )}
       {tower === "inside" && (
         <TowerView T={T} lang={lang} doc={newsDoc} agent={mine ?? null} market0={mine?.position?.market ?? mine?.markets[0] ?? "BTC-USD"} onExit={leaveTower} />
+      )}
+      {copy && (
+        <Modal onClose={() => setCopy(null)} labelledBy="copy-title" className="city-chart city-copy">
+          <div className="chart-head">
+            <h2 id="copy-title" className="grow">{T.copy.choose}</h2>
+            <button type="button" className="icon-btn" aria-label={T.card.close} data-autofocus onClick={() => setCopy(null)}><Icon.close /></button>
+          </div>
+          <div className="cp-body"><CopyChooser T={T} lang={lang} doc={copyDoc} initial={copy.open} onFollow={followLead} /></div>
+        </Modal>
+      )}
+      {arena === "inside" && (
+        <ArenaView T={T} lang={lang} doc={copyDoc} agent={mine ?? null} onExit={leaveArena}
+                   onFollow={(id) => { leaveArena(); followLead(id); }} />
       )}
       {details && agent && <DetailsModal T={T} lang={lang} a={agent} marks={marksOf(store.prices)} onClose={() => setDetails(false)} />}
     </div>

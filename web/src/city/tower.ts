@@ -35,10 +35,14 @@ export interface RoomData {
   walk: string[];
   pins?: Record<string, [number, number]>;
   leds?: [number, number][];
+  podium?: Record<string, [number, number]>;   // the Copy Arena: where each place's trader stands (art px)
 }
 export const TILE = tower.tile, ROOM_W = tower.w, ROOM_H = tower.h;
 export const ROOMS = tower.rooms as unknown as Record<RoomId, RoomData>;
 export const roomArt = (id: RoomId) => `${import.meta.env.BASE_URL ?? "/"}art/tower/${id}.webp`;
+/** The Copy Arena's hall (drawn with the tower's floors, its own building in the city). */
+export const ARENA = (tower.rooms as unknown as Record<string, RoomData>).arena;
+export const arenaArt = `${import.meta.env.BASE_URL ?? "/"}art/tower/arena.webp`;
 
 /** The tiles from (sx, sy) to (tx, ty) through the room's walkable tiles (none: unreachable). */
 export function roomPath(room: RoomData, sx: number, sy: number, tx: number, ty: number): [number, number][] {

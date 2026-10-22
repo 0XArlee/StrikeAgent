@@ -1,7 +1,7 @@
 // Strike City renderer: camera, input, picking and the per-frame dynamic layers over the pre-rendered city.
 import type { AgentView, Prices, Status } from "./agents";
 import { atWork, isActive, step } from "./agents";
-import { FEET, HEAD_TOP, drawFrame, hash, sheetFor, type Anim } from "./sprites";
+import { FEET, HEAD_TOP, drawFrame, hash, sheetFor, type Anim, type Dir } from "./sprites";
 import type { Book } from "./store";
 import { ART2, BUILDINGS, FOUNTAIN, H, SCREEN, TILE, W, footprint, renderGlow, renderLight, renderStatic } from "./world";
 
@@ -30,6 +30,13 @@ export interface EngineOpts {
   view?: { cx: number; cy: number; zoom: number };     // fixed camera for wide frames (desktop)
   viewSmall?: { cx: number; cy: number; zoom: number }; // and for frames under 700 px (phones)
 }
+
+/** The colour of Strike's copy trading in the city: the Copy Arena's neon, the leads' rings and bubbles. */
+export const LEAD_COLOR = "#fb7185";
+/** How many of a lead's copiers walk behind it (the rest are in its card). */
+export const TRAIL_MAX = 4;
+/** Copiers wear one of a few looks (a handful of sheets for every lead's copiers). */
+const COPIER_LOOKS = 6;
 
 export const STATUS_COLOR: Record<Status, string> = {
   analyzing: "#67e8f9", waiting: "#fbbf24", signal: "#4efab0", risk: "#fb923c",
@@ -86,6 +93,7 @@ export class CityEngine {
   private few = true;
   private bookW = new Array<number>(10).fill(0);
   private phases = new Map<string, number>();     // each agent's animation offset (seconds), stable   // the book's bars (5 asks, 5 bids), easing to each new reading
+  private trails = new Map<string, { x: number; y: number }[]>();   // each lead's latest steps, newest first: its copiers walk on them
 
   constructor(private canvas: HTMLCanvasElement, private o: EngineOpts) {
     this.ctx = canvas.getContext("2d", { alpha: false })!;
@@ -294,7 +302,7 @@ export class CityEngine {
     // bubbles: the selected agent first, then front to back. While the city is small every agent keeps its name and
     // overlapping bubbles stack; in a crowd they stack or shrink to a dot
     this.placed = [];
-    this.few = agents.length <= 12;
+    this.few = agents.filter((a) => a.kind !== "lead").length <= 12;   // leads give way to the city's own agents
     const sel = this.selected?.kind === "agent" ? this.selected.id : null;
     const rank = (a: AgentView) => (a.id === sel ? 0 : 1);
     const order = [...sorted].reverse().sort((p, q) => rank(p) - rank(q));
@@ -464,9 +472,16 @@ export class CityEngine {
   private drawAgent(g: CanvasRenderingContext2D, a: AgentView) {
     const sheet = sheetFor(a.id, a.look);   // null until its pieces have loaded: its ring shows meanwhile
     const walking = a.path.length > 0;
+    if (a.lead) this.drawCopiers(g, a, walking);
     g.fillStyle = "rgba(0,0,0,0.45)";
     g.beginPath(); g.ellipse(a.x, a.y, 5, 2, 0, 0, Math.PI * 2); g.fill();
-    {   // a ring: every agent here is a real one. It pulses only while the agent is doing something; one that waits
+    if (a.lead) {   // a lead of Strike's copy trading: a rose ring, pulsing while it walks to do something on Strike
+      const k = this.o.reducedMotion || !walking ? 0.3 : (performance.now() / 1400) % 1;
+      g.strokeStyle = `rgba(251,113,133,${0.85 - 0.6 * k})`; g.lineWidth = 1;
+      g.beginPath(); g.ellipse(a.x, a.y, 6 + k * 5, 2.5 + k * 2, 0, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = "rgba(251,113,133,0.2)";
+      g.beginPath(); g.ellipse(a.x, a.y, 7, 3, 0, 0, Math.PI * 2); g.fill();
+    } else {   // a ring: every agent here is a real one. It pulses only while the agent is doing something; one that waits
         // for its setup has a still ring, and a paused or offline one a faint ring
       const busy = isActive(a), resting = a.status === "paused" || a.status === "offline" || a.status === "unfunded";
       const k = this.o.reducedMotion || !busy ? 0.3 : (performance.now() / 1400) % 1;
@@ -476,7 +491,7 @@ export class CityEngine {
       g.beginPath(); g.ellipse(a.x, a.y, 7, 3, 0, 0, Math.PI * 2); g.fill();
     }
     if (this.selected?.kind === "agent" && a.id === this.selected.id) {
-      g.strokeStyle = "#4efab0"; g.lineWidth = 1;
+      g.strokeStyle = a.lead ? LEAD_COLOR : "#4efab0"; g.lineWidth = 1;
       g.beginPath(); g.ellipse(a.x, a.y, 8, 3.5, 0, 0, Math.PI * 2); g.stroke();
     }
     if (!sheet) return;
@@ -487,6 +502,40 @@ export class CityEngine {
     if (ph === undefined) { ph = (hash(a.id) % 1000) / 250; this.phases.set(a.id, ph); }
     const t = this.o.reducedMotion ? 0 : performance.now() / 1000 + ph;
     drawFrame(g, sheet, anim, anim === "phone" ? "down" : a.dir, t, a.x, a.y);
+  }
+
+  /** The people copying a lead on Strike right now (up to TRAIL_MAX), walking in its steps a little smaller than it:
+   *  copying is following. Standing, they wait in a short line behind it. */
+  private drawCopiers(g: CanvasRenderingContext2D, a: AgentView, walking: boolean) {
+    const n = Math.min(TRAIL_MAX, a.lead?.copiers.active ?? 0);
+    let trail = this.trails.get(a.id);
+    if (!trail) { trail = [{ x: a.x, y: a.y }]; this.trails.set(a.id, trail); }
+    const moved = Math.hypot(a.x - trail[0].x, a.y - trail[0].y);
+    if (moved > 40) { trail.length = 0; trail.push({ x: a.x, y: a.y }); }   // it jumped (reduced motion): start again
+    else if (moved >= 3) { trail.unshift({ x: a.x, y: a.y }); if (trail.length > 24) trail.length = 24; }
+    const t = this.o.reducedMotion ? 0 : performance.now() / 1000;
+    for (let i = 0; i < n; i++) {
+      const k = (i + 1) * 4;   // ~12 px apart along the lead's steps
+      let x: number, y: number, dir: Dir = a.dir;
+      if (trail.length > k) {
+        x = trail[k].x; y = trail[k].y;
+        const f = trail[k - 1], dx = f.x - x, dy = f.y - y;
+        if (dx || dy) dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up");
+      } else {   // not enough steps yet: in a row beside it, one each side in turn
+        const end = trail[trail.length - 1];
+        x = end.x + (i % 2 ? 1 : -1) * 11 * (1 + Math.floor(i / 2)); y = end.y - 2;
+        dir = walking ? a.dir : "down";
+      }
+      g.fillStyle = "rgba(0,0,0,0.35)";
+      g.beginPath(); g.ellipse(x, y, 4, 1.6, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "rgba(251,113,133,0.45)"; g.lineWidth = 0.75;
+      g.beginPath(); g.ellipse(x, y, 4.5, 1.9, 0, 0, Math.PI * 2); g.stroke();
+      const sheet = sheetFor(`copier:${(hash(a.id) + i) % COPIER_LOOKS}`);
+      if (!sheet) continue;
+      g.globalAlpha = 0.92;
+      drawFrame(g, sheet, walking ? "walk" : "idle", dir, t + i * 0.37, x, y, 0.75);
+      g.globalAlpha = 1;
+    }
   }
 
   private drawSigns(g: CanvasRenderingContext2D, t: number, night: number) {
@@ -545,7 +594,13 @@ export class CityEngine {
     const bob = isActive(a) ? Math.sin(t * 2 + a.x) * 1.5 : 0;   // a waiting agent's bubble stays still too
     let label = "";
     let color = STATUS_COLOR[a.status];
-    if (a.status === "in_trade" && a.position) {
+    let text = color;   // the label's colour (a lead keeps its rose border and says its side in green or red)
+    if (a.lead) {
+      color = LEAD_COLOR;
+      const p = a.position;
+      label = p ? `${p.side === "long" ? "LONG" : "SHORT"} ${p.market.replace("-USD", "")}` : `★${Math.round(a.lead.city ?? a.lead.score ?? 0)}`;
+      text = p ? (p.side === "long" ? "#4efab0" : "#f43f5e") : LEAD_COLOR;
+    } else if (a.status === "in_trade" && a.position) {
       const r = a.position.rOpen;
       // positions in several markets: it stands at one tower, so the bubble says which one it shows
       const many = new Set((a.real?.positions ?? []).map((p) => p.market)).size > 1;
@@ -571,10 +626,11 @@ export class CityEngine {
     const w = iw + tw + 4 * scale;
     const x = s.x - w / 2;
     const isSel = this.selected?.kind === "agent" && this.selected.id === a.id;
-    const isReal = this.few;   // small city: names always on, bubbles never reduced to a dot
+    const isReal = this.few && !a.lead;   // small city: names always on, bubbles never reduced to a dot
     // the name tag (selected, real, hovered or close zoom) is measured first so bubble + tag are placed as one block
+    // a lead carries its name (with a LEAD mark) when selected, hovered or zoomed in: the city's own agents keep theirs on
     const named = isSel || isReal || a.id === this.hovered || this.zoom >= 2.8;
-    const tag = "";
+    const tag = a.lead ? "LEAD" : "";
     const tagFont = `700 ${Math.round(8 * scale)}px "IBM Plex Mono", monospace`, nameFont = `600 ${Math.round(10 * scale)}px "IBM Plex Sans", sans-serif`;
     g.font = tagFont;
     const tagW = tag ? g.measureText(tag).width + 6 : 0;
@@ -610,17 +666,18 @@ export class CityEngine {
     g.fill(); g.stroke();
     g.beginPath(); g.moveTo(s.x - 3 * scale, y + h - 0.5); g.lineTo(s.x, y + h + 4 * scale); g.lineTo(s.x + 3 * scale, y + h - 0.5); g.closePath();
     g.fillStyle = "rgba(8,12,14,0.9)"; g.fill();
-    drawIcon(g, a, x + 2 * scale, y, iw, h, color);
-    if (label) { g.fillStyle = color; g.textBaseline = "middle"; g.textAlign = "left"; g.fillText(label, x + iw + 2 * scale, y + h / 2 + 0.5); }
+    if (a.lead && !a.position) drawStar(g, x + 2 * scale, y, iw, h, color);
+    else drawIcon(g, a, x + 2 * scale, y, iw, h, text);
+    if (label) { g.fillStyle = text; g.textBaseline = "middle"; g.textAlign = "left"; g.fillText(label, x + iw + 2 * scale, y + h / 2 + 0.5); }
     if (named) {
       // real agents always carry their name, with a LIVE mark
       const ny = y - nh - 3;
-      g.fillStyle = isSel ? "#4efab0" : "rgba(8,12,14,0.92)";
+      g.fillStyle = isSel ? (a.lead ? LEAD_COLOR : "#4efab0") : "rgba(8,12,14,0.92)";
       roundRect(g, nx, ny, nw, nh, 4); g.fill();
       if (isReal && !isSel) { g.strokeStyle = "rgba(78,250,176,0.7)"; g.lineWidth = 1; roundRect(g, nx + 0.5, ny + 0.5, nw - 1, nh - 1, 4); g.stroke(); }
       g.textBaseline = "middle";
       if (tag) {
-        g.fillStyle = isSel ? "#000" : "#4efab0";
+        g.fillStyle = isSel ? "#000" : a.lead ? LEAD_COLOR : "#4efab0";
         g.font = tagFont;
         g.textAlign = "left";
         g.fillText(tag, nx + 5, ny + nh / 2 + 0.5);
@@ -637,6 +694,20 @@ function roundRect(g: CanvasRenderingContext2D, x: number, y: number, w: number,
   g.beginPath();
   g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
   g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+
+/** A lead holding nothing right now: a star (its bubble shows its Strike City score). */
+function drawStar(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
+  const cx = x + w / 2, cy = y + h / 2, k = w / 18;
+  g.save();
+  g.fillStyle = color;
+  g.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const r = (i % 2 ? 2.6 : 6) * k, an = -Math.PI / 2 + (i * Math.PI) / 5;
+    if (i) g.lineTo(cx + Math.cos(an) * r, cy + Math.sin(an) * r); else g.moveTo(cx + Math.cos(an) * r, cy + Math.sin(an) * r);
+  }
+  g.closePath(); g.fill();
+  g.restore();
 }
 
 /** Status glyphs, shared by the map bubbles and the legend (drawn on small canvases). */

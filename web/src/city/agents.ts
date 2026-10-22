@@ -7,6 +7,7 @@ import type { Portfolio } from "./portfolio-types";
 import { BUILDINGS, COLS, ROWS, TILE, canWalk, plazaSpot, type Building } from "./world";
 import type { Dir } from "./sprites";
 import { normalizeLook, type Look } from "./look";
+import { mainPosition, traderName, type Trader } from "./copy";
 
 export type Status = "analyzing" | "waiting" | "signal" | "risk" | "entering" | "in_trade" | "exiting" | "paused" | "offline"
   | "unfunded";   // connected to Strike, its account has no balance yet
@@ -43,7 +44,7 @@ export interface RealInfo {
 
 export interface AgentView {
   id: string;
-  kind: "paper" | "live";            // simulated execution on Strike's real book / real orders
+  kind: "paper" | "live" | "lead";   // simulated execution on Strike's real book / real orders / a trader people copy on Strike
   name: string;
   owner: string;          // "Smart Flow" or "Strike user" (wallet addresses are never shown)
   risk: number;           // % of equity per trade
@@ -69,6 +70,7 @@ export interface AgentView {
   rush?: boolean;         // its owner is taking it into the News Tower: it runs
   persona?: Persona;      // its personality and trade in the city (its owner's choice, or one derived from its id)
   seen?: number;          // time of the latest journal entry already acted on
+  lead?: Trader;          // a lead of Strike's copy trading walking the city (city/copy.ts): never one of the agents
 }
 
 /** Whether the agent is doing something right now. Only then does it move, pulse or bob: one that waits for its
@@ -363,4 +365,50 @@ export function stats(a: AgentView) {
   })();
   return { n: t.n, winRate: t.n ? t.wins / t.n : 0, totalR: +(t.won - t.lost).toFixed(2), pf: t.lost ? t.won / t.lost : t.won ? Infinity : 0,
     best: t.n ? t.best : 0 };
+}
+
+// ---------------------------------------------------------------- leads of Strike's copy trading (/api/copy)
+/** Where a lead stands: at the tower of the market of its biggest open position (the exchange for a market the city
+ *  has no tower for), or at the Copy Arena while it holds nothing. */
+function leadPlace(t: Trader): string {
+  const p = mainPosition(t);
+  return p ? MARKET_TOWER[p.market] ?? "exchange" : "arena";
+}
+
+/** A lead as a walker of the city (its id "lead:" + its account). Keeps its place and path when it already walks; a
+ *  move newer than the last reading (it opened, closed, turned or resized a position on Strike) sends it to the exchange
+ *  for a while, then it goes back to where its positions keep it. */
+export function leadView(t: Trader, prev: AgentView | undefined, R: () => number): AgentView {
+  const id = `lead:${t.id}`;
+  const p = mainPosition(t);
+  const a: AgentView = prev ?? {
+    id, kind: "lead", name: traderName(t), owner: "", risk: 0, markets: [], status: "waiting", focus: "",
+    position: null, trades: [], decisions: [], rToday: 0, x: 0, y: 0, dir: "down", path: [], frame: R() * 10, target: "", nextAt: 0,
+  };
+  const latest = (t.events ?? []).reduce((m, e) => Math.max(m, e.t), 0);
+  if (prev?.seen !== undefined && latest > prev.seen) { a.trip = { to: "exchange", until: performance.now() + TRIP_MS }; a.nextAt = 0; }
+  a.seen = Math.max(prev?.seen ?? 0, latest);
+  a.lead = t;
+  a.name = traderName(t);
+  a.markets = [...new Set((t.positions ?? []).map((x) => x.market))];
+  a.status = p ? "in_trade" : "waiting";
+  a.position = p ? { market: p.market, side: p.side, entry: p.entry ?? 0, stop: p.entry ?? 0, trail: p.entry ?? 0, size: p.size, rOpen: 0,
+    stopKnown: false, upnl: p.upnl } : null;
+  a.focus = p?.market ?? "";
+  if (!prev) {   // first appearance: already at its place
+    const place = leadPlace(t), q = spot(place, R);
+    a.x = q.x; a.y = q.y; a.target = place;
+  }
+  return a;
+}
+
+/** Moves a lead only when its account does something on Strike (see leadView); otherwise it stands at its place. */
+export function leadTick(a: AgentView, now: number, R: () => number): void {
+  if (!a.lead || a.path.length) return;
+  if (a.trip) {
+    if (now < a.trip.until) { if (a.target !== a.trip.to) goTo(a, a.trip.to, R); return; }
+    a.trip = undefined;
+  }
+  const place = leadPlace(a.lead);
+  if (a.target !== place) goTo(a, place, R);
 }

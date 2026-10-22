@@ -47,7 +47,7 @@ function bitmap(text: string) {
   return b;
 }
 
-type Seg = { t: string; c: string };
+export type Seg = { t: string; c: string };
 /** One line of LED text (segments in their colours), drawn once at the screen's scale with its glow. */
 function board(segs: Seg[], k: number, pitch = 1): { im: HTMLCanvasElement; w: number; h: number } {
   const key = `${segs.map((s) => `${s.c}|${s.t}`).join("§")}@${k.toFixed(2)}/${pitch}`;
@@ -81,7 +81,7 @@ function board(segs: Seg[], k: number, pitch = 1): { im: HTMLCanvasElement; w: n
 }
 
 /** Draw a LED line at (x, y) in art px; with `scroll`, it runs right to left inside the box [x, x + boxW). */
-function led(g: CanvasRenderingContext2D, k: number, segs: Seg[], x: number, y: number, opt: { pitch?: number; boxW?: number; t?: number; align?: "left" | "center" | "right" } = {}) {
+export function led(g: CanvasRenderingContext2D, k: number, segs: Seg[], x: number, y: number, opt: { pitch?: number; boxW?: number; t?: number; align?: "left" | "center" | "right" } = {}) {
   if (!segs.length || !segs.some((s) => s.t)) return;
   const { im, w } = board(segs, k, opt.pitch ?? 1);
   const pad = Math.ceil(2 * k) / k;
@@ -98,7 +98,7 @@ function led(g: CanvasRenderingContext2D, k: number, segs: Seg[], x: number, y: 
   g.drawImage(im, bx - pad, y - pad, dw, dh);
 }
 
-function txt(g: CanvasRenderingContext2D, s: string, x: number, y: number, size: number, color: string, align: CanvasTextAlign = "left", weight = 700) {
+export function txt(g: CanvasRenderingContext2D, s: string, x: number, y: number, size: number, color: string, align: CanvasTextAlign = "left", weight = 700) {
   g.font = `${weight} ${size}px "IBM Plex Mono", monospace`;
   g.fillStyle = color; g.textAlign = align; g.textBaseline = "alphabetic";
   g.fillText(s, x, y);
@@ -106,7 +106,7 @@ function txt(g: CanvasRenderingContext2D, s: string, x: number, y: number, size:
 
 const up = (s: string) => s.toLocaleUpperCase();
 const lower = (s: string, lang: Lang) => s.charAt(0).toLocaleLowerCase(lang === "es" ? "es-ES" : "en-US") + s.slice(1);
-const plain = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");   // the LED font has no accents to spare
+export const plain = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");   // the LED font has no accents to spare
 
 // ------------------------------------------------------------------ the component
 export function TowerView({ T, lang, doc, agent, market0, onExit }:
@@ -587,7 +587,7 @@ function say(def: SpotDef, doc: NewsDoc | null, market: string, now: number, T: 
   }
 }
 
-function bubble(g: CanvasRenderingContext2D, x: number, y: number, s: string) {
+export function bubble(g: CanvasRenderingContext2D, x: number, y: number, s: string) {
   if (!s) return;
   g.font = `600 6px "IBM Plex Sans", sans-serif`;
   const w = Math.min(150, g.measureText(s).width + 8), h = 10;

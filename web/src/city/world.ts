@@ -58,7 +58,7 @@ export const BUILDINGS: Building[] = [
   { id: "homes", kind: "home", label: "AGENT HOMES", sub: "paused agents rest here", x: 3, y: 46, w: 18, d: 7, h: 34, wall: "#22262d", roof: "#2e333c", neon: "#93c5fd", door: { x: 12, y: 59 } },
   { id: "hq", kind: "hq", label: "SMART FLOW HQ", sub: "builder", x: 28, y: 46, w: 12, d: 7, h: 46, wall: "#0b1d17", roof: "#0f2c22", neon: "#4efab0", door: { x: 34, y: 59 } },
   { id: "cafe", kind: "cafe", label: "FUNDING CAFE", x: 41, y: 49, w: 6, d: 4, h: 24, wall: "#2b211a", roof: "#3a2c22", neon: "#fb923c", door: { x: 44, y: 59 } },
-  { id: "arena", kind: "arena", label: "RANKS ARENA", sub: "leaderboard", x: 53, y: 46, w: 16, d: 7, h: 40, wall: "#2a1820", roof: "#3a2230", neon: "#fb7185", door: { x: 61, y: 59 } },
+  { id: "arena", kind: "arena", label: "COPY ARENA", sub: "copy trading on Strike", x: 53, y: 46, w: 16, d: 7, h: 40, wall: "#2a1820", roof: "#3a2230", neon: "#fb7185", door: { x: 61, y: 59 } },
   { id: "risk", kind: "risk", label: "RISK OFFICE", sub: "every order checked", x: 76, y: 46, w: 12, d: 6, h: 36, wall: "#2a2f37", roof: "#363c46", neon: "#f8931a", door: { x: 81, y: 58 } },
   { id: "alley", kind: "alley", label: "LIQUIDATION ALLEY", x: 89, y: 48, w: 5, d: 5, h: 26, wall: "#2a1215", roof: "#3a171c", neon: "#f43f5e", door: { x: 91, y: 58 } },
 ];

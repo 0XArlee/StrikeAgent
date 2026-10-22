@@ -10,6 +10,7 @@ copies anyone and never touches the agents or a user's account.
 from __future__ import annotations
 
 import json
+import math
 import os
 import random
 import time
@@ -27,6 +28,10 @@ POSITIONS_EVERY_MS = 2 * 60_000
 STRIKE_LEADS, HL_LEADS, MAX_LEADS = 14, 6, 24    # the leads that walk the city (and whose positions it follows)
 PICK_STRIKE, PICK_HL = 60, 30                       # the traders the Copy Arena lets you choose from
 EQUITY_POINTS = 365
+# Strike City's score: each part 0-100, weighed; a part that cannot be known yet (fewer than 3 copiers, no fall measured,
+# no account value) is left out and the others share its weight
+SCORE_WEIGHTS = {"strike": 45, "copiers": 20, "fall": 15, "record": 10, "size": 10}
+RECORD_DAYS = 60                                       # days of history kept for full marks on track record
 STATS = {   # Strike's daily copy-trading series: (path, key in the answer, metric)
     "volume": ("/stat/v1/dashboard/copy-trading-volumes", "total_volume_daily"),
     "subscriptions": ("/stat/v1/dashboard/copy-trading-subscriptions", "daily_subscriptions"),
@@ -179,17 +184,29 @@ class CopyService:
         return strike[:PICK_STRIKE] + hl[:PICK_HL]
 
     @staticmethod
-    def city_score(score: float | None, copiers: dict, metrics: dict) -> float | None:
-        """Strike City's score for choosing whom to copy (0-100): Strike's copy score, what the people who already copy
-        the trader made (once at least 3 did), and how deep its PnL fell over every day kept."""
-        if score is None:
-            return None
+    def score_parts(score: float | None, copiers: dict, metrics: dict, value: float | None) -> dict[str, float | None]:
+        """The parts of Strike City's score, each 0-100 (None: not known yet): Strike's copy score; the share of the
+        people who copied the trader that ended in profit (once at least 3 did); how deep its PnL fell over every day
+        kept (0 % -> 100, 25 % -> 50, 50 %+ -> 0); how long a record Strike City holds (RECORD_DAYS for full marks);
+        and its account's size (1 k$ -> 0, 100 k$+ -> 100: tiny accounts often gamble)."""
         dd = metrics.get("dd")
-        fall = 50.0 if dd is None else max(0.0, 100.0 - 200.0 * dd)        # 0 % -> 100, 25 % -> 50, 50 %+ -> 0
-        if copiers.get("n", 0) >= 3:
-            won = 100.0 * copiers["won"] / copiers["n"]
-            return round(0.6 * score + 0.25 * won + 0.15 * fall, 1)
-        return round(0.75 * score + 0.25 * fall, 1)
+        n = copiers.get("n", 0)
+        return {
+            "strike": score,
+            "copiers": round(100.0 * copiers.get("won", 0) / n, 1) if n >= 3 else None,
+            "fall": None if dd is None else round(max(0.0, 100.0 - 200.0 * dd), 1),
+            "record": round(min(100.0, 100.0 * (metrics.get("days") or 0) / RECORD_DAYS), 1),
+            "size": None if not value or value <= 0 else round(min(100.0, max(0.0, 50.0 * (math.log10(value) - 3))), 1),
+        }
+
+    @staticmethod
+    def city_score(parts: dict[str, float | None]) -> float | None:
+        """Strike City's score for choosing whom to copy (0-100): the weighed mean of the parts known."""
+        if parts.get("strike") is None:
+            return None
+        known = {k: v for k, v in parts.items() if v is not None}
+        weight = sum(SCORE_WEIGHTS[k] for k in known)
+        return round(sum(SCORE_WEIGHTS[k] * v for k, v in known.items()) / weight, 1)
 
     def document(self, now: int) -> dict:
         fol, won = self.store.followers(), self.store.copiers()
@@ -205,16 +222,18 @@ class CopyService:
             f = fol.get(a, {"active": 0, "ever": 0, "pnl": 0, "volume": 0})
             w = won.get(a, {"n": 0, "won": 0})
             m = self.store.metrics(a)
-            score = num(t.get("copy_score"))
+            score, value = num(t.get("copy_score")), num(t.get("account_value"))
+            parts = self.score_parts(score, w, m, value)
             x = {
                 "id": a, "platform": platform, "url": app_url(platform, a, t.get("blockchain_address")),
                 "score": score, "scores": t.get("copy_scores") or {}, "direction": t.get("recommended_direction"),
-                "city": self.city_score(score, w, m), "style": t.get("style"), "bias": t.get("bias"), "value": num(t.get("account_value")),
+                "city": self.city_score(parts), "parts": parts, "style": t.get("style"), "bias": t.get("bias"), "value": value,
                 "pnl": {k: num(v) for k, v in (t.get("pnl") or {}).items()}, "roi": {k: num(v) for k, v in (t.get("roi") or {}).items()},
                 "volume": {k: num(v) for k, v in (t.get("volume") or {}).items()},
                 "assets": [y.get("asset") for y in t.get("top_assets") or []][:6], "recommended": recommended(t.get("copy_amount_coverage")),
                 "copiers": {**f, "won": w["won"], "n": w["n"]}, "metrics": m,
-                "equity": [[d, round(v, 2)] for d, v in self.store.equity(a, EQUITY_POINTS if a in walking else 120)],
+                # its PnL, every day kept (deposits and withdrawals move its equity, not this)
+                "curve": [[d, round(v, 2)] for d, v in self.store.pnl(a, EQUITY_POINTS if a in walking else 120)],
                 "lastTrade": t.get("last_traded_at_ms"), "since": t.get("first_seen"), "walks": a in walking,
             }
             if a in walking:

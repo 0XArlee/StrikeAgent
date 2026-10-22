@@ -9,6 +9,8 @@ Every floor is the same 28 x 14 tiles of 16 px (the same tower), with the lift a
   rules     the court: the bench, the regulators' lectern
   money     the trading floor: the ETF ticker, the desks, the news screens
   security  the security room: the alarm wall, the exchanges' board, the servers
+And the Copy Arena (its own building in the city, the same size, no lift): Strike's copy trading. The leaderboard on
+the back wall, the podium for the three best (the page stands them on it), the copiers' wall, Strike's totals.
 
 Licence (Modern Interiors, full version): commercial use, edits allowed; no reselling or distributing the asset;
 credits to limezu.itch.io. What the site serves is these composed pictures, never the pack's files.
@@ -68,6 +70,7 @@ class Room:
         self.screens: dict[str, list[int]] = {}
         self.staff: list[dict] = []
         self.extra: dict = {}
+        self.start = tuple(LIFT["stand"])   # where every spot must be reachable from (the lift; the door without one)
 
     def put(self, im: Image.Image, x: float, y: float, block: tuple[float, float, float, float] | None = None) -> None:
         self.im.alpha_composite(im, (int(x * T), int(y * T)))
@@ -86,7 +89,7 @@ class Room:
         if door:
             g[H - 1][13] = g[H - 1][14] = 1
         # every spot must be reachable from the lift (and the door)
-        start = tuple(LIFT["stand"])
+        start = self.start
         seen, todo = {start}, [start]
         while todo:
             x, y = todo.pop()
@@ -102,7 +105,7 @@ class Room:
 
 # ---------------------------------------------------------------------------------------------- the shell
 def shell(r: Room, l1: Image.Image, wall: tuple[int, int] | None, floor: tuple[int, int] | None,
-          tint: tuple[float, float, float] | None = None, door: bool = False) -> None:
+          tint: tuple[float, float, float] | None = None, door: bool = False, lift: bool = True) -> None:
     """Walls, floor and borders: the TV design's frame (columns 0 and 10: the border and the side walls), with this
     floor's wall paper and floor tile (None: the design's own grey wall and carpet)."""
     walls = Image.open(BUILDER / "Room_Builder_Walls_16x16.png").convert("RGBA")
@@ -159,6 +162,8 @@ def shell(r: Room, l1: Image.Image, wall: tuple[int, int] | None, floor: tuple[i
     r.im.alpha_composite(sh)
     if door:
         r.put(tile(l1, 6, 9, 4, 1), 12, H - 1)
+    if not lift:
+        return
     # the lift on every floor (the same shaft)
     generic = Image.open(GENERIC).convert("RGBA")
     r.put(tile(generic, 0, 21, 2, 2), 24, 1)
@@ -483,12 +488,81 @@ def security(l1) -> Room:
     return r
 
 
+# the podium's steps: (x in tiles, height in px, top colour, front colour)
+PODIUM = {2: (11, 18, (206, 214, 226), (128, 138, 158)), 1: (13, 26, (244, 198, 84), (182, 132, 42)),
+          3: (15, 12, (222, 146, 84), (146, 88, 44))}
+PODIUM_BASE = 8 * T - 2                                 # the floor line the steps stand on (art px)
+
+
+def arena(l1) -> Room:
+    """The Copy Arena: the leaderboard over the stage, the podium (gold, silver, bronze), the copiers' wall and Strike's
+    totals either side, the public on benches, a carpet from the door to the podium."""
+    r = Room("arena")
+    shell(r, l1, (1, 30), (8, 28), tint=(1.05, 0.7, 0.85), door=True, lift=False)
+    r.start = (13, H - 2)
+    put, d = r.put, r.d
+    # the carpet, from the door to the podium
+    x0, x1, y0, y1 = 11 * T + 4, 17 * T - 5, 8 * T, (H - 1) * T - 1
+    d.rectangle([x0, y0, x1, y1], fill=(112, 22, 46, 255))
+    d.rectangle([x0, y0, x1, y1], outline=(214, 170, 82, 255))
+    d.rectangle([x0 + 2, y0 + 2, x1 - 2, y1], outline=(150, 36, 66, 255))
+    # the leaderboard (an LED board) and the screens either side
+    panel(r, 7, 1, 14, 2, glass=(12, 6, 10), frame=(40, 26, 34), rim=(96, 64, 80), dots=(34, 16, 24), name="board", inset=2)
+    panel(r, 2, 1, 4.5, 2, glass=(8, 10, 16), name="copiers")
+    panel(r, 21.5, 1, 4.5, 2, glass=(8, 10, 16), name="stats")
+    # the stage under the podium: dark, a gold rim, its front a step down
+    sx0, sx1, sy0, sy1 = 10 * T, 18 * T - 1, 4 * T + 6, 8 * T - 1
+    d.rectangle([sx0 + 3, sy1 + 1, sx1 + 3, sy1 + 4], fill=(0, 0, 0, 110))
+    d.rectangle([sx0, sy0, sx1, sy1], fill=(46, 22, 44, 255), outline=(20, 8, 20, 255))
+    d.rectangle([sx0 + 1, sy1 - 4, sx1 - 1, sy1 - 1], fill=(30, 12, 30, 255))
+    d.line([sx0 + 1, sy0 + 1, sx1 - 1, sy0 + 1], fill=(214, 170, 82, 255))
+    d.line([sx0 + 1, sy1 - 5, sx1 - 1, sy1 - 5], fill=(150, 112, 54, 255))
+    for xx in range(sx0 + 6, sx1 - 4, 12):                                          # the footlights
+        d.rectangle([xx, sy1 - 3, xx + 1, sy1 - 2], fill=(255, 214, 140, 255))
+    # the podium's steps, drawn in the pack's style: a lit top, a darker front, a dark outline, a shadow
+    stands = {}
+    for place, (px, hh, top, front) in PODIUM.items():
+        bx0, bx1 = int(px * T), int((px + 2) * T) - 1
+        by0 = PODIUM_BASE - hh
+        d.rectangle([bx0 + 2, PODIUM_BASE + 1, bx1 + 2, PODIUM_BASE + 3], fill=(0, 0, 0, 100))
+        d.rectangle([bx0, by0, bx1, PODIUM_BASE], fill=front + (255,), outline=(36, 22, 16, 255))
+        d.rectangle([bx0 + 1, by0 + 1, bx1 - 1, by0 + 4], fill=top + (255,))
+        d.line([bx0 + 1, by0 + 5, bx1 - 1, by0 + 5], fill=tuple(int(c * 0.8) for c in front) + (255,))
+        d.line([bx0 + 2, by0 + 2, bx0 + 8, by0 + 2], fill=tuple(min(255, c + 30) for c in top) + (255,))
+        stands[str(place)] = [round(px * T + T), by0 + 3]          # where its trader's feet go (art px)
+        r.screens[f"step{place}"] = [bx0 + 4, by0 + 7, 2 * T - 8, hh - 8]   # its front, where the page writes its place
+    r.extra["podium"] = stands
+    r.blocked.append((10, 4, 8, 4))
+    # the stage lights and cameras, the public's benches, plants
+    put(single("23_Television", 5), 8, 4, block=(8, 5, 1, 1))
+    put(single("23_Television", 6), 19, 4, block=(19, 5, 1, 1))
+    for y in (9, 11):
+        for x in (3, 4, 5, 6, 7, 8, 19, 20, 21, 22, 23, 24):
+            put(single("13_Conference", 39), x, y, block=(x, y + 1, 1, 1))
+    put(single("22_Museum", 196), 2, 4, block=(2, 6, 2, 1))
+    put(single("22_Museum", 196), 24, 4, block=(24, 6, 2, 1))
+    put(single("13_Conference", 60), 10, 4)                            # the flags at the stage's back corners
+    put(single("13_Conference", 63), 17, 4)
+    r.spots.update({
+        "board":   {"rect": r.screens["board"], "stand": [14, 3], "face": "up"},
+        "podium":  {"rect": [11 * T, 4 * T, 6 * T, 4 * T], "stand": [14, 8], "face": "up"},
+        "copiers": {"rect": r.screens["copiers"], "stand": [4, 3], "face": "up"},
+        "stats":   {"rect": r.screens["stats"], "stand": [23, 3], "face": "up"},
+        "door":    {"rect": [12 * T, (H - 1) * T, 4 * T, T], "stand": [13, H - 2], "face": "down"},
+    })
+    r.staff = [{"x": 4, "y": 8, "dir": "up", "anim": "idle", "seed": "fan-1"},
+               {"x": 21, "y": 8, "dir": "up", "anim": "phone", "seed": "fan-2"},
+               {"x": 10, "y": 10, "dir": "up", "anim": "idle", "seed": "fan-3"},
+               {"x": 18, "y": 12, "dir": "left", "anim": "read", "seed": "fan-4"}]
+    return r
+
+
 def main() -> None:
     if not TV.exists():
         raise SystemExit(f"LimeZu's Modern Interiors is not unpacked in {MI}")
     l1, l2, l3 = (Image.open(TV / f"Tv_Studio_Design_layer_{i}.png").convert("RGBA") for i in (1, 2, 3))
     generic = Image.open(GENERIC).convert("RGBA")
-    rooms = [lobby(l1, l2, l3, generic), macro(l1), geo(l1), rules(l1), money(l1), security(l1)]
+    rooms = [lobby(l1, l2, l3, generic), macro(l1), geo(l1), rules(l1), money(l1), security(l1), arena(l1)]
     OUT.mkdir(parents=True, exist_ok=True)
     for old in OUT.glob("floor*"):
         old.unlink()
@@ -496,7 +570,7 @@ def main() -> None:
            "tile": T, "w": W, "h": H, "rooms": {}}
     for r in rooms:
         r.im.convert("RGB").save(OUT / f"{r.id}.webp", lossless=True, method=6)
-        out["rooms"][r.id] = {"spots": r.spots, "screens": r.screens, "staff": r.staff, "walk": r.walk(door=r.id == "lobby"), **r.extra}
+        out["rooms"][r.id] = {"spots": r.spots, "screens": r.screens, "staff": r.staff, "walk": r.walk(door=r.id in ("lobby", "arena")), **r.extra}
         print(f"{r.id}: {(OUT / f'{r.id}.webp').stat().st_size / 1e3:.0f} KB, {len(r.spots)} spots")
     MANIFEST.write_text(json.dumps(out, separators=(",", ":")) + "\n", encoding="utf-8", newline="\n")
 
