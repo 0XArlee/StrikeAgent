@@ -113,7 +113,17 @@ const en = {
       ["How do I stop it?", "Press Pause or Stop trading in “My agent”. You can also close positions and withdraw directly in the Strike app at any time."],
     ],
   },
-  kicker: { how: "4 steps · no custody", control: "Your account · your wallet", faq: "{n} questions" },
+  kicker: { how: "4 steps · no custody", control: "Your account · your wallet", faq: "{n} questions", copy: "Copy trading on Strike" },
+  copyArena: {
+    title: "Choose whom to copy, with what really happened",
+    sub: "The Copy Arena reads Strike's copy trading live: every trader you can copy, what the people who copied them really made, and a score that weighs it all. Then you copy on Strike, with your amount and your settings.",
+    points: [
+      ["What copying really made", "Strike's best-rated trader can have copiers who lost money together. The Copy Arena shows it next to every score."],
+      ["A score you can read", "Strike's copy score, the copiers in profit, the deepest fall, the track record and the account's size: each part shown."],
+      ["History that keeps growing", "Strike's API shows 30 days. Strike City keeps every day it sees, so the record gets longer every day."],
+    ] as [string, string][],
+    cta: "Enter the Copy Arena", art: "Inside the Copy Arena: the leaderboard over the stage, the three best on the podium, the copiers' wall and Strike's totals",
+  },
   footBy: "Smart Flow Agent",
   footer: {
     legal: "Smart Flow Agent is an independent integration built on Strike Finance through its official builder-code API. Strike Finance is a separate platform. Trading perpetual futures involves substantial risk of loss.",
@@ -488,7 +498,17 @@ const es: Dict = {
       ["¿Cómo lo paro?", "Pulsa Pausar o Dejar de operar en «Mi agente». También puedes cerrar posiciones y retirar directamente en la app de Strike cuando quieras."],
     ],
   },
-  kicker: { how: "4 pasos · sin custodia", control: "Tu cuenta · tu wallet", faq: "{n} preguntas" },
+  kicker: { how: "4 pasos · sin custodia", control: "Tu cuenta · tu wallet", faq: "{n} preguntas", copy: "Copy trading en Strike" },
+  copyArena: {
+    title: "Elige a quién copiar, con lo que de verdad pasó",
+    sub: "La Copy Arena lee el copy trading de Strike en vivo: todos los traders que puedes copiar, lo que de verdad ganaron quienes los copiaron y una puntuación que lo pesa todo. Después copias en Strike, con tu cantidad y tus ajustes.",
+    points: [
+      ["Lo que de verdad dio copiar", "El trader mejor valorado de Strike puede tener copiadores que en conjunto perdieron dinero. La Copy Arena lo muestra junto a cada puntuación."],
+      ["Una puntuación que se entiende", "El copy score de Strike, los copiadores en beneficio, la mayor caída, el historial y el tamaño de la cuenta: cada parte a la vista."],
+      ["Un historial que crece", "La API de Strike muestra 30 días. Strike City guarda cada día que ve, así que el historial se alarga cada día."],
+    ] as [string, string][],
+    cta: "Entrar en la Copy Arena", art: "Dentro de la Copy Arena: el ranking sobre el escenario, los tres mejores en el podio, el muro de copiadores y los totales de Strike",
+  },
   footBy: "Smart Flow Agent",
   footer: {
     legal: "Smart Flow Agent es una integración independiente construida sobre Strike Finance mediante su API oficial de builder codes. Strike Finance es una plataforma distinta. Operar futuros perpetuos implica un riesgo sustancial de pérdida.",

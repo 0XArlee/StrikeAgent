@@ -238,6 +238,23 @@ export function App() {
           </div>
         </section>
 
+        <section className="section" id="copy" aria-labelledby="copy-title">
+          <div className="container copy-arena">
+            <div className="section-head" data-reveal><span className="kicker">{t.kicker.copy}</span><h2 id="copy-title">{t.copyArena.title}</h2><p>{t.copyArena.sub}</p></div>
+            <div className="copy-arena-grid">
+              <a className="copy-arena-art" href="#/city?arena" aria-label={t.copyArena.cta} data-reveal>
+                <img src={`/art/copy-arena-${lang}.webp`} alt={t.copyArena.art} width={1344} height={672} loading="lazy" decoding="async" />
+              </a>
+              <div className="copy-arena-side">
+                <ul className="copy-arena-points" data-reveal-group>
+                  {t.copyArena.points.map(([h, p]) => <li key={h}><h3>{h}</h3><p>{p}</p></li>)}
+                </ul>
+                <a className="btn btn-primary btn-lg" href="#/city?arena">{t.copyArena.cta}</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="section" id="how" aria-labelledby="how-title">
           <div className="container">
             <div className="section-head" data-reveal><span className="kicker">{t.kicker.how}</span><h2 id="how-title">{t.how.title}</h2><p>{t.how.sub}</p></div>

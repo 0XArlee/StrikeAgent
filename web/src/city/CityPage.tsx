@@ -18,7 +18,7 @@ import { dict } from "../i18n";
 import { voiceLine } from "../components/PersonaPicker";
 import { TEMPER_COLOR } from "./persona";
 import { useNews } from "./news";
-import { useCopy } from "./copy";
+import { traderName, useCopy, type CopyState } from "./copy";
 import { CopyChooser, LeadCard } from "./CopyView";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
 import { ART2, BUILDINGS, artReady } from "./world";
@@ -378,7 +378,8 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
             </div>
             <div className="city-panel-body">
               {panel === "agents" && <AgentsPanel T={T} lang={lang} store={store} selected={agent?.id} onPick={(id) => choose({ kind: "agent", id })} />}
-              {panel === "ranks" && <RanksPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "agent", id })} onConnect={onConnect} />}
+              {panel === "ranks" && <RanksPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "agent", id })} onConnect={onConnect}
+                                                copy={copyDoc} onArena={enterArena} onTrader={(id) => (leads.current.some((a) => a.id === `lead:${id}`) ? followLead(id) : setCopy({ open: id }))} />}
               {panel === "feed" && <FeedPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "agent", id })} />}
               {panel === "markets" && <MarketsPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "building", id })} />}
               {panel === "guide" && <GuidePanel T={T} n={totals.total} />}
@@ -728,12 +729,33 @@ function AgentsPanel({ T, lang, store, selected, onPick }: { T: CityText; lang: 
   );
 }
 
-function RanksPanel({ T, lang, store, onPick, onConnect }: { T: CityText; lang: Lang; store: CityStore; onPick: (id: string) => void; onConnect: () => void }) {
+function RanksPanel({ T, lang, store, onPick, onConnect, copy, onArena, onTrader }: { T: CityText; lang: Lang; store: CityStore;
+  onPick: (id: string) => void; onConnect: () => void; copy: CopyState; onArena: () => void; onTrader: (id: string) => void }) {
+  const top = copy && typeof copy === "object" ? copy.traders.slice(0, 3) : [];
   return (
     <>
       <p className="muted small">{T.ranks.by}</p>
       {store.agents.length > 0 && <RankTable T={T} lang={lang} agents={store.agents} onPick={onPick} />}
       <button type="button" className="btn btn-outline btn-block city-cta" onClick={onConnect}>{T.ranks.cta}</button>
+      {top.length > 0 && (   // and the traders people copy on Strike: the Copy Arena's three best
+        <section className="city-copy-top" aria-labelledby="ranks-copy-title">
+          <h3 id="ranks-copy-title">{T.copy.ranksTitle}</h3>
+          <p className="small muted">{T.copy.top3}</p>
+          <ol>
+            {top.map((t, i) => (
+              <li key={t.id}>
+                <button type="button" className="city-row" onClick={() => onTrader(t.id)}>
+                  <span className="num faint">{i + 1}</span>
+                  <span className="grow"><span className="city-row-name mono">{traderName(t)}</span>
+                    <span className="small faint">{t.platform === "strike" ? "Strike" : "Hyperliquid"} · {t.assets.slice(0, 3).join(" · ")}</span></span>
+                  <span className="num city-copy-score">{t.city?.toLocaleString(lang === "es" ? "es-ES" : "en-US", { maximumFractionDigits: 0 }) ?? "—"}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+          <button type="button" className="btn btn-primary btn-block" onClick={onArena}>{T.copy.enter}</button>
+        </section>
+      )}
     </>
   );
 }
