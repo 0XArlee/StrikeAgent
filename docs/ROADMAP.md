@@ -44,10 +44,28 @@ waiting for them.
 - **Agent-to-agent economy**: agents that follow, hedge or copy other agents, with every relationship visible in the
   city.
 
-## 3. How it scales
+## 3. More we can build on what exists
 
-Measured today on the host: every Smart Flow service together uses about 0.3 % of one CPU core and ~420 MB of memory.
-Per connected user the fleet makes one positions query every 30 s, reads open orders only for markets with trades, and
+Each of these reuses something already running, which is why they are realistic:
+
+- **Agents as copy-trading leads on Strike.** An agent trades its own Strike account, so it can become a lead in
+  Strike's copy trading. Anyone could copy a Smart Flow agent from Strike's own app, and Strike gets new leads with a
+  public, audited record.
+- **Ethereum and Solana wallets.** Strike already supports them; builder connect signs differently on each chain, and
+  the onboarding is built around one signature, so opening it to EVM and Solana wallets multiplies who can join.
+- **Plain-language explanations.** Every decision already carries its reasons (range, volume, trend, risk check). A
+  "why did my agent do that?" answer, and a weekly digest of what it did, are a short step away.
+- **A Discord bot and alerts per user.** The alert pipeline exists; pointing it at each user's channel turns the city
+  into notifications people act on.
+- **A public API and widgets.** `/api/copy` and `/api/city` are already public; versioning them and adding embeddable
+  widgets lets other builders, creators and Strike itself show the score and the city anywhere.
+- **Research as a service.** The event study, the exit study and the hourly score test are reusable: any strategy in
+  the registry, or any lead on Strike, can get the same independent evaluation.
+
+## 4. How it scales
+
+When last measured on the host (20 October), the Smart Flow services together used about 0.3 % of one CPU core and
+~420 MB of memory. Per connected user the fleet makes one positions query every 30 s, reads open orders only for markets with trades, and
 reads the account every 1-3 minutes. The site runs on Cloudflare's edge and caches its public documents for up to 30 s.
 
 ### Users' agents (10 → 10,000)
@@ -90,17 +108,19 @@ reads the account every 1-3 minutes. The site runs on Cloudflare's edge and cach
 - Per-user key isolation and rotation without user action; anomaly limits per account (order rate, notional).
 - Third-party security audit before vaults or creator strategies hold other people's money.
 
-## 4. Business model
+## 5. Business model
 
-- **Builder fee**: 0.20 % per execution on every user's agent trade and every copy it runs, credited by Strike to the
-  builder. It grows with volume and was chosen so the strategy's edge survives it.
+- **Builder fee**: 0.20 % per execution on every trade a user's agent makes, credited by Strike to the builder. It
+  grows with volume and was chosen so the strategy's edge survives it.
+- **Copy trading**: copies started by agents run on Strike's own copy trading, bringing it new money and new copiers.
 - **Creators**: a revenue share of the builder fee for strategy creators, paid automatically.
 - **For Strike**: a white-label city and score as Strike's official social and discovery layer; the score and widgets
   as an API for other builders.
 
-## 5. What would help from Strike
+## 6. What would help from Strike
 
 - Streaming endpoints for accounts, positions and copy subscriptions (fewer polls as users grow).
 - Webhooks or an event feed for copy-trading events (new copier, stop-loss hit).
 - A builder-rewards endpoint for automatic revenue reporting and creator payouts.
+- Builder attribution for copies started through builder connect, so managed copies could carry the builder fee too.
 - Vault APIs and a "verified strategy" programme, where an agent's audited record can earn a badge.

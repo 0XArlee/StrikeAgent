@@ -34,9 +34,13 @@ outbound, signed requests.
 
 ## The site (`web/`)
 
-- **Front end** (`web/src`): React 18 + Vite. The landing with the strategy catalogue, the onboarding (character,
+- **Front end** (`web/src`): React 18 + Vite. The landing with the strategy marketplace, the onboarding (character,
   personality, strategy, review, one signature), "My agent" (positions, decisions, settings, copy plan), and the city.
   English and Spanish throughout.
+- **The strategy marketplace**: every strategy users can pick lives in one registry, `config/strategies.json`, read by
+  the landing's catalogue, each strategy's own page, the onboarding, the server's checks and the agents' host. A
+  strategy is listed only with its backtest figures (`config/figures/<id>.json`, generated with the agents' own account
+  model), and an entry can name its creator and a revenue share, ready for third-party strategies.
 - **The city engine** (`web/src/city/engine.ts`, `agents.ts`, `world.ts`): a tile map with roads, crossings and doors,
   A* paths, sprite animation, day and night, weather, building signs and screens drawn from live data, a camera that
   follows a character and keeps it clear of open panels. Each character's position is a function of real state (see
@@ -103,4 +107,5 @@ Python 3.13, standard library HTTP, one runtime dependency (`cryptography`). Lay
 | D1 | `smartflow-city` | `smartflow-city-qa` |
 | Host services | `-mainnet` units, `push` | testnet units, `push-qa` |
 
-Every change goes to staging first and is verified there in a real browser before production.
+Every change goes to staging first and is verified there in a real browser before production: see
+[QUALITY.md](QUALITY.md).

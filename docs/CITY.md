@@ -16,6 +16,8 @@ Open it at https://edgecraft-strikecity.pages.dev/#/city.
 | The people copying a lead right now | Strike's copy leaderboard | walk behind their lead, in a line |
 | An agent copying a lead for its owner | the owner's signed copy plan, as the host reports it | stands with that lead |
 
+![Strike traders holding nothing wait at the Copy Arena's door, each with the people copying them](images/lead-at-arena.jpg)
+
 ## What each building means
 
 | Building | An agent goes there when |
@@ -54,6 +56,11 @@ news reading, the day's move, its day in R). The personality never changes how i
   best) and Strike's copy-trading totals. From any trader: their profile, "Copy on Strike", and "Copy with my agent".
 
 Without an agent of your own you go in as a visitor.
+
+<p align="center">
+  <img src="images/arena-board.jpg" width="49%" alt="Inside the Copy Arena: the leaderboard and the score's live test">
+  <img src="images/tower-geopolitics.jpg" width="49%" alt="Inside the News Tower: the geopolitics floor">
+</p>
 
 ## The dock
 

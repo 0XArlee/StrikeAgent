@@ -86,9 +86,9 @@ own score alone did not. A smooth PnL curve did not help either: market makers' 
 which is why the fall is shown but not weighted.
 
 The collector repeats the test every hour on every copy it has seen, and the arena shows the result live. At the
-time of writing, on 379 copies of 69 traders:
-- **Ranking**: the chance that a copy in profit scored higher than one at a loss is 0.60 with the Strike City score and
+time of writing, on 389 copies of 70 traders:
+- **Ranking**: the chance that a copy in profit scored higher than one at a loss is 0.59 with the Strike City score and
   0.50 with Strike's (0.5 is a coin toss).
-- **Top third**: the share of copies in profit among each score's top third is 25.4 % with ours and 28.6 % with Strike's,
-  against 19.5 % for all copies.
+- **Top third**: the share of copies in profit among each score's top third is 24.8 % with ours and 28.7 % with Strike's,
+  against 19.3 % for all copies.
 - **Caveats**: few traders, today's scores looking back. The test reruns as copies add up.

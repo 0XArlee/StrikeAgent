@@ -1,0 +1,13 @@
+Copyright (c) 2026 EdgeCraft. All rights reserved.
+
+This repository and everything in it, including the Smart Flow strategy and its engine, are proprietary to EdgeCraft.
+The repository is shared with the judges of the Strike Hackathon so they can review the project. No licence to copy,
+modify, distribute or use the code is granted beyond that review without EdgeCraft's written permission.
+
+Third-party material
+
+- City and character art: LimeZu, Modern Exteriors and Modern Interiors (https://limezu.itch.io), used under the
+  packs' commercial licence. Only images composed from the packs are published; the packs themselves are not part of
+  this repository and may not be extracted or redistributed.
+- Fonts: IBM Plex Sans and IBM Plex Mono, SIL Open Font License 1.1.
+- Open-source dependencies keep their own licences, listed in pyproject.toml and web/package.json.
