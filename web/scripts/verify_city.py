@@ -58,10 +58,11 @@ def run(p, name, viewport, mobile):
         ctx.add_init_script("try { sessionStorage.setItem('sf-art', '%s') } catch (e) {}" % os.environ["SF_ART"])
     page = ctx.new_page()
     errors = []
-    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    # TradingView's own telemetry failing (some networks) is not the city's error
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" and "telemetry.tradingview.com" not in m.text else None)
     page.on("pageerror", lambda e: errors.append(str(e)))
 
-    page.goto(f"{BASE}/#/city", wait_until="networkidle")
+    page.goto(f"{BASE}/#/city", wait_until="load")   # not "networkidle": TradingView keeps requests of its own open
     page.wait_for_selector("dialog.city-welcome[open]", timeout=20000)
     page.wait_for_timeout(400)
     page.screenshot(path=str(OUT / f"c01_welcome_{name}.png"))
@@ -158,7 +159,7 @@ def run(p, name, viewport, mobile):
     page.on("pageerror", lambda e: errs2.append(str(e)))
     page.add_init_script("localStorage.setItem('sf-city-welcome', '1')")
     first = page.request.get(f"{BASE}/api/city").json()["agents"][0]["id"]
-    page.goto(f"{BASE}/#/city?agent={first}", wait_until="networkidle")
+    page.goto(f"{BASE}/#/city?agent={first}", wait_until="load")
     page.wait_for_selector(".city-card", timeout=20000)
     check(f"{name}: deep link opens the agent", page.locator("#agent-card-title").count() == 1, page.locator("#agent-card-title").inner_text())
     page.wait_for_timeout(1500)

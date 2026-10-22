@@ -73,7 +73,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   const newsDoc = useNews(ready);                             // read once the city is drawn, then every minute
   const copyDoc = useCopy(ready);                             // Strike's copy trading, the same way
   const [copy, setCopy] = useState<{ open: string | null } | null>(null);   // the chooser of whom to copy (a profile open)
-  const leads = useRef<AgentView[]>([]);   // the leads walking the city with their copiers: never in the agents' lists or totals
+  const leads = useRef<AgentView[]>([]);   // the leads walking the city with their copiers: out of the agents' totals (Agents lists them apart)
   const leadR = useMemo(() => mulberry(0x1ead), []);
   const leadLink = useRef(readLeadLink());
   const [tvOn, setTvOn] = useState(false);                   // TradingView's candles are drawn: show them
@@ -348,11 +348,6 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
         <div className="city-top-actions">
           <EventSoon T={T} doc={newsDoc} now={Date.now()} onOpen={() => setNews("BTC-USD")} />
           <NewsButton T={T} lang={lang} doc={newsDoc} now={Date.now()} onOpen={() => setNews("BTC-USD")} />
-          {onFeedback && (
-            <button type="button" className="city-fb-btn" onClick={onFeedback} title={dict[lang].feedback.title} aria-label={dict[lang].feedback.nav}>
-              <FeedbackIcon /><span className="hide-sm" aria-hidden="true">{dict[lang].feedback.nav}</span>
-            </button>
-          )}
           <span className={`city-weather w${weather.current}`} title={T.weather.tip}>
             <WeatherIcon w={weather.current} /><span className="hide-sm">{[T.weather.calm, T.weather.breezy, T.weather.storm][weather.current]}</span>
             <span className="sr-only">. {T.weather.tip}</span>
@@ -366,7 +361,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
 
       <div className="city-stage">
         <canvas ref={canvas} className="city-canvas" tabIndex={0} role="application" aria-roledescription="map"
-                aria-label={T.canvas(totals.live, totals.inTrade)} />
+                aria-label={T.canvas(totals.live, totals.inTrade, leads.current.length)} />
         {/* it loads as soon as the city is drawn (loading it during the city's own load delayed the city ~0.35 s, measured);
             until its candles are drawn the screen shows the city's own chart (Strike's prices), then it fades in */}
         {ready && (
@@ -397,12 +392,13 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
               <button type="button" className="icon-btn" aria-label={T.card.close} onClick={() => setPanel(null)}><Icon.close /></button>
             </div>
             <div className="city-panel-body">
-              {panel === "agents" && <AgentsPanel T={T} lang={lang} store={store} selected={agent?.id} onPick={(id) => choose({ kind: "agent", id })} />}
+              {panel === "agents" && <AgentsPanel T={T} lang={lang} store={store} leads={leads.current} selected={agent?.id ?? lead?.id}
+                                                  onPick={(id) => choose({ kind: "agent", id })} />}
               {panel === "ranks" && <RanksPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "agent", id })} onConnect={onConnect}
                                                 copy={copyDoc} onArena={enterArena} onTrader={(id) => (leads.current.some((a) => a.id === `lead:${id}`) ? followLead(id) : setCopy({ open: id }))} />}
               {panel === "feed" && <FeedPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "agent", id })} />}
               {panel === "markets" && <MarketsPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "building", id })} />}
-              {panel === "guide" && <GuidePanel T={T} n={totals.total} />}
+              {panel === "guide" && <GuidePanel T={T} n={totals.total} copyPilot={copyPilot} />}
             </div>
           </section>
         )}
@@ -503,6 +499,11 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
         <DockBtn label={T.nav.markets} active={panel === "markets"} onClick={() => togglePanel("markets")} icon={<Ico.bars />} controls />
         <DockBtn label={T.nav.guide} active={panel === "guide"} onClick={() => togglePanel("guide")} icon={<Ico.help />} controls />
         <DockBtn label={T.nav.me} active={me} onClick={openMe} icon={<Ico.user />} />
+        {onFeedback && (   // suggestions, where everyone sees them: it opens a dialog (no pressed state)
+          <button type="button" className="city-dock-btn city-dock-fb" onClick={onFeedback} aria-haspopup="dialog" title={dict[lang].feedback.title}>
+            <FeedbackIcon size={20} /><span>{T.nav.feedback}</span>
+          </button>
+        )}
       </nav>
 
       {ready && welcome && (
@@ -719,11 +720,34 @@ function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks,
   );
 }
 
-function AgentsPanel({ T, lang, store, selected, onPick }: { T: CityText; lang: Lang; store: CityStore; selected?: string; onPick: (id: string) => void }) {
+/** Everyone walking the city: the agents (Smart Flow's and its users'), then the traders people copy on Strike. */
+function AgentsPanel({ T, lang, store, leads, selected, onPick }: { T: CityText; lang: Lang; store: CityStore; leads: AgentView[]; selected?: string;
+  onPick: (id: string) => void }) {
   const [q, setQ] = useState("");
-  const [f, setF] = useState<"all" | "in_trade" | "analyzing" | "waiting" | "paused">("all");
-  const groups: Record<typeof f, Status[]> = { all: [], in_trade: ["in_trade", "entering"], analyzing: ["analyzing", "signal", "risk", "exiting"], waiting: ["waiting", "unfunded"], paused: ["paused", "offline"] };
-  const list = store.agents.filter((a) => (f === "all" || groups[f].includes(a.status)) && a.name.toLowerCase().includes(q.trim().toLowerCase()));
+  const [f, setF] = useState<"all" | "in_trade" | "analyzing" | "waiting" | "paused" | "leads">("all");
+  const groups: Record<Exclude<typeof f, "leads">, Status[]> = { all: [], in_trade: ["in_trade", "entering"], analyzing: ["analyzing", "signal", "risk", "exiting"], waiting: ["waiting", "unfunded"], paused: ["paused", "offline"] };
+  const match = (a: AgentView) => a.name.toLowerCase().includes(q.trim().toLowerCase());
+  const list = f === "leads" ? [] : store.agents.filter((a) => (f === "all" || groups[f].includes(a.status)) && match(a));
+  const leadList = f === "all" || f === "leads" ? leads.filter(match).sort((x, y) => (y.lead?.city ?? 0) - (x.lead?.city ?? 0)) : [];
+  const leadRows = (
+    <ul className="city-list">
+      {leadList.map((a) => {
+        const p = a.position;
+        return (
+          <li key={a.id}>
+            <button type="button" className="city-row real" aria-current={selected === a.id || undefined} onClick={() => onPick(a.id)}>
+              <Avatar id={a.id} />
+              <span className="grow"><span className="city-row-name">{a.name}</span>
+                <span className="city-row-tags"><span className="city-tag lead">{T.copy.leadTag}</span>
+                  <span className={`cp-plat ${a.lead?.platform}`}>{a.lead?.platform === "hyperliquid" ? "Hyperliquid" : "Strike"}</span></span></span>
+              {p ? <span className={`small strong ${p.side === "long" ? "pos" : "neg"}`}>{p.side === "long" ? "LONG" : "SHORT"} {ticker(p.market)}</span>
+                : <span className="num city-copy-score" title={T.copy.cityScore}><span className="sr-only">{T.copy.cityScore}: </span>{Math.round(a.lead?.city ?? 0)}</span>}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
   const rows = (xs: AgentView[]) => (
     <ul className="city-list">
       {xs.map((a) => (
@@ -748,10 +772,19 @@ function AgentsPanel({ T, lang, store, selected, onPick }: { T: CityText; lang: 
         {(Object.keys(groups) as (typeof f)[]).map((k) => (
           <button key={k} type="button" aria-pressed={f === k} onClick={() => setF(k)}>{k === "all" ? T.agents.all : T.status[k as Status]}</button>
         ))}
+        {leads.length > 0 && <button type="button" aria-pressed={f === "leads"} onClick={() => setF("leads")}>{T.agents.leads}</button>}
       </div>
-      <p className="faint small" aria-live="polite">{T.agents.count(list.length)}</p>
-      {!list.length && <p className="muted">{T.agents.none}</p>}
+      <p className="faint small" aria-live="polite">{f === "leads" ? T.agents.leadCount(leadList.length) : f === "all" && leads.length
+        ? `${T.agents.count(list.length)} · ${T.agents.leadCount(leadList.length)}` : T.agents.count(list.length)}</p>
+      {!list.length && !leadList.length && <p className="muted">{T.agents.none}</p>}
       {list.length > 0 && rows(list)}
+      {leadList.length > 0 && (
+        <section className="city-leads" aria-labelledby="city-leads-title">
+          <h3 id="city-leads-title" className="city-leads-title">{T.agents.leads}</h3>
+          <p className="small faint">{T.agents.leadsAbout}</p>
+          {leadRows}
+        </section>
+      )}
     </>
   );
 }
@@ -859,25 +892,32 @@ function MarketsPanel({ T, lang, store, onPick }: { T: CityText; lang: Lang; sto
   );
 }
 
-function GuidePanel({ T, n }: { T: CityText; n: number }) {
+function GuidePanel({ T, n, copyPilot }: { T: CityText; n: number; copyPilot?: boolean }) {
   const legend: Status[] = ["analyzing", "waiting", "signal", "risk", "in_trade", "exiting", "paused", "unfunded"];
+  // copying with your agent: live where it is open, on the way where it is not
+  const qa: [string, string][] = [...T.guide.qa, [T.copyQa.q, copyPilot ? T.copyQa.on : T.copyQa.off]];
+  const road = { ...T.roadmap.items, live: copyPilot ? [...T.roadmap.items.live, T.roadmap.copyAgent] : T.roadmap.items.live,
+    next: copyPilot ? T.roadmap.items.next : [T.roadmap.copyAgent, ...T.roadmap.items.next] };
   return (
     <>
       <SwarmScale T={T} n={n} inline />
       <p className="muted small">{T.guide.sub}</p>
       <div className="faq city-faq">
-        {T.guide.qa.map(([q, a]) => <details key={q}><summary>{q}</summary><div>{a}</div></details>)}
+        {qa.map(([q, a]) => <details key={q}><summary>{q}</summary><div>{a}</div></details>)}
       </div>
       <h3 className="city-h3">{T.legend.title}</h3>
       <ul className="city-legend">
         {legend.map((s) => <li key={s}><Glyph status={s} />{T.status[s]}</li>)}
         <li><Glyph status="in_trade" side="short" />{T.status.in_trade} · SHORT</li>
+        <li><span className="city-legend-lead" aria-hidden="true">★ 62</span>{T.legend.leadIdle}</li>
+        <li><span className="city-legend-lead pos" aria-hidden="true">LONG BTC</span>{T.legend.leadPos}</li>
+        <li><span className="city-legend-trail" aria-hidden="true" />{T.legend.copiers}</li>
       </ul>
       <h3 className="city-h3">{T.roadmap.title}</h3>
       <div className="city-roadmap">
         {(["live", "next", "later"] as const).map((k) => (
           <div key={k} className={`rm rm-${k}`}><p className="rm-title">{T.roadmap[k]}</p>
-            <ul>{T.roadmap.items[k].map((x) => <li key={x}>{x}</li>)}</ul></div>
+            <ul>{road[k].map((x) => <li key={x}>{x}</li>)}</ul></div>
         ))}
       </div>
       <p className="note">{T.liveLong}</p>
@@ -1053,8 +1093,8 @@ function Modal({ onClose, labelledBy, className, children }: { onClose: () => vo
   );
 }
 
-const FeedbackIcon = () => (
-  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+const FeedbackIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M4 5h16v11H9l-5 4z" /><path d="M8 9.5h8M8 12.5h5" /></svg>
 );
 

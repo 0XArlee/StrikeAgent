@@ -8,6 +8,7 @@ Cut text: an element narrower (or shorter) than its content that hides the rest 
 is not a scroll area; sticking out: an element past the window's edges outside any horizontal scroll area.
 """
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -90,18 +91,28 @@ def run(p, tag, viewport, mobile):
     pg = ctx.new_page()
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
-    pg.on("console", lambda m: errors.append(m.text) if m.type == "error" and "tradingview" not in m.text.lower() and "telemetry" not in m.text.lower() else None)
-    dock = lambda name: pg.locator(".city-dock-btn", has_text=name)
+    # not the city's errors: TradingView's own requests, and a failed answer from Strike's public price API (the city keeps
+    # the last order book for 60 s, then hides it)
+    # the browser's "Failed to load resource" lines carry no address: our own site's failures are caught by address below
+    noise = ("tradingview", "telemetry", "api.strikefinance.org/price/", "failed to load resource")
+    pg.on("console", lambda m: errors.append(m.text) if m.type == "error" and not any(n in m.text.lower() for n in noise) else None)
+    own = BASE.split("/")[2]
+    pg.on("requestfailed", lambda r: errors.append(f"{r.failure} {r.url[:100]}")
+          if r.url.split("/")[2] == own and "ERR_ABORTED" not in (r.failure or "") else None)   # aborted = left the page
+    pg.on("response", lambda r: errors.append(f"{r.status} {r.url[:100]}") if r.status >= 500 and r.url.split("/")[2] == own else None)
+    dock = lambda name: pg.locator(".city-dock-btn").filter(has_text=re.compile(rf"^\s*{re.escape(name)}\s*$"))   # "Feed" is not "Feedback"
 
     def open_city(hash_="#/city"):
-        pg.goto(f"{BASE}/{hash_}", wait_until="networkidle")
-        pg.reload(wait_until="networkidle")
+        # "load", not "networkidle": TradingView's widget keeps its own requests open (scanner-backend timing out after
+        # ~21 s from some networks), which is not the city; the city says when it is ready (data-ready)
+        pg.goto(f"{BASE}/{hash_}", wait_until="load")
+        pg.reload(wait_until="load")
         pg.wait_for_selector(".city[data-ready]", timeout=40000)
         pg.wait_for_timeout(1200)
 
     # ---- welcome
     def welcome():
-        pg.goto(f"{BASE}/#/city", wait_until="networkidle")
+        pg.goto(f"{BASE}/#/city", wait_until="load")
         pg.evaluate("localStorage.removeItem('sf-city-welcome')")
         open_city()
         pg.wait_for_selector(".city-welcome[open]", timeout=15000)
@@ -112,6 +123,10 @@ def run(p, tag, viewport, mobile):
     step(tag, "welcome", welcome)
     audit(pg, tag, "top bar", ".city-top")
     audit(pg, tag, "dock", ".city-dock")
+    # every dock label shows whole inside its button (8 of them share a phone's width)
+    fit = pg.evaluate("""() => [...document.querySelectorAll('.city-dock-btn')].map(b => { const r = b.getBoundingClientRect(), s = b.querySelector('span:not(.sr-only)');
+        const t = s ? s.getBoundingClientRect() : r; return [s ? s.innerText : '?', t.left >= r.left - 0.5 && t.right <= r.right + 0.5 && r.right <= innerWidth + 0.5]; })""")
+    check(f"{tag} dock: {len(fit)} buttons, every label whole", len(fit) >= 8 and all(ok for _, ok in fit), ", ".join(n for n, ok in fit if not ok))
 
     # ---- news
     def news():
@@ -130,7 +145,9 @@ def run(p, tag, viewport, mobile):
 
     # ---- feedback
     def feedback():
-        pg.locator(".city-fb-btn").click()
+        fb = pg.locator(".city-dock .city-dock-fb")
+        check(f"{tag} feedback: in the dock, visible", fb.count() == 1 and fb.is_visible() and pg.locator(".city-top .city-dock-fb").count() == 0)
+        fb.click()
         pg.wait_for_selector("dialog[open], [role=dialog]", timeout=8000)
         sel = "dialog[open]" if pg.locator("dialog[open]").count() else "[role=dialog]"
         audit(pg, tag, "feedback dialog", sel)
@@ -152,11 +169,16 @@ def run(p, tag, viewport, mobile):
 
     # ---- zoom
     def zoom():
-        z0 = pg.evaluate("() => 0")
-        pg.get_by_role("button", name=L["zoomIn"]).click(); pg.wait_for_timeout(200)
-        pg.get_by_role("button", name=L["zoomOut"]).click(); pg.wait_for_timeout(200)
-        pg.locator(".city-zoom .city-fab").nth(2).click(); pg.wait_for_timeout(300)
-        check(f"{tag} zoom in, out and recenter respond", z0 == 0 and not errors)
+        # the exchange's screen is drawn at the map's zoom: its width says the zoom changed
+        w = lambda: pg.evaluate("() => { const e = document.querySelector('.city-tv, .city-book'); return e ? e.getBoundingClientRect().width : 0 }")
+        w0 = w()
+        pg.get_by_role("button", name=L["zoomOut"]).click(); pg.wait_for_timeout(400)
+        w1 = w()
+        pg.get_by_role("button", name=L["zoomIn"]).click(); pg.get_by_role("button", name=L["zoomIn"]).click(); pg.wait_for_timeout(400)
+        w2 = w()
+        pg.locator(".city-zoom .city-fab").nth(2).click(); pg.wait_for_timeout(400)
+        w3 = w()
+        check(f"{tag} zoom out, in and recenter change the map", w0 > 0 and w1 < w0 < w2 and abs(w3 - w0) < 2, f"{w0:.0f} → {w1:.0f} → {w2:.0f} → {w3:.0f} px")
     step(tag, "zoom", zoom)
 
     # ---- the five panels
@@ -197,6 +219,26 @@ def run(p, tag, viewport, mobile):
         pg.locator(".city-card .icon-btn").first.click(); pg.wait_for_timeout(300)
         check(f"{tag} agent card: Close", pg.locator("#agent-card-title").count() == 0)
     step(tag, "agent", agent)
+
+    # ---- the Strike traders in Agents: listed after the agents, each opens its card
+    def leads():
+        if dock(L["panels"][0]).get_attribute("aria-pressed") != "true":   # on a desktop the panel stays open after a pick
+            dock(L["panels"][0]).click()
+        pg.wait_for_selector("#city-panel .city-leads .city-row", timeout=15000)
+        n = pg.locator("#city-panel .city-leads .city-row").count()
+        check(f"{tag} agents: {n} Strike traders listed with the agents", n > 0)
+        pg.locator("#city-panel .city-filters button").last.click(); pg.wait_for_timeout(200)
+        only = pg.locator("#city-panel .city-row").count() == pg.locator("#city-panel .city-leads .city-row").count()
+        check(f"{tag} agents: the traders filter shows only them", only)
+        audit(pg, tag, "agents traders filter", "#city-panel")
+        pg.locator("#city-panel .city-leads .city-row").first.click()
+        pg.wait_for_selector("#lead-card-title", timeout=8000)
+        audit(pg, tag, "trader card from agents", ".city-card")
+        pg.locator(".city-card .icon-btn").first.click(); pg.wait_for_timeout(300)
+        check(f"{tag} trader card: Close", pg.locator("#lead-card-title").count() == 0)
+        if pg.locator("#city-panel").count():
+            pg.locator("#city-panel .icon-btn").first.click(); pg.wait_for_timeout(300)
+    step(tag, "leads", leads)
 
     # ---- a building and its chart
     def building():

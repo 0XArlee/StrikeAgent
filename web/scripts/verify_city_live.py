@@ -50,11 +50,13 @@ def open_city(browser, base, viewport, mobile, welcome=True, block_api=False, ha
         ctx.route("**/api/city", lambda r: r.abort())
     page = ctx.new_page()
     errors = []
-    page.on("console", lambda m: errors.append(m.text) if m.type == "error" and "api/city" not in m.text else None)
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" and "api/city" not in m.text and "telemetry.tradingview.com" not in m.text else None)
     page.on("pageerror", lambda e: errors.append(str(e)))
     if not welcome:
         page.add_init_script("localStorage.setItem('sf-city-welcome', '1')")
-    page.goto(f"{base}/{hash}", wait_until="networkidle")
+    page.goto(f"{base}/{hash}", wait_until="load")   # not "networkidle": TradingView keeps requests of its own open
+    if not block_api:   # without its data the city shows its error instead
+        page.wait_for_selector(".city[data-ready]", timeout=40000)
     return ctx, page, errors
 
 
@@ -78,15 +80,19 @@ def real_mode(p, name, viewport, mobile):
     page.screenshot(path=str(OUT / f"l02_map_{name}.png"))
 
     # agents panel: real section first, LIVE tags, the demo switch
-    page.locator(".city-dock-btn", has_text="Agents").click()
+    page.get_by_role("button", name="Agents", exact=True).click()
     page.wait_for_selector(".city-panel")
     page.wait_for_timeout(300)
-    rows = page.locator(".city-row.real").count()
+    # the agents, then the Strike traders walking the city in their own section (one per trader that walks)
+    leads = page.locator(".city-leads .city-row").count()
+    rows = page.locator(".city-row").count() - leads
+    walking = sum(1 for t in page.request.get(f"{REAL}/api/copy").json().get("traders", []) if t.get("walks"))
     check(f"{name}: every agent is listed", rows == len(real), f"{rows} rows")
+    check(f"{name}: every Strike trader walking the city is listed apart", leads == walking, f"{leads} rows (api: {walking})")
     page.screenshot(path=str(OUT / f"l03_agents_{name}.png"))
     axe(page, f"{name} agents panel (live)")
-    check(f"{name}: only real agents, no demo population", page.locator(".city-row").count() == len(real)
-          and page.locator(".city-demo, .city-switch").count() == 0, f"{page.locator('.city-row').count()} rows")
+    check(f"{name}: only real agents, no demo population", rows == len(real)
+          and page.locator(".city-demo, .city-switch").count() == 0, f"{rows} rows")
 
     # a real agent's card: its latest real check, schedule and paper account. An agent in a trade shows its position
     # instead, so the first one that is not in a trade (when all are, its position is checked)

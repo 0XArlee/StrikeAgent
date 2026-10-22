@@ -376,10 +376,11 @@ export function stats(a: AgentView) {
 
 // ---------------------------------------------------------------- leads of Strike's copy trading (/api/copy)
 /** Where a lead stands: at the tower of the market of its biggest open position (the exchange for a market the city
- *  has no tower for), or at the Copy Arena while it holds nothing. */
+ *  has no tower for), or, while it holds nothing, at its own spot in the plaza, waiting like the agents do (they all
+ *  stood at the Copy Arena's door before: half of them out of the opening view). */
 function leadPlace(t: Trader): string {
   const p = mainPosition(t);
-  return p ? MARKET_TOWER[p.market] ?? "exchange" : "arena";
+  return p ? MARKET_TOWER[p.market] ?? "exchange" : "plaza";
 }
 
 /** A lead as a walker of the city (its id "lead:" + its account). Keeps its place and path when it already walks; a
@@ -403,7 +404,8 @@ export function leadView(t: Trader, prev: AgentView | undefined, R: () => number
     stopKnown: false, upnl: p.upnl } : null;
   a.focus = p?.market ?? "";
   if (!prev) {   // first appearance: already at its place
-    const place = leadPlace(t), q = spot(place, R);
+    a.post = nearFountain(R);
+    const place = leadPlace(t), q = place === "plaza" ? { x: a.post.x * TILE + 8, y: a.post.y * TILE + 12 } : spot(place, R);
     a.x = q.x; a.y = q.y; a.target = place;
   }
   return a;
@@ -417,5 +419,7 @@ export function leadTick(a: AgentView, now: number, R: () => number): void {
     a.trip = undefined;
   }
   const place = leadPlace(a.lead);
-  if (a.target !== place) goTo(a, place, R);
+  if (a.target === place) return;
+  if (place === "plaza") goToTile(a, a.post ?? (a.post = nearFountain(R)), "plaza");
+  else goTo(a, place, R);
 }

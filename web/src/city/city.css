@@ -156,6 +156,8 @@
 .city-dock-btn[aria-pressed="true"] { color: var(--primary); }
 .city-dock-btn[aria-pressed="true"]::before { content: ""; position: absolute; top: -7px; left: 22%; right: 22%; height: 2px; border-radius: 2px; background: var(--primary); }
 .city-dock-btn:focus-visible { box-shadow: var(--focus); }
+.city-dock-fb { color: var(--golden); }   /* suggestions: in the dock, in its own colour so it is seen */
+.city-dock-fb:hover { color: #ffd29a; }
 
 /* ---------- loading ---------- */
 .city-loading { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 40%, #0b1d17, #05070a 70%); }
@@ -221,12 +223,16 @@
   .city-panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 64%; border-radius: 16px 16px 0 0; border-bottom: 0; }
   .city-card { left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 62%; }
   .city-dock { gap: 0; justify-content: space-between; padding-left: 4px; padding-right: 4px; }
-  .city-dock-btn { min-width: 0; flex: 1; padding: 4px 2px; font-size: 10.5px; }
+  /* eight buttons share a phone's width: equal shares, but a long label ("Actividad", "Mercados") takes what it needs
+     from the short ones ("Mapa", "Guía"), so no two labels ever touch (measured from 320 to 412 px in both languages) */
+  .city-dock-btn { min-width: auto; flex: 1 1 0; padding: 4px 3px; font-size: 10.5px; }
+  .city-dock-btn span { white-space: nowrap; }
   .city-dialog { width: 100%; max-width: none; margin: auto 0 0; border-radius: 16px 16px 0 0; max-height: 92dvh; }
   .city-dialog-inner { padding: 20px 16px calc(16px + env(safe-area-inset-bottom)); }
   .city-statgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (max-width: 400px) { .city-stats .hide-xs { display: none !important; } }
+@media (max-width: 400px) { .city-stats .hide-xs { display: none !important; } .city-dock-btn { font-size: 10px; padding: 4px 2px; } }
+@media (max-width: 350px) { .city-dock { padding-left: 2px; padding-right: 2px; } .city-dock-btn { font-size: 9px; padding: 4px 1px; } }
 @media (max-width: 370px) { .city-top .city-live { display: none; } }
 @media (prefers-reduced-motion: reduce) { .city-panel, .city-card, .city-dialog, .city-live-dot, .city-event-dot { animation: none; } }
 
@@ -500,17 +506,12 @@
 .city-say { font-size: 14px; font-style: italic; color: var(--text); margin-bottom: 2px !important; }
 .city-persona-t { color: var(--tc); font-weight: 600; }
 .city-persona-job { margin-top: 2px !important; color: var(--text-muted); }
-.city-fb-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 10px; border: 1px solid var(--border);
-  border-radius: 8px; background: transparent; color: var(--text-muted); font: 600 13px var(--font); cursor: pointer; }
-.city-fb-btn:hover { color: var(--text); border-color: #4a4a4a; }
-.city-fb-btn:focus-visible { outline: none; box-shadow: var(--focus); }
-/* the top bar fits at every width (checked from 360 to 1920 px, with and without a release warning): the feedback and
-   weather labels give way to icons first (each keeps its name for screen readers), then the tickers (also in Markets),
-   then the release warning shortens ("CPI · 3 h") and the news reading goes, then the "live" word and one figure, then the
-   brand's words and the news label */
+/* the top bar fits at every width (checked from 360 to 1920 px, with and without a release warning): the weather label
+   gives way to its icon first (it keeps its name for screen readers), then the tickers (also in Markets), then the
+   release warning shortens ("CPI · 3 h") and the news reading goes, then the "live" word and one figure, then the brand's
+   words and the news label. Feedback lives in the dock, where it is seen. */
 @media (max-width: 1600px) {
-  .city-fb-btn, .city-weather { width: 34px; padding: 0; justify-content: center; }
-  .city-fb-btn .hide-sm { display: none; }
+  .city-weather { width: 34px; padding: 0; justify-content: center; }
   .city-top .city-weather > .hide-sm { display: inline; position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 @media (max-width: 1520px) { .city-news-btn .nb-read { display: none; } }   /* the reading is in the News dialog */
@@ -681,4 +682,15 @@
   .cp-ev-bar { grid-column: 1 / -1; grid-row: 2; }
 }
 .city-card-copying { margin: 10px 0 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+/* Agents: the Strike traders after the agents */
+.city-leads { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-soft); }
+.city-leads-title { margin: 0 0 2px; font-size: 14px; }
+.city-leads > p { margin: 0 0 8px; }
+.city-row-tags .cp-plat { align-self: center; }
 
+/* the Guide's legend: a Strike trader's bubble (rose border, as on the map) and their copiers' trail */
+.city-legend-lead { flex: none; padding: 1px 5px; border: 1px solid #fb7185; border-radius: 5px; background: rgba(8, 12, 14, .9);
+  color: #fb7185; font: 700 10px var(--font-mono, "IBM Plex Mono", monospace); white-space: nowrap; }
+.city-legend-lead.pos { color: #4efab0; }
+.city-legend-trail { flex: none; width: 18px; height: 6px; border-radius: 3px;
+  background: radial-gradient(circle, #fb7185 2px, transparent 2.5px) 0 0 / 6px 6px repeat-x; opacity: .8; }

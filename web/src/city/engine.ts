@@ -609,7 +609,7 @@ export class CityEngine {
     if (a.lead) {
       color = LEAD_COLOR;
       const p = a.position;
-      label = p ? `${p.side === "long" ? "LONG" : "SHORT"} ${ticker(p.market)}` : `★${Math.round(a.lead.city ?? a.lead.score ?? 0)}`;
+      label = p ? `${p.side === "long" ? "LONG" : "SHORT"} ${ticker(p.market)}` : `${Math.round(a.lead.city ?? a.lead.score ?? 0)}`;   // the star is its icon
       text = p ? (p.side === "long" ? "#4efab0" : "#f43f5e") : LEAD_COLOR;
     } else if (a.status === "in_trade" && a.position) {
       const r = a.position.rOpen;
