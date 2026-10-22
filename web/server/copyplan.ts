@@ -122,14 +122,28 @@ export async function copying(db: D1Database, ids: string[], env: string): Promi
   return out;
 }
 
-/** GET /api/internal/copyplans (HMAC): the plans of the owners connected to Strike on this site's network. */
+/** GET /api/internal/copyplans (HMAC): the plans of the owners connected to Strike on this site's network. An agent
+ *  deleted or disconnected from Strike has its plan served as "off" (so the host stops a copy still running) until
+ *  the host reports nothing left to stop. */
 export async function hostCopyPlans({ request, env }: { request: Request; env: Env }): Promise<Response> {
   if (!(await fromHost(env, request, "GET /api/internal/copyplans"))) return fail(401, "bad signature");
   const e = liveEnv(env);
-  const rows = (await env.DB.prepare("SELECT c.user_id, c.plan, c.version, l.pub, l.account_id FROM copy_plans c "
-    + "JOIN live_links l ON l.user_id = c.user_id WHERE c.env = ?1 AND l.env = ?1 AND l.status = 'active'").bind(e)
-    .all<{ user_id: string; plan: string; version: number; pub: string; account_id: string }>()).results;
-  return json({ env: e, plans: rows.map((r) => ({ userId: r.user_id, pub: r.pub, accountId: r.account_id, version: r.version, plan: JSON.parse(r.plan) })) });
+  const rows = (await env.DB.prepare("SELECT c.user_id, c.plan, c.version, l.pub, l.account_id, l.status AS link, u.id AS uid, s.body AS status "
+    + "FROM copy_plans c JOIN live_links l ON l.user_id = c.user_id AND l.env = ?1 LEFT JOIN users u ON u.id = c.user_id "
+    + "LEFT JOIN copy_status s ON s.user_id = c.user_id WHERE c.env = ?1").bind(e)
+    .all<{ user_id: string; plan: string; version: number; pub: string; account_id: string; link: string; uid: string | null; status: string | null }>()).results;
+  const plans = [];
+  for (const r of rows) {
+    const gone = r.link !== "active" || !r.uid;
+    const plan = JSON.parse(r.plan) as CopyPlan;
+    if (gone) {
+      const st = r.status ? JSON.parse(r.status) as { state?: string; env?: string } : null;
+      if (st?.env === e && st.state === "off") continue;   // stopped and reported: nothing left to do
+      plan.mode = "off";
+    }
+    plans.push({ userId: r.user_id, pub: r.pub, accountId: r.account_id, version: r.version, plan });
+  }
+  return json({ env: e, plans });
 }
 
 /** POST /api/internal/copystatus (HMAC): how each plan goes, as the host saw it. */

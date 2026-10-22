@@ -349,7 +349,11 @@ export async function action(c: Ctx): Promise<Response> {
   const set = (sql: string, ...v: unknown[]) => db.prepare(`UPDATE users SET ${sql}, updated_at = ?1 WHERE id = ?2`).bind(now, u.id, ...v);
   const was = { name: u.name, status: u.status, public: !!u.public, strategy: strategyOf(u.strategy), markets: JSON.parse(u.markets) as string[], risk: u.risk };
   if (p.action === "revoke") {   // the agent goes; its audit rows stay
+    // and nothing of it keeps running: its Strike connection goes off, and a copy it runs is stopped by the host
+    // (copyplan.ts serves the plans of gone agents as "off" until the host reports no copy left)
     await db.batch([audit(db, request, liveEnv(env), { ...proof, ok: true, detail: { deleted: was } }, now),
+      db.prepare("UPDATE live_links SET status = 'off', updated_at = ?2 WHERE user_id = ?1").bind(u.id, now),
+      db.prepare("UPDATE copy_plans SET plan = json_set(plan, '$.mode', 'off'), version = version + 1, updated_at = ?2 WHERE user_id = ?1").bind(u.id, now),
       db.prepare("DELETE FROM events WHERE user_id = ?1").bind(u.id), db.prepare("DELETE FROM users WHERE id = ?1").bind(u.id)]);
     purgeCity(c);
     return json({ deleted: true });
