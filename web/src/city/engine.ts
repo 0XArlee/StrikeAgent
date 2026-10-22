@@ -10,9 +10,11 @@ export type Sel = { kind: "agent" | "building"; id: string };
 type Hit = Sel | { kind: "screen"; id: string };
 
 /** The chart on the exchange's screen (world px): TradingView's live chart is laid over it (city/tradingview.tsx). */
-export const SCREEN_CHART = { x: SCREEN.x + 2, y: SCREEN.y + 2, w: Math.round(SCREEN.w * 0.64) - 2, h: SCREEN.h - 16 };
+export const SCREEN_CHART = { x: SCREEN.x + 2, y: SCREEN.y + 2, w: Math.round(SCREEN.w * 0.64) - 2, h: SCREEN.h - 19 };
 /** And the order book beside it: Strike's real BTC-USD book (the city lays its prices and sizes over it). */
-export const SCREEN_BOOK = { x: SCREEN.x + Math.round(SCREEN.w * 0.66), y: SCREEN.y + 2, w: SCREEN.w - Math.round(SCREEN.w * 0.66) - 2, h: SCREEN.h - 16 };
+export const SCREEN_BOOK = { x: SCREEN.x + Math.round(SCREEN.w * 0.66), y: SCREEN.y + 2, w: SCREEN.w - Math.round(SCREEN.w * 0.66) - 2, h: SCREEN.h - 19 };
+/** The news strip along the screen's foot (world px). */
+const STRIP = 15;
 
 export interface EngineOpts {
   getAgents: () => AgentView[];
@@ -296,9 +298,9 @@ export class CityEngine {
     g.drawImage(this.lightLayer, 0, 0);
     g.drawImage(this.glowLayer, 0, 0);   // windows, neon and lamps shine through the night
     g.globalAlpha = 1;
-    this.drawSigns(g, time, n);
     // screen-space overlays
     g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.drawSigns(g, time, n);
     if (this.o.getWeather() === 2 && !this.o.reducedMotion) this.drawRain(g, dt);
     // bubbles: the selected agent first, then front to back. While the city is small every agent keeps its name and
     // overlapping bubbles stack; in a crowd they stack or shrink to a dot
@@ -355,7 +357,7 @@ export class CityEngine {
     const { x, y, w, h } = SCREEN;
     g.fillStyle = "#020806"; g.fillRect(x, y, w, h);
     g.strokeStyle = "rgba(78,250,176,0.6)"; g.lineWidth = 1; g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-    const chartH = h - 14;
+    const chartH = h - STRIP - 2;
     const hist = this.o.getHistory("BTC-USD");
     g.fillStyle = "rgba(78,250,176,0.08)";
     for (let gx = x + 8; gx < x + w * 0.62; gx += 16) g.fillRect(gx, y + 3, 1, chartH - 4);
@@ -393,17 +395,17 @@ export class CityEngine {
       g.fillStyle = "rgba(78,250,176,0.75)"; g.fillRect(bx + bw - b, y + chartH - 3 - (4 - i) * 4, b, 3);
     }
     // news strip
-    const ny = y + h - 12;
-    g.fillStyle = "#041510"; g.fillRect(x + 1, ny, w - 2, 11);
+    const ny = y + h - STRIP;
+    g.fillStyle = "#041510"; g.fillRect(x + 1, ny, w - 2, STRIP - 1);
     g.save();
-    g.beginPath(); g.rect(x + 1, ny, w - 2, 11); g.clip();
+    g.beginPath(); g.rect(x + 1, ny, w - 2, STRIP - 1); g.clip();
     const txt = this.o.getHeadline();
-    g.font = `600 7px "IBM Plex Mono", monospace`;
+    g.font = `600 9px "IBM Plex Mono", monospace`;
     g.textBaseline = "middle"; g.textAlign = "left";
     const tw = g.measureText(txt).width + 40;
     const off = this.o.reducedMotion ? 0 : (t * 22) % tw;
     g.fillStyle = "#c7fde4";
-    for (let k = -1; k < 3; k++) g.fillText(txt, x + 4 - off + k * tw, ny + 6);
+    for (let k = -1; k < 3; k++) g.fillText(txt, x + 4 - off + k * tw, ny + STRIP / 2);
     g.restore();
   }
 
@@ -539,38 +541,46 @@ export class CityEngine {
     }
   }
 
+  /** Each building's name on a lit plate at its front (the exchange's under its screen), drawn on the screen so it
+   *  reads at any zoom: 12-20 CSS px, never the size of a speck when zoomed out nor of a poster when zoomed in. A market
+   *  tower adds its live price under its name. */
   private drawSigns(g: CanvasRenderingContext2D, t: number, night: number) {
     const prices = this.o.getPrices();
+    const font = `"IBM Plex Mono", monospace`;
     g.save();
     g.textAlign = "center";
     g.textBaseline = "middle";
     for (const b of BUILDINGS) {
-      const x = (b.x + b.w / 2) * TILE, y = (b.y + b.d) * TILE + 7;
+      const wy = b.kind === "exchange" ? Math.max((b.y + b.d) * TILE + 7, SCREEN.y + SCREEN.h + 9) : (b.y + b.d) * TILE + 7;
+      const s = this.toScreen((b.x + b.w / 2) * TILE, wy);
+      if (s.x < -200 || s.x > this.vw + 200 || s.y < -40 || s.y > this.vh + 60) continue;
+      const big = b.kind === "exchange" || b.kind === "news";
+      const size = Math.round(Math.min(big ? 20 : 17, Math.max(big ? 13 : 12, (big ? 10 : 8.5) * this.zoom)));
       const flicker = b.kind === "alley" && t ? 0.7 + 0.3 * Math.max(0, Math.sin(t * 13) * Math.sin(t * 3.1)) : 1;
-      const size = b.kind === "exchange" ? 9 : 7;
-      g.font = `700 ${size}px "IBM Plex Mono", monospace`;
-      const tw = g.measureText(b.label).width;
-      g.fillStyle = "rgba(3,6,8,0.75)";
-      g.fillRect(x - tw / 2 - 4, y - size / 2 - 2, tw + 8, size + 4);
-      g.shadowColor = b.neon;
-      g.shadowBlur = 5 * (0.4 + night);
-      g.fillStyle = b.neon;
+      g.font = `700 ${size}px ${font}`;
+      const tw = g.measureText(b.label).width, padX = Math.round(size * 0.6), h = Math.round(size * 1.6);
+      roundRect(g, s.x - tw / 2 - padX, s.y - h / 2, tw + padX * 2, h, 4);
+      g.fillStyle = "rgba(3,6,8,0.86)"; g.fill();
+      g.strokeStyle = b.neon; g.globalAlpha = 0.6; g.lineWidth = 1; g.stroke();
       g.globalAlpha = flicker;
-      g.fillText(b.label, x, y + 0.5);
+      g.shadowColor = b.neon;
+      g.shadowBlur = 6 * (0.4 + night);
+      g.fillStyle = b.neon;
+      g.fillText(b.label, s.x, s.y + 1);
       g.globalAlpha = 1;
       g.shadowBlur = 0;
       if (b.market && prices[b.market]) {
         const p = prices[b.market];
-        g.font = `600 7px "IBM Plex Mono", monospace`;
+        const ps = Math.max(11, Math.round(size * 0.78));
+        g.font = `600 ${ps}px ${font}`;
         const txt = `${p.price >= 1000 ? Math.round(p.price).toLocaleString("en-US") : p.price.toFixed(2)} ${p.change >= 0 ? "▲" : "▼"}${Math.abs(p.change).toFixed(2)}%`;
-        const pw = g.measureText(txt).width + 8, py = y + size / 2 + 5;
-        g.fillStyle = "rgba(2,6,6,0.92)";
-        g.fillRect(x - pw / 2, py, pw, 11);
+        const pw = g.measureText(txt).width + ps, ph = Math.round(ps * 1.5), py = s.y + h / 2 + 3;
+        roundRect(g, s.x - pw / 2, py, pw, ph, 3);
+        g.fillStyle = "rgba(2,6,6,0.92)"; g.fill();
         g.strokeStyle = p.change >= 0 ? "rgba(78,250,176,0.55)" : "rgba(244,63,94,0.55)";
-        g.lineWidth = 1;
-        g.strokeRect(x - pw / 2 + 0.5, py + 0.5, pw - 1, 10);
+        g.lineWidth = 1; g.stroke();
         g.fillStyle = p.change >= 0 ? "#4efab0" : "#f43f5e";
-        g.fillText(txt, x, py + 6);
+        g.fillText(txt, s.x, py + ph / 2 + 0.5);
       }
     }
     g.restore();

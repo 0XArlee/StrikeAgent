@@ -25,8 +25,8 @@ export function NewsButton({ T, lang, doc, now, onOpen }: { T: CityText; lang: L
     + (ev ? `. ${N.soon(N.evShort[ev.kind] ?? ev.kind, when(T, ev, now))}` : "");
   return (
     <button type="button" className="city-news-btn" aria-haspopup="dialog" aria-label={N.open + said} title={N.open} onClick={onOpen}>
-      <NewsIcon />{ev && <span className="city-news-badge" aria-hidden="true" />}<span className="hide-sm">{N.title}</span>
-      {net != null && <span className={`num hide-sm ${sideOf(net)}`} aria-hidden="true">BTC {signed(net, lang)}</span>}
+      <NewsIcon />{ev && <span className="city-news-badge" aria-hidden="true" />}<span className="nb-label">{N.title}</span>
+      {net != null && rd?.label && <span className={`nb-read ${sideOf(net)}`} aria-hidden="true">BTC {N.labels[rd.label].toLocaleLowerCase(lang === "es" ? "es-ES" : "en-US")}</span>}
     </button>
   );
 }
@@ -48,9 +48,12 @@ export function EventSoon({ T, doc, now, onOpen }: { T: CityText; doc: Doc; now:
   const ev = soonEvent(doc, now);
   if (!ev) return null;
   const text = T.news.soon(T.news.evShort[ev.kind] ?? ev.kind, when(T, ev, now));
+  // where the bar is short: the release's code and the first unit of the countdown ("CPI · 3 h")
+  const short = `${T.tower.codes[ev.kind] ?? ev.kind} · ${ev.just ? T.news.eventJust : countdown(ev.t - now, T.news.units).split(" ").slice(0, 2).join(" ")}`;
   return (
-    <button type="button" className={`city-event${ev.just ? " just" : ""}`} title={T.news.soonTip} onClick={onOpen} aria-haspopup="dialog">
-      <span className="city-event-dot" aria-hidden="true" /><span className="hide-sm">{text}</span><span className="sr-only">{`${text}. ${T.news.soonTip}`}</span>
+    <button type="button" className={`city-event${ev.just ? " just" : ""}`} title={`${text}. ${T.news.soonTip}`} onClick={onOpen} aria-haspopup="dialog">
+      <span className="city-event-dot" aria-hidden="true" /><span className="ev-full" aria-hidden="true">{text}</span>
+      <span className="ev-short" aria-hidden="true">{short}</span><span className="sr-only">{`${text}. ${T.news.soonTip}`}</span>
     </button>
   );
 }

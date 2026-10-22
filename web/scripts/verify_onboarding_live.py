@@ -66,7 +66,7 @@ def run(p, tag, viewport, mobile):
     page = ctx.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" and "telemetry.tradingview.com" not in m.text else None)   # TradingView's own telemetry is not ours
     signed = []
 
     def py_sign(payload_hex):

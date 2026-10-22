@@ -23,8 +23,9 @@ const reduced = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduce
 
 interface Walker { x: number; y: number; dir: Dir; path: [number, number][]; then?: () => void }
 
-export function ArenaView({ T, lang, doc, agent, onExit, onFollow }:
-  { T: CityText; lang: Lang; doc: CopyState; agent: AgentView | null; onExit: () => void; onFollow: (id: string) => void }) {
+export function ArenaView({ T, lang, doc, agent, onExit, onFollow, onCopy }:
+  { T: CityText; lang: Lang; doc: CopyState; agent: AgentView | null; onExit: () => void; onFollow: (id: string) => void;
+    onCopy?: (t: Trader) => void }) {   // copy with your agent (where it is open)
   const C = T.copy, W = T.tower;
   const [spot, setSpot] = useState<Spot>("board");
   const [open, setOpen] = useState<string | null>(null);   // a trader's profile open on the board
@@ -256,7 +257,7 @@ export function ArenaView({ T, lang, doc, agent, onExit, onFollow }:
           <h3 id="ar-spot-title">{C.spots[spot]}</h3>
           {agent && !arrived && spot !== "door" && <p className="tw-going small" role="status">{W.going(name, C.spots[spot].toLocaleLowerCase(lang === "es" ? "es-ES" : "en-US"))}</p>}
           {!d ? <p className="news-state" role="status">{doc === null ? C.loading : doc === "none" ? C.none : C.error}</p>
-            : <SpotBody T={T} lang={lang} doc={d} spot={spot} open={open} onProfile={profile} onFollow={onFollow} onExit={onExit} />}
+            : <SpotBody T={T} lang={lang} doc={d} spot={spot} open={open} onProfile={profile} onFollow={onFollow} onExit={onExit} onCopy={onCopy} />}
         </section>
       </div>
     </div>
@@ -264,13 +265,14 @@ export function ArenaView({ T, lang, doc, agent, onExit, onFollow }:
 }
 
 // ------------------------------------------------------------------ what a spot shows beside the scene
-function SpotBody({ T, lang, doc, spot, open, onProfile, onFollow, onExit }: { T: CityText; lang: Lang; doc: CopyDoc; spot: Spot;
+function SpotBody({ T, lang, doc, spot, open, onProfile, onFollow, onExit, onCopy }: { T: CityText; lang: Lang; doc: CopyDoc; spot: Spot;
+  onCopy?: (t: Trader) => void;
   open: string | null; onProfile: (id: string) => void; onFollow: (id: string) => void; onExit: () => void }) {
   const C = T.copy;
   switch (spot) {
     case "board":
       return <><p className="tw-hint">{C.hints.board}</p>
-        <CopyChooser key={open ?? "list"} T={T} lang={lang} doc={doc} initial={open} onFollow={onFollow} compact /></>;
+        <CopyChooser key={open ?? "list"} T={T} lang={lang} doc={doc} initial={open} onFollow={onFollow} onCopy={onCopy} compact /></>;
     case "podium": {
       const top = doc.traders.slice(0, 3);
       return (
@@ -278,7 +280,8 @@ function SpotBody({ T, lang, doc, spot, open, onProfile, onFollow, onExit }: { T
           <p className="tw-hint">{C.hints.podium}</p>
           {!top.length ? <p className="small muted">{C.podiumEmpty}</p> : (
             <ol className="ar-podium">
-              {top.map((t, i) => <PodiumCard key={t.id} T={T} lang={lang} t={t} place={i + 1} onProfile={() => onProfile(t.id)} />)}
+              {top.map((t, i) => <PodiumCard key={t.id} T={T} lang={lang} t={t} place={i + 1} onProfile={() => onProfile(t.id)}
+                                             onCopy={onCopy ? () => onCopy(t) : undefined} />)}
             </ol>
           )}
           <p className="small faint">{C.cityHow}</p>
@@ -337,12 +340,13 @@ function SpotBody({ T, lang, doc, spot, open, onProfile, onFollow, onExit }: { T
   return null;
 }
 
-function PodiumCard({ T, lang, t, place, onProfile }: { T: CityText; lang: Lang; t: Trader; place: number; onProfile: () => void }) {
+function PodiumCard({ T, lang, t, place, onProfile, onCopy }: { T: CityText; lang: Lang; t: Trader; place: number; onProfile: () => void;
+  onCopy?: () => void }) {
   const C = T.copy, loc = lang === "es" ? "es-ES" : "en-US";
   const won = copiersWon(t);
   return (
     <li className={`ar-place p${place}`}>
-      <span className="ar-medal num" aria-label={C.rank(place)}>{place}</span>
+      <span className="ar-medal num" aria-hidden="true">{place}</span><span className="sr-only">{C.rank(place)}</span>
       <div className="grow">
         <p className="ar-name"><b className="mono">{traderName(t)}</b> <span className={`cp-plat ${t.platform}`}>{t.platform === "strike" ? "Strike" : "Hyperliquid"}</span></p>
         <p className="small"><span className="faint">{C.roi30}</span> <b className={`num ${(t.roi["30d"] ?? 0) >= 0 ? "pos" : "neg"}`}>{pct(t.roi["30d"], lang)}</b>
@@ -351,8 +355,11 @@ function PodiumCard({ T, lang, t, place, onProfile }: { T: CityText; lang: Lang;
         {t.assets.length > 0 && <p className="small faint">{t.assets.slice(0, 4).map((a) => ticker(a)).join(" · ")}</p>}
         <Spark points={curveOf(t)} w={260} h={30} label={C.curve} />
         <div className="ar-actions">
-          <button type="button" className="btn btn-ghost" onClick={onProfile}>{C.open}</button>
-          <a className="btn btn-primary" href={t.url} target="_blank" rel="noopener noreferrer">{C.copyOn} <Icon.external /><span className="sr-only">{C.newTab}</span></a>
+          {/* each button says whose it is: three podium cards side by side must not sound alike */}
+          {onCopy && <button type="button" className="btn btn-primary" onClick={onCopy}>{C.withAgent}<span className="sr-only">: {traderName(t)}</span></button>}
+          <button type="button" className="btn btn-ghost" onClick={onProfile}>{C.open}<span className="sr-only">: {traderName(t)}</span></button>
+          <a className={`btn ${onCopy ? "btn-ghost" : "btn-primary"}`} href={t.url} target="_blank" rel="noopener noreferrer">{C.copyOn} <Icon.external />
+            <span className="sr-only">: {traderName(t)}{C.newTab}</span></a>
         </div>
       </div>
       <div className="ar-score"><span className="small faint">{C.cityScore}</span><b className="num">{t.city?.toLocaleString(loc, { maximumFractionDigits: 0 }) ?? "—"}</b></div>

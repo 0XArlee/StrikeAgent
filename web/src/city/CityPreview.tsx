@@ -12,7 +12,7 @@ const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-r
 // a wide frame (700 px and more) has room for the exchange and the plaza (where the agents gather) side by side; the
 // hero's square frame takes the small view: the exchange's board on top, the plaza filling the rest
 const VIEW = { cx: 640, cy: 490, zoom: 1.7 };
-const VIEW_SMALL = { cx: 770, cy: 520, zoom: 1.25 };   // phones: the text sits below, the plaza fills the square
+const VIEW_SMALL = { cx: 760, cy: 470, zoom: 1.15 };   // the exchange's big screen whole at the top (its label too in the wider frame), the plaza below
 
 export default function CityPreview({ onStats }: { onStats?: (s: { online: number; inTrade: number }) => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);

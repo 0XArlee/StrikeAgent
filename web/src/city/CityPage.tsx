@@ -290,7 +290,8 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   const totals = store.totals();
   const btc = store.prices["BTC-USD"];
   weather.current = !btc ? 0 : Math.abs(btc.change) >= 4 ? 2 : Math.abs(btc.change) >= 1.5 ? 1 : 0;
-  const latest = store.feed.find((x) => x.d.kind !== "analysis") ?? store.feed[0];
+  // the screen's tape: the latest decision an agent made (its warnings, like Strike not answering, stay in Feed)
+  const latest = store.feed.find((x) => x.d.kind !== "analysis" && x.d.kind !== "alert") ?? store.feed.find((x) => x.d.kind !== "alert");
   const SL = T.stats;
   const tape = tapeLine(newsDoc, T, lang, Date.now());   // the news reading and the next US release, after the agents' line
   newsRef.current = newsDoc;
@@ -328,8 +329,11 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
         <dl className="city-stats" aria-label={T.title}>
           <div><dt>{SL.live}</dt><dd className="num">{totals.live}</dd></div>
           <div><dt>{SL.inTrade}</dt><dd className="num">{totals.inTrade}</dd></div>
-          <div className="hide-xs"><dt>{SL.trades}</dt><dd className="num">{totals.trades}</dd></div>
+          <div className="hide-xs hide-md"><dt>{SL.trades}</dt><dd className="num">{totals.trades}</dd></div>
           <div><dt>{SL.r}</dt><dd className={`num ${totals.rToday >= 0 ? "pos" : "neg"}`}>{fmtR(totals.rToday, lang)}</dd></div>
+          {/* phones: the weather is one more figure here (the bar keeps one row of buttons) */}
+          <div className="city-stat-weather" title={T.weather.tip}><dt>{T.weather.label}</dt>
+            <dd className={`w${weather.current}`}><WeatherIcon w={weather.current} />{[T.weather.calm, T.weather.breezy, T.weather.storm][weather.current]}</dd></div>
         </dl>
         <ul className="city-tickers" aria-label={T.markets.title}>
           {["BTC-USD", "ETH-USD", "SOL-USD"].map((m) => {
@@ -532,7 +536,8 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
       )}
       {arena === "inside" && (
         <ArenaView T={T} lang={lang} doc={copyDoc} agent={mine ?? null} onExit={leaveArena}
-                   onFollow={(id) => { leaveArena(); followLead(id); }} />
+                   onFollow={(id) => { leaveArena(); followLead(id); }}
+                   onCopy={copyPilot ? (t) => { leaveArena(); copyWithAgent(t); } : undefined} />
       )}
       {details && agent && <DetailsModal T={T} lang={lang} a={agent} marks={marksOf(store.prices)} onClose={() => setDetails(false)} />}
     </div>
@@ -806,8 +811,9 @@ function RankTable({ T, lang, agents, onPick }: { T: CityText; lang: Lang; agent
 
 function FeedPanel({ T, lang, store, onPick }: { T: CityText; lang: Lang; store: CityStore; onPick: (id: string) => void }) {
   const items: FeedItem[] = store.feed;
+  // the live region wraps the list (a role on the list itself would hide that it is a list)
   return items.length ? (
-    <ol className="city-feed" role="log" aria-live="polite" aria-relevant="additions">
+    <div role="log" aria-live="polite" aria-relevant="additions"><ol className="city-feed">
       {items.slice(0, 40).map((it) => (
         <li key={it.id} className={`tone-${it.tone}`}>
           <div className="city-feed-meta"><button type="button" className="city-link" onClick={() => onPick(it.agentId)}>{it.agent}</button>
@@ -815,7 +821,7 @@ function FeedPanel({ T, lang, store, onPick }: { T: CityText; lang: Lang; store:
           <p>{describe(it.d, T, lang).text}</p>
         </li>
       ))}
-    </ol>
+    </ol></div>
   ) : <p className="muted">{T.feed.empty}</p>;
 }
 

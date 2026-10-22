@@ -37,13 +37,19 @@
 .city-card-context { margin-top: 10px; line-height: 1.45; }
 .city-news-btn { position: relative; }
 .city-news-badge { display: none; position: absolute; top: -2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; background: var(--golden); box-shadow: 0 0 0 2px #0a0a0a; }
-.city-news-btn .num { color: var(--text-muted); } .city-news-btn .num.pos { color: var(--primary); } .city-news-btn .num.neg { color: var(--negative); }
-@media (max-width: 1180px) { .city-tickers { display: none; } .city-top-actions { margin-left: auto; } }
+.city-news-btn .nb-read { padding-left: 7px; border-left: 1px solid var(--border); color: var(--text-muted); white-space: nowrap; }
+.city-news-btn .nb-read.pos { color: var(--primary); } .city-news-btn .nb-read.neg { color: var(--negative); }
+.city-event .ev-short { display: none; }
+.city-stat-weather { display: none !important; }
+.city-stat-weather dd { display: inline-flex; align-items: center; gap: 5px; }
+.city-stat-weather dd.w0 { color: var(--text-muted); } .city-stat-weather dd.w1 { color: var(--golden); } .city-stat-weather dd.w2 { color: #93c5fd; }
 /* a release coming up: its warning takes the prices' place (the towers' signs show them) */
 @media (max-width: 1720px) { .city-top:has(.city-event) .city-tickers { display: none; } .city-top:has(.city-event) .city-top-actions { margin-left: auto; } }
 
 /* ---------- stage & canvas ---------- */
-.city-stage { position: relative; overflow: hidden; }
+/* clip, not hidden: the screen's chart and book reach past the map's edges, and a hidden overflow can still be
+   scrolled by focus or scrollIntoView (it shifted the whole stage on phones) */
+.city-stage { position: relative; overflow: hidden; overflow: clip; }
 .city-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 .city-canvas:focus-visible { box-shadow: inset 0 0 0 2px var(--primary); border-radius: 0; }
 
@@ -187,7 +193,7 @@
 
 /* ---------- small screens ---------- */
 @media (max-width: 760px) {
-  .city-top { flex-wrap: wrap; gap: 8px 10px; padding: 8px 12px; }
+  .city-top { flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
   /* phones: the long name stacks (EDGECRAFT over STRIKECITY) and the live badge keeps only its dot, so the bar stays
      on one row above the stats */
   .city-word { font-size: 15px; line-height: 1; display: grid; gap: 3px; }
@@ -197,9 +203,14 @@
   .city-live-txt { display: none; }
   .city-stats { order: 3; width: 100%; margin: 0; justify-content: space-between; gap: 8px; }
   .city-stats dd { font-size: 14px; }
+  .city-stats .hide-md { display: flex; }
+  .city-stat-weather { display: flex !important; }
   .city-top .hide-sm { display: none; }
-  .city-weather { width: 34px; padding: 0; justify-content: center; }
+  .city-top-actions { margin-left: auto; gap: 6px; }
+  .city-top-actions .city-weather { display: none; }   /* phones: the weather is a figure under the buttons */
   .city-news-btn { width: 34px; padding: 0; justify-content: center; }
+  .city-news-btn .nb-label, .city-news-btn .nb-read { display: none; }
+  .city-top .lang button { padding: 6px 9px; }
   .city-event { display: none; }   /* phones: a dot on the news button instead (the bar keeps one row) */
   .city-news-badge { display: block; }
   .city-scale-float { display: none; }   /* phones: the scale lives in the Guide panel, the map stays clear */
@@ -215,7 +226,8 @@
   .city-dialog-inner { padding: 20px 16px calc(16px + env(safe-area-inset-bottom)); }
   .city-statgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (max-width: 400px) { .city-stats .hide-xs { display: none; } }
+@media (max-width: 400px) { .city-stats .hide-xs { display: none !important; } }
+@media (max-width: 370px) { .city-top .city-live { display: none; } }
 @media (prefers-reduced-motion: reduce) { .city-panel, .city-card, .city-dialog, .city-live-dot, .city-event-dot { animation: none; } }
 
 /* live mode: real agents from /api/city */
@@ -283,20 +295,21 @@
 @media (max-width: 760px) {
   .city-dialog.city-chart { width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
   .chart-head { flex-wrap: wrap; gap: 6px 12px; padding: 6px 6px 8px 14px; }
-  .chart-tabs { order: 3; width: 100%; margin-left: 0; }
+  .chart-tabs { order: 3; width: 100%; margin-left: 0; flex-wrap: wrap; overflow: visible; }   /* every market in sight, none behind the edge */
   .chart-tabs button { min-height: 40px; }
   .chart-head .icon-btn { margin-left: auto; }
 }
 /* Strike's real order book beside it (BookRows): same transform as the chart; bars slide to each new reading */
 .city-book { position: absolute; left: 0; top: 0; z-index: 1; transform-origin: 0 0; pointer-events: none; overflow: hidden;
   background: #020806; will-change: transform; contain: strict; }
-.bk { display: grid; grid-template-rows: repeat(10, 1fr); height: 100%; padding: 2px 6px; font-family: var(--mono);
-  font-size: 10px; line-height: 1; font-variant-numeric: tabular-nums; }
+/* laid out at TV_K px per world px (the screen's book is about 400 x 210 here): sized to read like the chart beside it */
+.bk { display: grid; grid-template-rows: repeat(10, 1fr); height: 100%; padding: 4px 10px; font-family: var(--mono);
+  font-size: 15px; line-height: 1; font-variant-numeric: tabular-nums; }
 .bk-head, .bk-mid, .bk-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; position: relative; }
-.bk-head { color: var(--text-faint); font-size: 9px; letter-spacing: .04em; }
+.bk-head { color: var(--text-faint); font-size: 12px; letter-spacing: .04em; }
 .bk-head span:first-child { color: var(--primary); font-weight: 700; }
 .bk-mid { color: var(--text); font-weight: 700; border-top: 1px solid rgba(78, 250, 176, .15); border-bottom: 1px solid rgba(78, 250, 176, .15); }
-.bk-mid span:last-child { color: var(--text-faint); font-weight: 600; font-size: 9px; }
+.bk-mid span:last-child { color: var(--text-faint); font-weight: 600; font-size: 12px; }
 .bk-row span { position: relative; }
 .bk-bar { position: absolute !important; inset: 1px 0; transform-origin: right center; transition: transform .6s cubic-bezier(.2, .8, .2, 1); }
 .bk-row.ask .bk-bar { background: rgba(244, 63, 94, .22); }
@@ -335,7 +348,7 @@
 .nr-drv.up h4 { color: var(--primary); } .nr-drv.down h4 { color: var(--negative); } .nr-flip h4 { color: var(--golden); }
 .nr-drv ul, .nr-flip ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .nr-drv li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 13px; }
-.nr-drv li p { grid-column: 1 / -1; color: var(--text-faint); font-size: 12px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.nr-drv li p { grid-column: 1 / -1; color: var(--text-faint); font-size: 12px; line-height: 1.4; }   /* the whole headline, never cut */
 .nr-cat { font-weight: 600; }
 .nr-flip li { font-size: 13px; color: var(--text-muted); padding-left: 12px; position: relative; }
 .nr-flip li::before { content: ""; position: absolute; left: 0; top: .6em; width: 5px; height: 5px; border-radius: 50%; background: var(--golden); }
@@ -463,8 +476,7 @@
   .tw-scene { padding: 0 12px 10px; }
   /* the scene stays on top while what it looks at scrolls under it */
   .tw-stage { position: sticky; top: 0; z-index: 2; flex: none; min-height: 0; overflow: visible; padding: 8px 0 6px; background: #05060a; }
-  .tw-floors { display: flex; overflow-x: auto; scrollbar-width: none; }
-  .tw-floors button { flex: 0 0 auto; min-width: 128px; }
+  .tw-floors { grid-template-columns: repeat(3, minmax(0, 1fr)); }   /* two rows of three: every floor in sight */
   .tw-panel { overflow: visible; border-left: 0; border-top: 1px solid var(--border-soft); }
 }
 @media (max-width: 560px) {
@@ -474,8 +486,7 @@
   .tw-exit { position: absolute; top: 10px; right: 12px; min-height: 36px; padding: 6px 10px; font-size: 13px; }
   .tw-head h2 { font-size: 17px; }
   .tw-about { font-size: 12px; }
-  .tw-markets { order: 3; width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-  .tw-markets button { flex: none; }
+  .tw-markets { order: 3; width: 100%; flex-wrap: wrap; }
   .tw-spots { justify-content: flex-start; }
   .tw-bymarket { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .city-toast { bottom: 76px; }
@@ -493,16 +504,30 @@
   border-radius: 8px; background: transparent; color: var(--text-muted); font: 600 13px var(--font); cursor: pointer; }
 .city-fb-btn:hover { color: var(--text); border-color: #4a4a4a; }
 .city-fb-btn:focus-visible { outline: none; box-shadow: var(--focus); }
-/* the top bar fits at every width: labels give way to icons first (each keeps its name for screen readers), then the
-   tickers (also in Markets), then the "live" word, then the brand's words */
+/* the top bar fits at every width (checked from 360 to 1920 px, with and without a release warning): the feedback and
+   weather labels give way to icons first (each keeps its name for screen readers), then the tickers (also in Markets),
+   then the release warning shortens ("CPI · 3 h") and the news reading goes, then the "live" word and one figure, then the
+   brand's words and the news label */
 @media (max-width: 1600px) {
   .city-fb-btn, .city-weather { width: 34px; padding: 0; justify-content: center; }
-  .city-fb-btn .hide-sm, .city-news-btn > .hide-sm:not(.num) { display: none; }
+  .city-fb-btn .hide-sm { display: none; }
   .city-top .city-weather > .hide-sm { display: inline; position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
+@media (max-width: 1520px) { .city-news-btn .nb-read { display: none; } }   /* the reading is in the News dialog */
 @media (max-width: 1380px) { .city-tickers { display: none; } .city-top-actions { margin-left: auto; } }
-@media (max-width: 1000px) { .city-live-txt { display: none; } .city-stats { gap: 12px; } }
-@media (min-width: 761px) and (max-width: 900px) { .city-word { display: none; } }
+@media (max-width: 1240px) {
+  .city-event .ev-full { display: none; } .city-event .ev-short { display: inline; }
+  .city-top:has(.city-event) .nb-read { display: none; }
+}
+@media (max-width: 1100px) {
+  .city-live-txt { display: none; } .city-live { padding: 6px; }
+  .city-stats { gap: 14px; } .city-stats .hide-md { display: none; }
+  .city-news-btn .nb-read { display: none; }
+}
+@media (min-width: 761px) and (max-width: 940px) {
+  .city-word { display: none; }
+  .city-news-btn { width: 34px; padding: 0; justify-content: center; } .city-news-btn .nb-label { display: none; }
+}
 
 /* ---- the Copy Arena's chooser (CopyView): filters, the ranked list, a trader's profile */
 .cp { display: grid; gap: 12px; }
@@ -628,11 +653,9 @@
 .ar-made { display: grid; justify-items: end; text-align: right; }
 .ar-chart { margin: 10px 0 0; }
 @media (max-width: 1000px) { .tw.arena .tw-main { display: block; } }
-@media (max-width: 760px) {
-  /* a lead's card: its actions (Copy on Strike first of all) stay in view while the card scrolls */
-  .cp-card .city-card-actions { position: sticky; bottom: -12px; margin: 10px -14px -12px; padding: 10px 14px 12px; background: #0a0a0a;
-    border-top: 1px solid var(--border-soft); }
-}
+/* a card's actions stay in view at its foot while a long card scrolls (an agent's checks of 8 markets, a lead's positions) */
+.city-card > .city-card-actions:last-child { position: sticky; bottom: -12px; z-index: 1; margin: 12px -14px -12px; padding: 10px 14px 12px;
+  background: #0b0b0b; border-top: 1px solid var(--border-soft); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
 
 /* Ranks: the Copy Arena's three best */
 .city-copy-top { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-soft); }

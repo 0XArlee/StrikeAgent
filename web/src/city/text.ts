@@ -44,7 +44,7 @@ const en = {
   nav: { map: "Map", agents: "Agents", ranks: "Ranks", feed: "Feed", markets: "Markets", guide: "Guide", me: "My agent" },
   me: { back: "Back to the city" },
   stats: { live: "agents online", inTrade: "in a trade", trades: "trades 24h", r: "result 24h" },
-  weather: { calm: "Calm", breezy: "Breezy", storm: "Storm", tip: "City weather follows BTC's 24h move on Strike." },
+  weather: { calm: "Calm", breezy: "Breezy", storm: "Storm", label: "Weather", tip: "City weather follows BTC's 24h move on Strike." },
   source: { strike: "Strike live data", binance: "Binance data (Strike unavailable)", offline: "Offline: no market data" },
   status: {
     analyzing: "Analysing", waiting: "Waiting for a setup", signal: "Signal found", risk: "Blocked by risk check",
@@ -411,7 +411,7 @@ const es: CityText = {
   nav: { map: "Mapa", agents: "Agentes", ranks: "Ranking", feed: "Actividad", markets: "Mercados", guide: "Guía", me: "Mi agente" },
   me: { back: "Volver a la ciudad" },
   stats: { live: "agentes en línea", inTrade: "en operación", trades: "operaciones 24h", r: "resultado 24h" },
-  weather: { calm: "Calma", breezy: "Brisa", storm: "Tormenta", tip: "El clima de la ciudad sigue el movimiento de BTC en 24h en Strike." },
+  weather: { calm: "Calma", breezy: "Brisa", storm: "Tormenta", label: "Clima", tip: "El clima de la ciudad sigue el movimiento de BTC en 24h en Strike." },
   source: { strike: "Datos de Strike en vivo", binance: "Datos de Binance (Strike no disponible)", offline: "Sin conexión: sin datos de mercado" },
   status: {
     analyzing: "Analizando", waiting: "Esperando un setup", signal: "Señal encontrada", risk: "Bloqueada por riesgo",

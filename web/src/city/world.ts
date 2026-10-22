@@ -71,7 +71,8 @@ if (ART2) for (const g of city2.buildings) {
 // plaza (walkable, decorated) in front of the exchange; the fountain sits in the middle
 export const PLAZA = { x: 27, y: 28, w: 44, d: 13 };
 export const FOUNTAIN = { x: 48 * TILE + TILE, y: 35 * TILE };
-export const SCREEN = { x: 36 * TILE, y: 21 * TILE - 2, w: 24 * TILE, h: 4 * TILE };   // exchange roof screen
+// the exchange's big screen: across its roof edge and down its front (30 x 6.5 tiles), its sign under it
+export const SCREEN = { x: 33 * TILE, y: 21 * TILE - 2, w: 30 * TILE, h: 104 };
 
 // ---------------------------------------------------------------- walkability
 export const walk = new Uint8Array(COLS * ROWS);   // 1 = walkable
