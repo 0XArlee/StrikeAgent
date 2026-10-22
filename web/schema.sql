@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   look TEXT,                           -- the character (JSON, validated by web/src/city/look.ts)
+  persona TEXT,                        -- personality and trade in the city (JSON, web/src/city/persona.ts)
   strategy TEXT NOT NULL DEFAULT 'smartflow'   -- smartflow | pyramid
 );
 -- databases created before 2026-10-19 (look column): migrations/001_look.sql; before 2026-10-20 (strategy): 003
@@ -106,3 +107,18 @@ CREATE TABLE IF NOT EXISTS audit_anchors (
 );
 CREATE TRIGGER IF NOT EXISTS anchors_no_update BEFORE UPDATE ON audit_anchors BEGIN SELECT RAISE(ABORT, 'anchors are append-only'); END;
 CREATE TRIGGER IF NOT EXISTS anchors_no_delete BEFORE DELETE ON audit_anchors BEGIN SELECT RAISE(ABORT, 'anchors are append-only'); END;
+CREATE TABLE IF NOT EXISTS feedback (
+  id TEXT PRIMARY KEY,
+  created_at INTEGER NOT NULL,
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  image TEXT,              -- data:image/...;base64 (the page shrinks it under 1 MB)
+  page TEXT, lang TEXT,
+  user_id TEXT,            -- the agent of whoever sent it, if they were signed in
+  ua TEXT,
+  ip_net TEXT,             -- the sender's network (/24, /48), only to limit how many an hour
+  read_at INTEGER,         -- an admin read it in My agent
+  sent_at INTEGER          -- the agents' host sent it to the operator's phone
+);
+CREATE INDEX IF NOT EXISTS feedback_time ON feedback (created_at);
+CREATE INDEX IF NOT EXISTS feedback_unsent ON feedback (sent_at);

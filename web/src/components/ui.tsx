@@ -17,6 +17,10 @@ export const Icon = {
   play: () => <svg {...S} width={16} height={16}><path d="M7 5l12 7-12 7z" /></svg>,
   logout: () => <svg {...S} width={16} height={16}><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l-5-5 5-5M5 12h11" /></svg>,
   wallet: () => <svg {...S} width={16} height={16}><path d="M4 7h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1z" /><path d="M4 7l11-3v3M16 13h.01" /></svg>,
+  download: (p: { size?: number }) => <svg {...S} width={p.size ?? 18} height={p.size ?? 18}><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>,
+  share: (p: { size?: number }) => <svg {...S} width={p.size ?? 18} height={p.size ?? 18}><circle cx="18" cy="5" r="2.5" /><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="19" r="2.5" /><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4" /></svg>,
+  message: (p: { size?: number }) => <svg {...S} width={p.size ?? 18} height={p.size ?? 18}><path d="M4 5h16v11H9l-5 4z" /><path d="M8 9.5h8M8 12.5h5" /></svg>,
+  image: (p: { size?: number }) => <svg {...S} width={p.size ?? 18} height={p.size ?? 18}><rect x="3.5" y="4.5" width="17" height="15" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="M20 16l-5-5-8 8" /></svg>,
 };
 
 /** Smart Flow mark: own brand (never Strike's logo), Strike's mint as accent. */

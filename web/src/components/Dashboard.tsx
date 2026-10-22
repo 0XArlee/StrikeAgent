@@ -9,6 +9,9 @@ import { cityText, describe } from "../city/text";
 import { fmt, type Dict, type Lang } from "../i18n";
 import type { LinkResult } from "./ConnectModal";
 import { AvatarEditor, Sprite } from "./AvatarEditor";
+import { PersonaPicker } from "./PersonaPicker";
+import { FeedbackInbox } from "./FeedbackDialog";
+import { personaFor, type Persona } from "../city/persona";
 import { PortfolioView, useMarks } from "../city/portfolio";
 import { MIN_BALANCE, TEST_MIN_AVAILABLE, strategyId, strategyName } from "../strategies";
 import { StrategyPicker, type Plan } from "./StrategyPicker";
@@ -29,6 +32,7 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
   const [error, setError] = useState("");
   const [expired, setExpired] = useState(false);
   const [editing, setEditing] = useState<Look | null>(null);
+  const [persona, setPersona] = useState<Persona | null>(null);   // the personality dialog
   const [plan, setPlan] = useState<Plan | null>(null);   // the strategy/markets/risk dialog
   const [notice, setNotice] = useState("");
   const loc = lang === "es" ? "es-ES" : "en-US";
@@ -50,7 +54,7 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
     return () => { alive = false; clearInterval(id); };
   }, [link, onUnlinked]);
 
-  async function act(action: AgentAction, look?: Look, settings?: Plan) {
+  async function act(action: AgentAction, look?: Look, settings?: Plan, nextPersona?: Persona) {
     setError("");
     setNotice("");
     setBusy(action);
@@ -58,12 +62,12 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
       const w = scanWallets().find((x) => x.name === link.walletName) ?? scanWallets()[0];
       if (!w) throw new Error(t.modal.noWallets);
       const conn = await connect(w);
-      const ch = await api.actionChallenge(link.accountId, action, look, settings);
+      const ch = await api.actionChallenge(link.accountId, action, look, settings, nextPersona);
       const sig = await signMessage(conn, messageHex(ch.messageToSign));
       const r = await api.action(ch.sessionId, sig);
       if ("deleted" in r) { onUnlinked(); return; }
       setMe(r);
-      if (action === "look") setEditing(null);
+      if (action === "look") { setEditing(null); setPersona(null); }
       if (action === "settings") { setPlan(null); if (r.live?.status === "active") setNotice(t.strategies.restart); }
       if (action === "test") setNotice(t.live.testAsked);
     } catch (e) {
@@ -228,6 +232,8 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
             <button type="button" className="btn btn-ghost" onClick={() => setPlan({ strategy: strat, markets: me?.markets ?? link.markets, risk: me?.risk ?? link.risk })}
                     disabled={!!busy || expired}>{S.edit}</button>
             {paper && <button type="button" className="btn btn-ghost" onClick={() => setEditing(look)} disabled={!!busy || expired}>{t.avatar.edit}</button>}
+            {paper && <button type="button" className="btn btn-ghost" onClick={() => setPersona(me?.persona ?? personaFor(link.cityId ?? link.accountId))}
+                              disabled={!!busy || expired}>{t.persona.edit}</button>}
             <button type="button" className="btn btn-danger" onClick={() => act("revoke")} disabled={!!busy || expired}>{label("revoke", paper ? P.remove : d.revoke)}</button>
             <button type="button" className="btn btn-ghost" onClick={onSignOut} disabled={!!busy}><Icon.logout /> {d.signOut}</button>
           </div>
@@ -288,6 +294,7 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
             </ol>
           )}
         </div>
+        {me?.admin && link.token && <div className="card" style={{ marginTop: 16 }}><FeedbackInbox t={t} lang={lang} token={link.token} /></div>}
       </div>
       {editing && (
         <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) setEditing(null); }}>
@@ -300,6 +307,22 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
                 {busy === "look" ? d.signToConfirm : t.avatar.save}
               </button>
               <button type="button" className="btn btn-ghost btn-lg btn-block" onClick={() => setEditing(null)} disabled={!!busy}>{t.avatar.cancel}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {persona && (
+        <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) setPersona(null); }}>
+          <div className="dialog dialog-wide" role="dialog" aria-modal="true" aria-labelledby="pp-edit-title">
+            <h2 id="pp-edit-title">{t.persona.edit}</h2>
+            <p className="dialog-sub">{t.persona.sub}</p>
+            <PersonaPicker t={t} lang={lang} value={persona} onChange={setPersona} look={look} idPrefix="dash-pp" />
+            {error && <Alert kind="err">{error}</Alert>}
+            <div className="actions">
+              <button type="button" className="btn btn-primary btn-lg btn-block" onClick={() => act("look", undefined, undefined, persona)} disabled={!!busy}>
+                {busy === "look" ? d.signToConfirm : t.avatar.save}
+              </button>
+              <button type="button" className="btn btn-ghost btn-lg btn-block" onClick={() => setPersona(null)} disabled={!!busy}>{t.avatar.cancel}</button>
             </div>
           </div>
         </div>

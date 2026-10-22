@@ -16,7 +16,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from .. import audit
+from .. import audit, notify
 from ..live.health import holds
 from .city import build, load_city, load_live
 
@@ -119,6 +119,52 @@ class News:
         self.retry_at = now + 60   # refused or failed: again in a minute, not every turn of the loop
 
 
+class Feedback:
+    """The site's new suggestions (its Feedback button), sent to the operator's phone through the alert channel
+    (notify.py) once a minute, with a signed link to the picture if there is one. The site marks them sent only after
+    they went out: with no alert webhook set up they wait there (and in My agent's inbox), none is lost."""
+
+    EVERY_S = 60
+
+    def __init__(self, push_url: str, secret: str, log=print, send=None, timeout: float = 20):
+        self.base = push_url.split("/api/", 1)[0]
+        self.secret, self.log, self.timeout = secret, log, timeout
+        self.send = send or notify.send
+        self.ready = (lambda: True) if send else notify.configured
+        self.at = 0.0
+
+    def _req(self, method: str, path: str, body: bytes | None, payload: str) -> dict:
+        ts = str(int(time.time() * 1000))
+        sig = hmac.new(self.secret.encode(), f"{ts}.{payload}".encode(), hashlib.sha256).hexdigest()
+        req = urllib.request.Request(self.base + path, data=body, method=method, headers={
+            "Content-Type": "application/json", "User-Agent": UA, "X-SF-Time": ts, "X-SF-Signature": sig})
+        with urllib.request.urlopen(req, timeout=self.timeout) as r:
+            return json.loads(r.read() or b"{}")
+
+    def maybe_send(self) -> None:
+        if time.time() - self.at < self.EVERY_S or not self.ready():
+            return
+        self.at = time.time()
+        try:
+            items = self._req("GET", "/api/internal/feedback", None, "GET /api/internal/feedback").get("items") or []
+            site = self.base.split("//", 1)[-1]
+            sent = []
+            for f in items:
+                lines = [str(f.get("subject", "")), str(f.get("message", ""))[:1500],
+                         f"— {f.get('user') or 'anonymous'} · {f.get('page') or '/'} · {site}"]
+                if f.get("image"):
+                    lines.append(f"Image: {f['image']}")
+                text = "\n".join(lines)
+                if self.send("feedback", text, source="suggestion", key=str(f.get("id")), cooldown_s=0):
+                    sent.append(f["id"])
+            if sent:
+                raw = json.dumps({"ids": sent}, separators=(",", ":"))
+                self._req("POST", "/api/internal/feedback", raw.encode(), raw)
+                self.log(f"feedback: {len(sent)} sent to the operator")
+        except Exception as e:   # the next minute tries again; they wait on the site
+            self.log(f"feedback failed: {e!r}")
+
+
 def fingerprint(doc: dict) -> str:
     """What changes the city: everything except the build time."""
     return hashlib.sha256(encode({k: v for k, v in doc.items() if k != "generated"})).hexdigest()
@@ -132,8 +178,10 @@ def run(city_toml: Path, url: str, secret: str, every: float = 30, heartbeat: fl
     last_fp, last_at, last_sig, built_at = "", 0.0, None, 0.0
     anchors = Anchors(url, secret, Path(runs_root), log)
     tower = News(url, secret, news, heartbeat, log) if news else None
+    feedback = Feedback(url, secret, log)
     while True:
         anchors.maybe_send()
+        feedback.maybe_send()
         if tower:
             tower.maybe_send()
         try:

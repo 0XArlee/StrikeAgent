@@ -6,12 +6,16 @@ import "@fontsource/ibm-plex-mono/700.css";
 import "./city.css";
 import type { Lang } from "../i18n";
 import { Icon, Mark } from "../components/ui";
-import { lastChecks, nowDecision, stats, type AgentView, type FeedItem, type Status } from "./agents";
+import { atWork, lastChecks, nowDecision, stats, type AgentView, type FeedItem, type Prices, type Status } from "./agents";
 import { CityEngine, SCREEN_BOOK, SCREEN_CHART, STATUS_COLOR, drawIcon, type Sel } from "./engine";
 import type { Look } from "./look";
 import { FEET, FW, HEAD_TOP, frameAt, onSheet, sheetFor } from "./sprites";
 import { BOOK_MARKET, CITY_MARKETS, CityStore, type Book } from "./store";
-import { EventSoon, NewsButton, NewsView, contextLine, tapeLine } from "./NewsView";
+import { EventSoon, NewsButton, NewsView, contextLine, signed, tapeLine } from "./NewsView";
+import { TowerView } from "./TowerView";
+import { dict } from "../i18n";
+import { voiceLine } from "../components/PersonaPicker";
+import { TEMPER_COLOR } from "./persona";
 import { useNews } from "./news";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
 import { ART2, BUILDINGS, artReady } from "./world";
@@ -22,6 +26,7 @@ type Panel = "agents" | "ranks" | "feed" | "markets" | "guide";
 
 interface Props {
   lang: Lang; setLang: (l: Lang) => void; onConnect: () => void;
+  onFeedback?: () => void;   // the Feedback dialog (the site's, opened over the city)
   myAgent?: ReactNode;   // the owner's dashboard (null until they sign in with their wallet)
   owner?: { id: string; token: string } | null;   // signed in: their own agent shows with its amounts
 }
@@ -43,7 +48,7 @@ function readDeepLink(): string | null {
   return m ? m[1] : null;
 }
 
-export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: Props) {
+export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent, owner }: Props) {
   const T = cityText[lang];
   const store = useMemo(() => new CityStore(), []);
   store.owner = owner?.token ? owner : null;
@@ -57,6 +62,7 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
   const [details, setDetails] = useState(false);
   const [chart, setChart] = useState<string | null>(null);   // the market whose full chart is open
   const [news, setNews] = useState<string | null>(null);     // the market whose news is open
+  const [tower, setTower] = useState<null | "walking" | "inside">(null);   // the News Tower: your agent on its way, or inside
   const newsDoc = useNews(ready);                             // read once the city is drawn, then every minute
   const [tvOn, setTvOn] = useState(false);                   // TradingView's candles are drawn: show them
   const tvScreen = useRef<HTMLDivElement>(null);
@@ -66,8 +72,13 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
   const canvas = useRef<HTMLCanvasElement>(null);
   const engine = useRef<CityEngine | null>(null);
   const headline = useRef("EDGECRAFT-STRIKECITY");
+  const newsTape = useRef("");
+  const newsRef = useRef<typeof newsDoc>(null);
+  const langRef = useRef(lang);
+  langRef.current = lang;
   const weather = useRef<0 | 1 | 2>(0);
   const deepLink = useRef(readDeepLink());   // read before the hash is rewritten below
+  const towerLink = useRef(/[?&]tower\b/.test(location.hash));   // #/city?tower: straight into the News Tower
 
   useEffect(() => {
     let alive = true;
@@ -81,7 +92,8 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
     if (!ready || !canvas.current) return;
     const e = new CityEngine(canvas.current, {
       getAgents: () => store.agents, getPrices: () => store.prices, getHistory: (m) => store.hist[m] ?? [],
-      getHeadline: () => headline.current, getWeather: () => weather.current, reducedMotion: !!reduced, getBook: () => store.book,
+      getHeadline: () => headline.current, getNewsTape: () => newsTape.current,
+      getJobLabel: (a) => jobLabel(a, newsRef.current, store.prices, langRef.current), getWeather: () => weather.current, reducedMotion: !!reduced, getBook: () => store.book,
       onSelect: (s) => { setSel(s); setDetails(false); if (s && isSmall()) setPanel(null); },
       onChart: (m) => setChart(m),
       // TradingView's chart and Strike's book follow the screen as the map moves: one transform each, written only
@@ -140,8 +152,44 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
   useEffect(() => {
     const e = engine.current;
     if (!e) return;
-    if (me) e.pause(); else e.start();
-  }, [me, ready]);
+    // only this page stops drawing the city: the agents keep trading and everyone else sees the city as always
+    if (me || tower === "inside") e.pause(); else e.start();
+  }, [me, ready, tower]);
+
+  // the News Tower: your agent runs to its door (the camera follows it) and you go in with it; without an agent of
+  // your own you go in as a visitor
+  const mine = owner?.id ? store.agent(owner.id) : undefined;
+  const enterTower = () => {
+    const a = mine;
+    if (!a || reduced) { setTower("inside"); return; }
+    a.trip = { to: "news", until: performance.now() + 10 * 60_000 };
+    a.rush = true; a.nextAt = 0; a.path = [];
+    choose({ kind: "agent", id: a.id });
+    engine.current?.setFollow(true);
+    setTower("walking");
+  };
+  const leaveTower = () => {
+    const a = mine;
+    if (a?.trip?.to === "news") { a.trip = undefined; a.rush = false; a.nextAt = 0; }
+    setTower(null);
+    canvas.current?.focus();
+  };
+  useEffect(() => {
+    if (!ready || !towerLink.current) return;
+    towerLink.current = false;
+    enterTower();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, version]);
+  useEffect(() => {
+    if (tower !== "walking") return;
+    const t0 = Date.now();
+    const id = window.setInterval(() => {
+      const a = mine;
+      // there (or still far after 15 s: in it goes)
+      if (!a || (a.target === "news" && !a.path.length) || Date.now() - t0 > 15_000) { window.clearInterval(id); setTower("inside"); }
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [tower, mine]);
 
   // the hash changes inside the city (e.g. right after creating your agent): select it as soon as the city has it
   const pending = useRef<string | null>(null);
@@ -170,6 +218,10 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
   const latest = store.feed.find((x) => x.d.kind !== "analysis") ?? store.feed[0];
   const SL = T.stats;
   const tape = tapeLine(newsDoc, T, lang, Date.now());   // the news reading and the next US release, after the agents' line
+  newsRef.current = newsDoc;
+  newsTape.current = newsDoc && typeof newsDoc === "object"
+    ? newsDoc.headlines.filter((h) => h.catalyst).slice(0, 6).map((h) => (lang === "es" && h.es ? h.es : h.title).toUpperCase()).join("   ◆   ")
+    : "";
   headline.current = (latest ? `${latest.agent.toUpperCase()} · ${describe(latest.d, T, lang).text}`
     : btc ? `EDGECRAFT-STRIKECITY · BTC ${fmtPrice(btc.price, lang)} ${fmtPct(btc.change, lang)}` : "EDGECRAFT-STRIKECITY")
     + (tape ? `      ${tape}` : "");
@@ -203,6 +255,11 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
         <div className="city-top-actions">
           <EventSoon T={T} doc={newsDoc} now={Date.now()} onOpen={() => setNews("BTC-USD")} />
           <NewsButton T={T} lang={lang} doc={newsDoc} now={Date.now()} onOpen={() => setNews("BTC-USD")} />
+          {onFeedback && (
+            <button type="button" className="city-fb-btn" onClick={onFeedback} title={dict[lang].feedback.title} aria-label={dict[lang].feedback.nav}>
+              <FeedbackIcon /><span className="hide-sm" aria-hidden="true">{dict[lang].feedback.nav}</span>
+            </button>
+          )}
           <span className={`city-weather w${weather.current}`} title={T.weather.tip}>
             <WeatherIcon w={weather.current} /><span className="hide-sm">{[T.weather.calm, T.weather.breezy, T.weather.storm][weather.current]}</span>
             <span className="sr-only">. {T.weather.tip}</span>
@@ -269,7 +326,8 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
           <AgentCard T={T} lang={lang} a={agent} following={engine.current?.following === agent.id}
                      onFollow={() => { engine.current?.setFollow(engine.current.following !== agent.id); force((x) => x + 1); }}
                      onDetails={() => setDetails(true)} onClose={() => choose(null)} marks={marksOf(store.prices)}
-                     context={agent.position ? contextLine(newsDoc, agent.position.market, T, lang, Date.now()) : null} />
+                     context={agent.position ? contextLine(newsDoc, agent.position.market, T, lang, Date.now()) : null}
+                     job={jobLabel(agent, newsDoc, store.prices, lang)} />
         )}
         {bld && !me && !(panel && isSmall()) && (
           <aside className="city-card" aria-labelledby="bld-title">
@@ -283,7 +341,21 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
             {(bld.market || bld.id === "exchange") && (
               <button type="button" className="btn btn-ghost btn-block city-card-chart" onClick={() => setChart(bld.market ?? "BTC-USD")}>{T.chart.open}</button>
             )}
+            {bld.id === "news" && (
+              <div className="city-card-actions">
+                <button type="button" className="btn btn-primary btn-block" onClick={enterTower}>{mine ? T.tower.enter : T.tower.visitorEnter}</button>
+                <button type="button" className="btn btn-ghost btn-block" onClick={() => setNews("BTC-USD")}>{T.tower.quick}</button>
+              </div>
+            )}
           </aside>
+        )}
+
+        {tower === "walking" && mine && (
+          <div className="city-toast" role="status">
+            <p>{T.tower.entering(mine.name)}</p>
+            <button type="button" className="btn btn-primary" onClick={() => setTower("inside")}>{T.tower.enterNow}</button>
+            <button type="button" className="icon-btn" aria-label={T.card.close} onClick={leaveTower}><Icon.close /></button>
+          </div>
         )}
 
         {!ready && (
@@ -333,6 +405,9 @@ export default function CityPage({ lang, setLang, onConnect, myAgent, owner }: P
         <Modal onClose={() => setNews(null)} labelledBy="news-title" className="city-chart city-news">
           <NewsView T={T} lang={lang} doc={newsDoc} market={news} onMarket={setNews} onClose={() => setNews(null)} live={totals.live} inTrade={totals.inTrade} />
         </Modal>
+      )}
+      {tower === "inside" && (
+        <TowerView T={T} lang={lang} doc={newsDoc} agent={mine ?? null} market0={mine?.position?.market ?? mine?.markets[0] ?? "BTC-USD"} onExit={leaveTower} />
       )}
       {details && agent && <DetailsModal T={T} lang={lang} a={agent} marks={marksOf(store.prices)} onClose={() => setDetails(false)} />}
     </div>
@@ -426,8 +501,9 @@ function KindTag({ T, a }: { T: CityText; a: AgentView }) {
 
 const money = (v: number, lang: Lang) => v.toLocaleString(lang === "es" ? "es-ES" : "en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
-function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks, context }: { T: CityText; lang: Lang; a: AgentView; following: boolean;
-  onFollow: () => void; onDetails: () => void; onClose: () => void; marks: Record<string, number>; context?: string | null }) {
+function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks, context, job }: { T: CityText; lang: Lang; a: AgentView; following: boolean;
+  onFollow: () => void; onDetails: () => void; onClose: () => void; marks: Record<string, number>; context?: string | null; job?: string | null }) {
+  const PT = dict[lang].persona;
   const last = nowDecision(a);
   const p = a.position;
   const today = a.trades.filter((x) => x.time >= Date.now() - 86400_000).reduce((s, x) => s + x.r, 0);
@@ -491,6 +567,14 @@ function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks,
           <div><dt>{T.card.risk}</dt><dd className="num">{a.risk.toLocaleString(lang === "es" ? "es-ES" : "en-US")}%</dd></div>
           <div><dt>{T.card.today}</dt><dd className={`num ${today >= 0 ? "pos" : "neg"}`}>{fmtR(today, lang)}</dd></div>
         </dl>
+      )}
+      {a.persona && (   // its personality and trade (never how it trades): what it says, what it reads at work
+        <div className="city-persona" style={{ ["--tc" as string]: TEMPER_COLOR[a.persona.temper] }}>
+          <p className="city-say">“{sayLine(a, lang)}”</p>
+          <p className="small"><span className="city-persona-t">{PT.tempers[a.persona.temper].name}</span>
+            <span className="faint"> · {PT.jobs[a.persona.job].name}{job ? ` · ${atWork(a) ? PT.atWork(PT.jobs[a.persona.job].place) : PT.worksAt(PT.jobs[a.persona.job].place)}` : ""}</span></p>
+          {job && <p className="small mono city-persona-job">{job}</p>}
+        </div>
       )}
       {p && context && <p className="city-card-context small"><span className="muted">{T.news.context}:</span> {context} <span className="faint">({T.news.contextNote})</span></p>}
       <div className="city-card-actions">
@@ -813,6 +897,11 @@ function Modal({ onClose, labelledBy, className, children }: { onClose: () => vo
   );
 }
 
+const FeedbackIcon = () => (
+  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 5h16v11H9l-5 4z" /><path d="M8 9.5h8M8 12.5h5" /></svg>
+);
+
 function WeatherIcon({ w }: { w: 0 | 1 | 2 }) {
   const S = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, "aria-hidden": true };
   if (w === 0) return <svg {...S}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>;
@@ -831,3 +920,38 @@ const Ico = {
   help: () => <svg {...SI}><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.6 2.6 0 1 1 3.6 2.4c-.7.3-1.1.9-1.1 1.6v.5M12 17h.01" /></svg>,
   target: () => <svg {...SI} width={16} height={16}><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>,
 };
+
+/** What an agent's trade reads where it works, from real data: the chartist its last candle's range and volume, the
+ *  reporter the news reading, the tape reader the price change, the risk keeper its day. One market at a time. */
+function jobLabel(a: AgentView, doc: ReturnType<typeof useNews>, prices: Prices, lang: Lang): string | null {
+  const job = a.persona?.job;
+  if (!job) return null;
+  const PT = dict[lang].persona, loc = lang === "es" ? "es-ES" : "en-US";
+  const ms = a.markets.length ? a.markets : ["BTC-USD"];
+  const m = ms[Math.floor(performance.now() / 3000) % ms.length], tk = ticker(m);
+  const f = (v: unknown, d: number) => Number(v).toLocaleString(loc, { minimumFractionDigits: d, maximumFractionDigits: d });
+  switch (job) {
+    case "chartist": {
+      const c = a.real?.checks?.[m]?.args as Record<string, unknown> | undefined;
+      return c && c.range != null ? `${tk} ${f(c.range, 2)} ATR${c.vol != null ? ` · vol ×${f(c.vol, 2)}` : ""}` : null;
+    }
+    case "reporter": {
+      const rd = doc && typeof doc === "object" ? doc.markets[m] : undefined;
+      return rd?.net != null ? `${tk} ${signed(rd.net, lang)} ${rd.label ? cityText[lang].news.labels[rd.label].toLocaleLowerCase(loc) : ""}`.trim()
+        : `${tk} ${PT.noReading}`;
+    }
+    case "tape": { const px = prices[m]; return px ? `${tk} ${fmtPct(px.change, lang)} 24h` : null; }
+    case "guardian": return `${PT.today} ${fmtR(a.rToday, lang)} · ${a.risk.toLocaleString(loc)} %`;
+  }
+}
+
+/** Its line, in its own voice, for what it is doing now (an exit says how it went). */
+function sayLine(a: AgentView, lang: Lang): string {
+  const t = dict[lang], temper = a.persona?.temper ?? "stoic", tk = ticker(a.position?.market ?? a.focus ?? a.markets[0] ?? "BTC-USD");
+  const last = a.trades[0];
+  const fresh = last && Date.now() - last.time < 6 * 3600_000;
+  const moment = a.status === "in_trade" || a.status === "entering" ? "enter" : a.status === "signal" ? "signal" : a.status === "risk" ? "risk"
+    : a.status === "analyzing" ? "analyze" : fresh ? (last.r > 0 ? "win" : "loss") : "wait";
+  const r = fresh ? Math.abs(last.r).toLocaleString(lang === "es" ? "es-ES" : "en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : "";
+  return voiceLine(t, temper, moment, Math.floor((last?.time ?? 0) / 1000), tk, r);
+}

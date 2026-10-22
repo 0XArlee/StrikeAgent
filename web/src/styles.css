@@ -709,3 +709,98 @@ legend { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding:
 .spage-others strong { font-size: 16px; }
 .spage-others span { color: var(--text-muted); }
 @media (prefers-reduced-motion: reduce) { .strat, .strat::before, .spage-others a { transition: none; } }
+
+/* ---- personality and trade (PersonaPicker): the agent in its workplace on the left, the choices on the right */
+.pp { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 20px; align-items: start; margin-top: 4px; }
+.pp-stage { position: sticky; top: 0; display: grid; justify-items: center; gap: 4px; padding: 10px 10px 14px; border: 1px solid var(--border);
+  border-radius: var(--radius-lg); background: var(--surface-2); }
+.pp-place { border-radius: 8px; box-shadow: inset 0 -40px 40px -20px rgba(0, 0, 0, .55); }
+.pp-hero { position: relative; display: grid; justify-items: center; margin-top: -92px; }
+.pp-sprite { width: 80px; height: 110px; image-rendering: pixelated; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .45)); }
+.pp-say { position: relative; max-width: 210px; margin-bottom: 6px; padding: 6px 10px; border: 0; border-radius: 10px; background: #fff; color: #0b0d12;
+  font: 600 13px/1.35 var(--font); cursor: pointer; box-shadow: 0 0 0 2px var(--tc); }
+.pp-say::after { content: ""; position: absolute; left: 50%; bottom: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: #fff; transform: translateX(-50%); }
+.pp-say:focus-visible { box-shadow: var(--focus); }
+.pp-who { margin: 6px 0 0; text-align: center; }
+.pp-who b { color: var(--tc); }
+.pp-where { margin: 0; }
+.pp-body { display: grid; gap: 22px; min-width: 0; }
+.pp-h { margin: 0 0 8px; font-size: 16px; }
+.pp-sub { margin: -4px 0 10px; }
+.pp-tabs { display: flex; gap: 2px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+.pp-tabs button { all: unset; cursor: pointer; padding: 9px 12px; font-size: 14px; font-weight: 600; color: var(--text-muted); border-bottom: 2px solid transparent; }
+.pp-tabs button[aria-selected="true"] { color: var(--primary); border-bottom-color: var(--primary); }
+.pp-tabs button:focus-visible { box-shadow: var(--focus); }
+.pp-steps { display: flex; gap: 6px; margin: 0 0 10px; padding: 0; list-style: none; }
+.pp-steps button { width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--text-muted);
+  font: 600 13px var(--mono); cursor: pointer; }
+.pp-steps button.on { border-color: var(--primary); color: var(--primary); }
+.pp-steps button[aria-current="step"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.pp-steps button:focus-visible { box-shadow: var(--focus); }
+.pp-q { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.pp-q legend { margin-bottom: 8px; padding: 0; font-size: 16px; font-weight: 600; }
+.pp-a, .pp-card, .pp-job { position: relative; cursor: pointer; }
+.pp-a input, .pp-card input, .pp-job input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.pp-a span { display: block; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font-size: 14px; }
+.pp-a input:checked + span { border-color: var(--primary); background: var(--primary-10); }
+.pp-a input:focus-visible + span, .pp-card input:focus-visible + span, .pp-job input:focus-visible + span { box-shadow: var(--focus); }
+.pp-result { min-height: 22px; margin: 10px 0 0; font-size: 14px; }
+.pp-cards, .pp-jobs { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.pp-card span { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--border); border-left: 3px solid var(--tc); border-radius: var(--radius); background: var(--surface); }
+.pp-card small { color: var(--text-muted); font-size: 13px; }
+.pp-sample { color: var(--text-faint); font-size: 13px; }
+.pp-card input:checked + span { border-color: var(--tc); background: color-mix(in srgb, var(--tc) 10%, var(--surface)); }
+.pp-jobs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pp-job > span { display: flex; gap: 10px; align-items: flex-start; height: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.pp-job input:checked + span { border-color: var(--primary); background: var(--primary-10); }
+.pp-job-art { flex: none; border-radius: 6px; }
+.pp-job-txt { display: grid; gap: 2px; min-width: 0; font-size: 14px; }
+.pp-job-txt small { font-size: 12px; line-height: 1.4; }
+.pp-never { margin: 10px 0 0; }
+@media (max-width: 720px) {
+  .pp { grid-template-columns: 1fr; }
+  .pp-stage { position: static; }
+  .pp-jobs { grid-template-columns: 1fr; }
+}
+
+/* ---- "Meet <name>": the card at the end of creating an agent */
+.meet { margin: 14px 0 0; }
+.meet-canvas { display: block; width: 100%; height: auto; aspect-ratio: 1200 / 630; border-radius: var(--radius-lg); background: #070a14;
+  box-shadow: 0 0 0 1px var(--border), 0 24px 60px -24px rgba(78, 250, 176, .35); }
+.meet-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.meet-actions .btn { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---- Feedback: the dialog (native <dialog>), the header's button and the admins' inbox in My agent */
+.nav-fb { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.nav-fb:hover { color: var(--text); }
+.nav-fb:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 4px; }
+.mm-fb { margin-top: 8px; }
+.fb { width: min(560px, calc(100% - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background: var(--surface); color: var(--text); overflow: auto; }
+.fb::backdrop { background: rgba(0, 0, 0, .7); backdrop-filter: blur(2px); }
+.fb-inner { padding: 18px 20px 20px; }
+.fb-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fb-head h2 { margin: 0; font-size: 20px; }
+.fb textarea { width: 100%; resize: vertical; min-height: 120px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface-2); color: var(--text); font: inherit; }
+.fb textarea:focus-visible { outline: none; box-shadow: var(--focus); }
+.fb-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; }
+.fb-drop { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; border: 1px dashed var(--border); border-radius: var(--radius); }
+.fb-drop .btn, .fb-actions .btn { display: inline-flex; align-items: center; gap: 6px; }
+.fb-preview { display: flex; align-items: center; gap: 12px; }
+.fb-preview img { max-width: 160px; max-height: 100px; border-radius: 6px; border: 1px solid var(--border); object-fit: contain; background: #fff; }
+.fb-private { display: flex; gap: 8px; align-items: flex-start; margin: 4px 0 12px; }
+.fb-private svg { flex: none; width: 16px; height: 16px; color: var(--primary); }
+.fb-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.fb-sent { display: grid; justify-items: center; gap: 8px; padding: 12px 0 4px; text-align: center; }
+.fb-inbox-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fb-inbox-head h3 { display: flex; align-items: center; gap: 8px; margin: 0; }
+.fb-badge { padding: 2px 8px; border-radius: 999px; background: var(--primary); color: var(--primary-ink); font-size: 12px; font-weight: 700; }
+.fb-list { display: grid; gap: 10px; margin: 12px 0 0; padding: 0; list-style: none; }
+.fb-list li { padding: 10px 12px; border: 1px solid var(--border-soft); border-radius: var(--radius); background: var(--surface-2); }
+.fb-list li.unread { border-left: 3px solid var(--primary); }
+.fb-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.fb-subject { margin: 4px 0 2px; font-weight: 600; }
+.fb-message { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text-muted); }
+.fb-image summary { cursor: pointer; margin-top: 6px; color: var(--primary); font-size: 13px; }
+.fb-image img { display: block; max-width: 100%; margin-top: 8px; border-radius: 6px; border: 1px solid var(--border); }

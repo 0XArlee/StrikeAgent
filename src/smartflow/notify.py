@@ -22,8 +22,8 @@ import time
 import urllib.parse
 import urllib.request
 
-LEVELS = {"info": 0, "warning": 1, "error": 2, "critical": 3}
-ICON = {"info": "ℹ️", "warning": "⚠️", "error": "🛑", "critical": "🚨"}
+LEVELS = {"info": 0, "warning": 1, "feedback": 1, "error": 2, "critical": 3}   # feedback: the site's suggestions
+ICON = {"info": "ℹ️", "warning": "⚠️", "feedback": "💬", "error": "🛑", "critical": "🚨"}
 UA = "smartflow-alert/1.0"
 
 _sent: dict[tuple[str, str], float] = {}

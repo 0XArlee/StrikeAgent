@@ -10,11 +10,12 @@ import { Mark } from "./ui";
 interface Props {
   t: Dict; lang: Lang; setLang: (l: Lang) => void;
   connectLabel: string; onConnect: () => void;
+  onFeedback?: () => void;   // the Feedback dialog
 }
 
 const WIDE = "(min-width: 861px)";   // .nav shows from here (styles.css)
 
-export function MobileMenu({ t, lang, setLang, connectLabel, onConnect }: Props) {
+export function MobileMenu({ t, lang, setLang, connectLabel, onConnect, onFeedback }: Props) {
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
@@ -82,6 +83,7 @@ export function MobileMenu({ t, lang, setLang, connectLabel, onConnect }: Props)
           </a>
           <div className="mm-foot" style={{ "--i": items.length + 1 } as CSSProperties}>
             <button type="button" className="btn btn-primary btn-lg btn-block" onClick={() => { close(false); onConnect(); }}>{connectLabel}</button>
+            {onFeedback && <button type="button" className="btn btn-ghost btn-block mm-fb" onClick={() => { close(false); onFeedback(); }}>{t.feedback.nav}</button>}
             <div className="mm-row">
               <div className="lang" role="group" aria-label="Language">
                 <button type="button" aria-pressed={lang === "en"} onClick={() => setLang("en")}>EN</button>

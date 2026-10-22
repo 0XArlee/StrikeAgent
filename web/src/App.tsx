@@ -6,6 +6,7 @@ import { ConnectModal, type LinkResult } from "./components/ConnectModal";
 import { sessionWallet } from "./cardano/wallets";
 import { Dashboard } from "./components/Dashboard";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { FeedbackDialog } from "./components/FeedbackDialog";
 import { StrategyCatalog } from "./components/StrategyCatalog";
 import { StrategyPage } from "./components/StrategyPage";
 import { Icon, Mark } from "./components/ui";
@@ -126,6 +127,8 @@ export function App() {
   const openConnect = (city: boolean, strategy?: StrategyId) => { setFromCity(city); setPicked(strategy); setOpen(true); };
 
   const connectLabel = link ? t.dashboard : t.connect;
+  const [feedback, setFeedback] = useState(false);   // the Feedback dialog (landing and city)
+  const feedbackDialog = feedback && <FeedbackDialog t={t} lang={lang} token={link?.token} onClose={() => setFeedback(false)} />;
   const onConnectClick = () => (link ? goDashboard() : openConnect(false));
   // "Use this strategy": the sign-up with it already picked, or My agent (where the strategy is changed) for an agent
   const onUse = (id: StrategyId) => (link ? goDashboard() : openConnect(false, id));
@@ -143,12 +146,13 @@ export function App() {
         <ErrorBoundary onClose={() => { location.hash = ""; }}>
         <Suspense fallback={<div className="city-boot" role="status"><span className="sr-only">Loading EdgeCraft-StrikeCity</span></div>}>
           <CityPage lang={lang} setLang={setLang} onConnect={() => (link ? openCity(link.cityId ?? link.accountId) : openConnect(true))}
+                    onFeedback={() => setFeedback(true)}
                     myAgent={link ? <Dashboard t={t} lang={lang} info={info} link={link} onUnlinked={unlink} onSignOut={() => signOut(t.dash.signedOut)}
                                                onSignIn={() => { unlink(); openConnect(true); }} onOpenCity={openCity} /> : null}
                     owner={link?.token ? { id: link.cityId ?? link.accountId, token: link.token } : null} />
         </Suspense>
         </ErrorBoundary>
-        {modal}
+        {modal}{feedbackDialog}
         {bye && <div className="toast" role="status">{bye}</div>}
       </>
     );
@@ -172,6 +176,7 @@ export function App() {
           <nav className="nav" aria-label="Main">
             <a href="#strategies">{t.nav.strategy}</a><a href="#how">{t.nav.how}</a>
             <a href="#faq">{t.nav.faq}</a>
+            <button type="button" className="nav-fb" onClick={() => setFeedback(true)}><Icon.message size={16} />{t.feedback.nav}</button>
             <a href="#/city" className="nav-city">{t.nav.city}</a>
           </nav>
           <div className="header-actions">
@@ -182,7 +187,8 @@ export function App() {
             <button type="button" className="btn btn-primary connect-desktop" onClick={onConnectClick}>
               {link ? <Icon.wallet /> : null}{connectLabel}
             </button>
-            <MobileMenu t={t} lang={lang} setLang={setLang} connectLabel={link ? t.dashboard : t.connectCardano} onConnect={onConnectClick} />
+            <MobileMenu t={t} lang={lang} setLang={setLang} connectLabel={link ? t.dashboard : t.connectCardano} onConnect={onConnectClick}
+                        onFeedback={() => setFeedback(true)} />
           </div>
         </div>
       </header>
@@ -289,7 +295,7 @@ export function App() {
         </div>
       </div>
 
-      {modal}
+      {modal}{feedbackDialog}
       {bye && <div className="toast" role="status">{bye}</div>}
     </>
   );

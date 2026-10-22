@@ -2,9 +2,11 @@
 // actions — every change needs a fresh CIP-30 signature over a one-time message. Agents' host: internal/push (HMAC).
 // Thin route files under ../functions/api call these.
 /// <reference path="./env.d.ts" />
-import { REFERENCE_ID, liveAgent, meView, startingAgent, stoppedAgent, storedLook, strikePrices, userAgent, type Agent, type CityDoc } from "./agents";
+import { REFERENCE_ID, liveAgent, meView, startingAgent, stoppedAgent, storedLook, storedPersona, strikePrices, userAgent, type Agent, type CityDoc } from "./agents";
 import { burnKey, finishLink, inviteOnly, linkFor, liveAllowed, liveEnv, liveFee, liveForAll, liveView, startLink, walletNetwork } from "./live";
 import { lookId, normalizeLook } from "../src/city/look";
+import { normalizePersona, personaId } from "../src/city/persona";
+import { isAdmin } from "./feedback";
 import { parseAddress, verifyCip30 } from "./cardano";
 import { addEvent, audit, auditNow, consumeChallenge, eventsFor, newChallenge, publicUsers, saveSnapshot, snapshot, snapshotAt, tooMany, userById } from "./store";
 import {
@@ -82,7 +84,7 @@ export async function city(c: Ctx): Promise<Response> {
 export async function connectChallenge({ request, env }: Ctx): Promise<Response> {
   const now = Date.now();
   const b = await body<{ address?: unknown; chain?: unknown; risk?: unknown; markets?: unknown; name?: unknown; public?: unknown; look?: unknown;
-    strategy?: unknown; signin?: unknown }>(request);
+    persona?: unknown; strategy?: unknown; signin?: unknown }>(request);
   if (!b) return fail(400, "invalid request");
   if (b.chain !== undefined && b.chain !== "cardano") return fail(400, "only Cardano wallets are supported");
   let address: string;
@@ -111,9 +113,11 @@ export async function connectChallenge({ request, env }: Ctx): Promise<Response>
   if (!riskAllowed(strategy, risk)) return fail(400, `${STRATEGIES[strategy].name} goes up to the ${STRATEGIES[strategy].maxRisk} risk (${RISK[STRATEGIES[strategy].maxRisk]}% per trade)`);
   const look = b.look === undefined || b.look === null ? null : normalizeLook(b.look);
   if (b.look && !look) return fail(400, "invalid character");
+  const persona = b.persona === undefined || b.persona === null ? null : normalizePersona(b.persona);
+  if (b.persona && !persona) return fail(400, "invalid personality");
   if (await tooMany(env.DB, ip(request), address, "connect", now)) return fail(429, "too many attempts: wait a few minutes");
   const id = crypto.randomUUID();
-  const payload = { name, markets, risk, public: pub, look, strategy };
+  const payload = { name, markets, risk, public: pub, look, persona, strategy };
   // where real trading is offered, creating the agent IS connecting it: the only message is Strike's builder connect
   // (it names the wallet and a nonce, so it also proves ownership)
   const link = env.BUILDER_CODE ? await linkFor(env.DB, uid) : null;
@@ -131,7 +135,8 @@ export async function connectChallenge({ request, env }: Ctx): Promise<Response>
     "It cannot move funds, place orders or approve any fee.", "",
     `Wallet: ${address}`, `Agent name: ${name}`, `Strategy: ${STRATEGIES[strategy].name}`, `Markets: ${markets.join(", ")}`,
     `Risk per trade: ${RISK[risk]}%`,
-    `Show in EdgeCraft-StrikeCity: ${pub ? "yes" : "no"}`, `Character: ${look ? lookId(look) : "automatic"}`, `Mode: ${mode}`,
+    `Show in EdgeCraft-StrikeCity: ${pub ? "yes" : "no"}`, `Character: ${look ? lookId(look) : "automatic"}`,
+    ...(persona ? [`Personality in the city: ${personaId(persona)} (never changes how it trades)`] : []), `Mode: ${mode}`,
     `Site: ${new URL(request.url).host}`, `Nonce: ${id}`, `Issued: ${iso(now)}`, `Expires: ${iso(now + CHALLENGE_TTL)}`,
   ].join("\n");
   await newChallenge(env.DB, { address, kind: "connect", payload, message, ip: ip(request) }, id, now);
@@ -172,7 +177,7 @@ export async function connectVerify(c: Ctx): Promise<Response> {
   if (!b || typeof b.sessionId !== "string" || typeof b.walletSignature !== "string") return fail(400, "invalid request");
   const ch = await consumeChallenge(env.DB, b.sessionId, "connect", now);
   if (!ch) return fail(410, "this sign-in request expired or was already used: start again");
-  const p = JSON.parse(ch.payload) as { name: string; markets: string[]; risk: string; public: boolean; look: unknown;
+  const p = JSON.parse(ch.payload) as { name: string; markets: string[]; risk: string; public: boolean; look: unknown; persona?: unknown;
     strategy?: string; live?: { pub: string; nonce: string; env: string }; signin?: boolean };
   const why = await verifyCip30(ch.address, b.walletSignature, new TextEncoder().encode(ch.message));
   const id = await userIdFor(ch.address);
@@ -196,32 +201,35 @@ export async function connectVerify(c: Ctx): Promise<Response> {
       mode: link && link.status === "active" && link.env === liveEnv(env) ? "live" : liveForAll(env) ? "live" : "paper",
       live: env.BUILDER_CODE ? liveView(env, link, liveAllowed(env, u.address)) : undefined,
       agent: { name: u.name, markets: JSON.parse(u.markets) as string[], risk: u.risk, public: !!u.public, look: storedLook(u),
-        strategy: strategyOf(u.strategy) },
+        persona: storedPersona(u), strategy: strategyOf(u.strategy) },
     });
   }
   const look = normalizeLook(p.look);
+  const persona = normalizePersona(p.persona);
   // the same signature goes to Strike, which links the user's account to our API wallet (nothing is saved if it fails)
   const linkStmts = p.live ? await finishLink(env, id, { ...p.live, address: ch.address }, b.walletSignature, now,
     { req: request, message: ch.message }) : [];
   if (linkStmts instanceof Response) return linkStmts;   // refused by Strike: finishLink recorded why
   const prev = await userById(env.DB, id);
   const stmts = [env.DB.prepare(
-    "INSERT INTO users (id, address, name, risk, markets, public, status, created_at, updated_at, look, strategy) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', ?7, ?7, ?8, ?9) "
+    "INSERT INTO users (id, address, name, risk, markets, public, status, created_at, updated_at, look, strategy, persona) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', ?7, ?7, ?8, ?9, ?10) "
     + "ON CONFLICT(id) DO UPDATE SET name = excluded.name, risk = excluded.risk, markets = excluded.markets, public = excluded.public, "
-    + "updated_at = excluded.updated_at, look = COALESCE(excluded.look, users.look), strategy = excluded.strategy",
+    + "updated_at = excluded.updated_at, look = COALESCE(excluded.look, users.look), strategy = excluded.strategy, persona = COALESCE(excluded.persona, users.persona)",
   ).bind(id, ch.address, p.name, p.risk, JSON.stringify(p.markets), p.public ? 1 : 0, now, look ? JSON.stringify(look) : null,
-    strategyOf(p.strategy))];
+    strategyOf(p.strategy), persona ? JSON.stringify(persona) : null)];
   if (!prev) stmts.push(addEvent(env.DB, id, "start", now));
   else if (!!prev.public !== p.public) stmts.push(addEvent(env.DB, id, p.public ? "show" : "hide", now));
   stmts.push(audit(env.DB, request, liveEnv(env), { ...proof, ok: true, detail: {
     name: p.name, strategy: strategyOf(p.strategy), markets: p.markets, risk: p.risk, riskPct: RISK[p.risk] ?? null, public: p.public,
-    look: look ? lookId(look) : null, live: !!p.live, replaced: prev ? { name: prev.name, strategy: prev.strategy, markets: JSON.parse(prev.markets), risk: prev.risk } : null,
+    look: look ? lookId(look) : null, persona: persona ? personaId(persona) : null, live: !!p.live, replaced: prev ? { name: prev.name, strategy: prev.strategy, markets: JSON.parse(prev.markets), risk: prev.risk } : null,
   } }, now));
   await env.DB.batch([...stmts, ...linkStmts]);
   purgeCity(c);
   const t = await issueToken(env.SESSION_SECRET, id, now);
   const live = p.live ? liveView(env, await linkFor(env.DB, id), true) : undefined;
-  return json({ accountId: id, apiWalletPublicKey: "", token: t.token, expiresAt: iso(t.exp), cityId: id, mode: live ? "live" : "paper", live });
+  // its citizen number in the city (the row's order of arrival: "Meet <name>, citizen #0042")
+  const citizen = (await env.DB.prepare("SELECT rowid AS n FROM users WHERE id = ?1").bind(id).first<{ n: number }>())?.n ?? null;
+  return json({ accountId: id, apiWalletPublicKey: "", token: t.token, expiresAt: iso(t.exp), cityId: id, mode: live ? "live" : "paper", live, citizen });
 }
 
 async function meFor(env: Env, id: string, now: number): Promise<Response> {
@@ -241,6 +249,7 @@ async function meFor(env: Env, id: string, now: number): Promise<Response> {
   // agent: the owner's own agent as the city draws it, with the amounts (the city shows it to its owner this way);
   // hold: its strategy's safety hold, if any (new trades wait; open ones keep their stop)
   return json({ ...meView(u, a, a.positions.length ? await strikePrices() : {}), live: liveView(env, await linkFor(env.DB, id), liveAllowed(env, u.address)),
+    admin: isAdmin(env, id),   // reads the site's suggestions (My agent's inbox)
     agent: a, hold: doc?.holds?.[strategyOf(u.strategy)] ?? null });
 }
 
@@ -256,10 +265,11 @@ const ACTIONS: Record<string, string> = { pause: "pause", resume: "resume", revo
 
 export async function actionChallenge({ request, env }: Ctx): Promise<Response> {
   const now = Date.now();
-  const b = await body<{ accountId?: unknown; action?: unknown; look?: unknown; strategy?: unknown; markets?: unknown; risk?: unknown }>(request);
+  const b = await body<{ accountId?: unknown; action?: unknown; look?: unknown; persona?: unknown; strategy?: unknown; markets?: unknown; risk?: unknown }>(request);
   if (!b || typeof b.accountId !== "string" || typeof b.action !== "string" || !(b.action in ACTIONS)) return fail(400, "invalid request");
-  const look = b.action === "look" ? normalizeLook(b.look) : null;
-  if (b.action === "look" && !look) return fail(400, "invalid character");
+  const look = b.action === "look" && b.look != null ? normalizeLook(b.look) : null;
+  const persona = b.action === "look" && b.persona != null ? normalizePersona(b.persona) : null;
+  if (b.action === "look" && ((b.look != null && !look) || (b.persona != null && !persona) || (!look && !persona))) return fail(400, "invalid character");
   const u = await userById(env.DB, b.accountId);
   if (!u) return fail(404, "this agent no longer exists");
   let settings: { strategy: string; markets: string[]; risk: string } | null = null;
@@ -290,10 +300,11 @@ export async function actionChallenge({ request, env }: Ctx): Promise<Response> 
       ? "My agent opens the smallest trade Strike allows (about 11 $) with its stop, holds it about 2 minutes and closes it. It costs a few cents in fees."
       : "This signature only proves that you own this wallet.", "",
     `Wallet: ${u.address}`, `Agent: ${u.name}`, `Action: ${b.action}`, ...(look ? [`Character: ${lookId(look)}`] : []),
+    ...(persona ? [`Personality in the city: ${personaId(persona)} (never changes how it trades)`] : []),
     ...(settings ? [`Strategy: ${STRATEGIES[settings.strategy].name}`, `Markets: ${settings.markets.join(", ")}`, `Risk per trade: ${RISK[settings.risk]}%`] : []),
     `Site: ${new URL(request.url).host}`, `Nonce: ${id}`, `Issued: ${iso(now)}`, `Expires: ${iso(now + CHALLENGE_TTL)}`,
   ].join("\n");
-  await newChallenge(env.DB, { address: u.address, kind: "action", payload: { action: b.action, id: u.id, look, settings }, message, ip: ip(request) }, id, now);
+  await newChallenge(env.DB, { address: u.address, kind: "action", payload: { action: b.action, id: u.id, look, persona, settings }, message, ip: ip(request) }, id, now);
   return json({ sessionId: id, messageToSign: message, feeBps: 0, expiresAt: now + CHALLENGE_TTL });
 }
 
@@ -305,7 +316,7 @@ export async function action(c: Ctx): Promise<Response> {
   const ch = await consumeChallenge(env.DB, b.sessionId, "action", now);
   if (!ch) return fail(410, "this request expired or was already used: start again");
   const why = await verifyCip30(ch.address, b.walletSignature, new TextEncoder().encode(ch.message));
-  const p = JSON.parse(ch.payload) as { action: string; id: string; look?: unknown; settings?: { strategy: string; markets: string[]; risk: string } | null };
+  const p = JSON.parse(ch.payload) as { action: string; id: string; look?: unknown; persona?: unknown; settings?: { strategy: string; markets: string[]; risk: string } | null };
   const proof = { user: p.id, address: ch.address, action: p.action, message: ch.message, signature: b.walletSignature };
   if (why) {
     await auditNow(env.DB, request, liveEnv(env), { ...proof, ok: false, detail: { error: `invalid wallet signature (${why})` } }, now);
@@ -332,6 +343,8 @@ export async function action(c: Ctx): Promise<Response> {
   if (p.action === "hide" && u.public) stmts.push(set("public = 0"), addEvent(db, u.id, "hide", now));
   const newLook = p.action === "look" ? normalizeLook(p.look) : null;
   if (newLook) stmts.push(set("look = ?3", JSON.stringify(newLook)));
+  const newPersona = p.action === "look" ? normalizePersona(p.persona) : null;
+  if (newPersona) stmts.push(set("persona = ?3", JSON.stringify(newPersona)));
   if (p.action === "settings" && p.settings) {
     stmts.push(set("strategy = ?3, markets = ?4, risk = ?5", p.settings.strategy, JSON.stringify(p.settings.markets), p.settings.risk),
       addEvent(db, u.id, "settings", now));
@@ -343,7 +356,7 @@ export async function action(c: Ctx): Promise<Response> {
   // every signed action is kept, also the ones that changed nothing (pausing a paused agent)
   stmts.push(audit(db, request, liveEnv(env), { ...proof, ok: true, detail: {
     changed: stmts.length > 0, before: was,
-    ...(p.settings ? { ...p.settings, riskPct: RISK[p.settings.risk] ?? null } : {}), ...(newLook ? { look: lookId(newLook) } : {}),
+    ...(p.settings ? { ...p.settings, riskPct: RISK[p.settings.risk] ?? null } : {}), ...(newLook ? { look: lookId(newLook) } : {}), ...(newPersona ? { persona: personaId(newPersona) } : {}),
     ...(p.action === "test" ? { at: now } : {}),
   } }, now));
   await db.batch(stmts);

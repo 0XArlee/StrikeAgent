@@ -1,6 +1,8 @@
 // City agents: data model (mirrors the agent journal), A* paths on the walk grid, and how a real agent moves.
 // Every agent comes from the Smart Flow API (/api/city), built from real agent journals: the Smart Flow paper agents
 // and the users' agents their owners chose to show.
+import { hash } from "./rand";
+import { JOB_PLACE, normalizePersona, personaFor, type Persona } from "./persona";
 import type { Portfolio } from "./portfolio-types";
 import { BUILDINGS, COLS, ROWS, TILE, canWalk, plazaSpot, type Building } from "./world";
 import type { Dir } from "./sprites";
@@ -64,6 +66,8 @@ export interface AgentView {
   tour?: number;          // live: the market its card shows first while it waits (two agents never show the same one)
   post?: { x: number; y: number };     // its own spot in the plaza: where it stands still while it waits
   trip?: { to: string; until: number }; // a real event just happened (order, exit, risk check): it goes there
+  rush?: boolean;         // its owner is taking it into the News Tower: it runs
+  persona?: Persona;      // its personality and trade in the city (its owner's choice, or one derived from its id)
   seen?: number;          // time of the latest journal entry already acted on
 }
 
@@ -137,7 +141,7 @@ function goToTile(a: AgentView, t: { x: number; y: number }, target: string): vo
 
 export function step(a: AgentView, dt: number): void {
   if (!a.path.length) return;
-  const speed = 34; // art px per second
+  const speed = a.rush ? 120 : 34; // art px per second
   const t = a.path[0];
   const dx = t.x - a.x, dy = t.y - a.y;
   const dist = Math.hypot(dx, dy);
@@ -184,6 +188,7 @@ export interface ApiAgent {
   checks?: RealInfo["checks"];
   decisions?: Decision[];
   look?: unknown;
+  persona?: unknown;
   error?: string;
   portfolio?: Portfolio;
 }
@@ -217,6 +222,7 @@ export function fromApi(x: ApiAgent, prev: AgentView | undefined, R: () => numbe
   a.name = x.name;
   a.portfolio = x.portfolio ?? undefined;
   a.look = normalizeLook(x.look) ?? undefined;
+  a.persona = normalizePersona(x.persona) ?? personaFor(x.id);
   a.owner = x.owner ?? "Smart Flow";
   a.kind = x.kind === "live" ? "live" : "paper";
   a.risk = x.riskPct ?? 0.5;
@@ -248,14 +254,27 @@ const TRIP: Partial<Record<Decision["kind"], string>> = { signal: "exchange", or
 const TRIP_MS = 75_000;
 
 /** Where its state keeps it: paused or offline at home, analysing in the lab, in a trade at the market's tower,
- *  waiting for a setup at its own spot in the plaza. */
+ *  waiting for a setup at its own spot in the plaza, except during its shifts at its trade's building. */
 function placeFor(a: AgentView): string {
   switch (a.status) {
     case "offline": case "paused": case "unfunded": return "homes";
     case "analyzing": return "lab";
     case "in_trade": return a.position ? MARKET_TOWER[a.position.market] ?? "alts" : "plaza";
+    case "waiting": return a.persona && onShift(a.id, Date.now()) ? JOB_PLACE[a.persona.job] : "plaza";
     default: return "plaza";
   }
+}
+
+/** While it waits for its next candle an agent works its trade in shifts: 4 minutes in every 12 (each agent at its own
+ *  time), the rest at its spot in the plaza. Only where it stands in the city: nothing about its trading. */
+export function onShift(id: string, now: number): boolean {
+  const period = 12 * 60_000;
+  return (now + (hash(id) % period)) % period < 4 * 60_000;
+}
+
+/** At its trade's building, doing its job (not walking there, not on its way back). */
+export function atWork(a: AgentView): boolean {
+  return a.status === "waiting" && !!a.persona && !a.path.length && a.target === JOB_PLACE[a.persona.job];
 }
 
 /** Where waiting agents stand, spread around the fountain so a still crowd stays readable: the most visible spots

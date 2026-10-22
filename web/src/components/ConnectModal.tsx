@@ -4,18 +4,21 @@ import { shortAddr } from "../cardano/bech32";
 import { KNOWN_WALLETS, WalletError, connect, signMessage, watchWallets, type Connected, type DetectedWallet } from "../cardano/wallets";
 import { fmt, type Dict, type Lang } from "../i18n";
 import type { Look } from "../city/look";
+import type { Persona } from "../city/persona";
 import { lookFor } from "../city/sprites";
 import { MIN_BALANCE, strategyId, strategyName, type StrategyId } from "../strategies";
-import { AvatarEditor, Sprite } from "./AvatarEditor";
+import { AvatarEditor } from "./AvatarEditor";
+import { MeetCard } from "./MeetCard";
+import { PersonaPicker } from "./PersonaPicker";
 import { StrategyPicker, defaultPlan, type Plan } from "./StrategyPicker";
 import { Alert, CardanoLogo, Icon, Mark, WalletIcon } from "./ui";
 
-// wallet -> character and name -> strategy, markets and risk -> review and sign -> done; a wallet that already has
-// an agent goes wallet -> sign in -> My agent
-type Step = "wallets" | "connecting" | "signin" | "avatar" | "plan" | "review" | "preparing" | "signing" | "verifying" | "done";
+// wallet -> character and name -> personality and trade in the city -> strategy, markets and risk -> review and sign ->
+// done (meet your agent); a wallet that already has an agent goes wallet -> sign in -> My agent
+type Step = "wallets" | "connecting" | "signin" | "avatar" | "persona" | "plan" | "review" | "preparing" | "signing" | "verifying" | "done";
 
 export interface LinkResult extends Linked {
-  address: string; walletName: string; risk: RiskPreset; markets: string[]; name?: string; public?: boolean; look?: Look;
+  address: string; walletName: string; risk: RiskPreset; markets: string[]; name?: string; public?: boolean; look?: Look; persona?: Persona;
   strategy?: StrategyId;
 }
 
@@ -53,6 +56,7 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
   const [pub, setPub] = useState(!!fromCity);
   const [nameErr, setNameErr] = useState("");
   const [look, setLook] = useState<Look | null>(null);
+  const [persona, setPersona] = useState<Persona>({ v: 1, temper: "stoic", job: "chartist" });
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [linked, setLinked] = useState<Linked | null>(null);
   const [error, setError] = useState("");
@@ -81,14 +85,18 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
       else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
     };
     document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose, step]);
+  // only when the dialog closes: the page stops scrolling under it while open, and focus goes back to its opener (a
+  // new onClose from a re-render used to send focus back to the opener while the dialog was still open)
+  useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
       (returnFocus.current as HTMLElement | null)?.focus?.();
     };
-  }, [onClose, step]);
+  }, []);
 
   const say = (s: string) => setAnnounce(s);
   const go = (s: Step, announce: string) => { setError(""); setStep(s); say(announce); };
@@ -133,10 +141,10 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
   }
 
   const cleanName = () => name.replace(/\s+/g, " ").trim();
-  const toPlan = () => {
+  const toPersona = () => {
     if (!NAME_RE.test(cleanName())) { setNameErr(P.errName); document.getElementById("cm-name")?.focus(); return; }
     setNameErr("");
-    go("plan", S.title);
+    go("persona", t.persona.title);
   };
   const toReview = () => {
     if (!plan.markets.length) { setError(m.minMarkets); return; }
@@ -189,7 +197,7 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
     say(m.preparing);
     try {
       const ch = await api.challenge(conn.address, { risk: plan.risk, markets: plan.markets, strategy: plan.strategy, name: nm, public: pub,
-        look: look ?? undefined });
+        look: look ?? undefined, persona });
       setChallenge(ch);
       setStep("signing");
       say(fmt(m.signing, { wallet: conn.wallet.name }));
@@ -203,7 +211,7 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
       setStep("done");
       say(l.mode === "live" ? fmt(L.starting, { env: envName }) : P.done);
       onLinked({ ...l, address: conn.address, walletName: conn.wallet.name, risk: plan.risk, markets: plan.markets, strategy: plan.strategy,
-        name: nm, public: pub, look: look ?? undefined });
+        name: nm, public: pub, look: look ?? undefined, persona });
     } catch (e) {
       // a name the server refuses (reserved, invalid) is fixed on the character step, next to the field
       if (e instanceof ApiError && e.status === 400 && /name/i.test(e.message)) {
@@ -231,7 +239,7 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
 
   return (
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
-      <div className={`dialog${step === "avatar" || step === "plan" ? " dialog-wide" : ""}`} role="dialog" aria-modal="true" aria-labelledby="cm-title" aria-describedby="cm-desc" ref={dialog} aria-busy={busy}>
+      <div className={`dialog${step === "avatar" || step === "persona" || step === "plan" || step === "done" ? " dialog-wide" : ""}`} role="dialog" aria-modal="true" aria-labelledby="cm-title" aria-describedby="cm-desc" ref={dialog} aria-busy={busy}>
         <button type="button" className="icon-btn dialog-close" onClick={onClose} aria-label={m.close} disabled={step === "signing" || step === "verifying"}>
           <Icon.close />
         </button>
@@ -317,14 +325,26 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
             </div>
             <AvatarEditor t={t} lang={lang} value={look} onChange={setLook} idPrefix="cm-av" />
             <div className="actions sticky">
-              <button type="button" className="btn btn-primary btn-lg btn-block" onClick={toPlan}>{A.next}</button>
+              <button type="button" className="btn btn-primary btn-lg btn-block" onClick={toPersona}>{A.next}</button>
+            </div>
+          </>
+        )}
+
+        {step === "persona" && conn && (
+          <>
+            {nav("avatar")}
+            <h2 id="cm-title" tabIndex={-1} data-autofocus>{t.persona.title}</h2>
+            <p id="cm-desc" className="dialog-sub">{t.persona.sub}</p>
+            <PersonaPicker t={t} lang={lang} value={persona} onChange={setPersona} look={look} idPrefix="cm-pp" />
+            <div className="actions sticky">
+              <button type="button" className="btn btn-primary btn-lg btn-block" onClick={() => go("plan", S.title)}>{t.persona.next}</button>
             </div>
           </>
         )}
 
         {step === "plan" && conn && (
           <>
-            {nav("avatar")}
+            {nav("persona")}
             <h2 id="cm-title" tabIndex={-1} data-autofocus>{S.title}</h2>
             <p id="cm-desc" className="dialog-sub">{S.sub}</p>
             <StrategyPicker t={t} lang={lang} info={info} value={plan} onChange={(p) => { setPlan(p); setError(""); }} idPrefix="cm" titled={false} />
@@ -358,6 +378,7 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
               <div className="kv"><span>{m.markets}</span><span>{marketList}</span></div>
               <div className="kv"><span>{m.risk}</span><span>{riskText}</span></div>
               <div className="kv"><span>{P.city}</span><span>{pub ? P.shown : P.privateLbl}</span></div>
+              <div className="kv"><span>{t.persona.temper}</span><span>{t.persona.tempers[persona.temper].name} · {t.persona.jobs[persona.job].name}</span></div>
             </div>
             <div className="box">
               <div className="box-title">{m.canDo}</div>
@@ -401,12 +422,12 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
               <h2 id="cm-title" tabIndex={-1} data-autofocus>{linked.mode === "live" ? fmt(L.starting, { env: envName }) : P.done}</h2>
               <p id="cm-desc" className="dialog-sub">{linked.mode === "live" ? L.startingSub : P.doneSub}</p>
             </div>
-            {look && <div className="done-avatar"><Sprite look={look} scale={6} className="av-mid" /></div>}
+            <MeetCard t={t} lang={lang} info={{
+              name: cleanName(), look, persona, citizen: linked.citizen ?? null, strategy: strategyName(plan.strategy), markets: plan.markets,
+              risk: `${m.risk}: ${riskText}`,
+              url: pub ? `${location.origin}/#/city?agent=${encodeURIComponent(linked.cityId ?? linked.accountId)}` : location.origin,
+            }} />
             <div className="box">
-              <div className="kv"><span>{P.agent}</span><span>{cleanName()}</span></div>
-              <div className="kv"><span>{S.label}</span><span>{strategyName(plan.strategy)}</span></div>
-              <div className="kv"><span>{m.markets}</span><span>{marketList}</span></div>
-              <div className="kv"><span>{m.risk}</span><span>{riskText}</span></div>
               <div className="kv"><span>{P.city}</span><span>{pub ? P.shown : P.privateLbl}</span></div>
               {linked.mode === "live" && <div className="kv"><span>{L.fee}</span><span className="num">{feePct}</span></div>}
             </div>

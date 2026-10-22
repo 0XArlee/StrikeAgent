@@ -4,6 +4,7 @@
 // fees); the paper account compounds them at the user's risk.
 /// <reference path="./env.d.ts" />
 import { normalizeLook, type Look } from "../src/city/look";
+import { normalizePersona, type Persona } from "../src/city/persona";
 import { accountResult, pointResult, type Portfolio } from "../src/city/portfolio-types";
 import { RISK, strategyOf, type UserRow } from "./util";
 
@@ -18,7 +19,7 @@ export interface Agent {
   markets: string[]; riskPct?: number; feeBps?: number; equity0?: number | null; cash?: number | null; since?: number | null;
   lastCheck?: number | null; nextCheck?: number; status: string; alerts?: unknown[];
   positions: Position[]; trades: Trade[]; checks: Record<string, { time: number; args: Record<string, unknown>; text: string }>;
-  decisions: Decision[]; look?: Look | null; error?: string;
+  decisions: Decision[]; look?: Look | null; persona?: Persona | null; error?: string;
   portfolio?: Portfolio;   // a user's live agent: its Strike account (amounts only for the owner, see publicPortfolio)
   strategy?: string;       // smartflow | pyramid
   result?: number | null;  // a live account's result since it started, deposits left out (owner only)
@@ -77,7 +78,7 @@ export function userAgent(u: UserRow, ref: Agent | undefined, events: UserEvent[
     id: u.id, name: u.name, owner: "Strike user", kind: "paper", env: ref?.env ?? "mainnet", tf: ref?.tf ?? "240",
     variant: "reference", changes: [], markets, riskPct: risk, feeBps: ref?.feeBps ?? 10, equity0: PAPER_EQUITY,
     cash: +equity.toFixed(2), since: u.created_at, lastCheck: last || null, nextCheck: ref?.nextCheck ?? now, status,
-    alerts: [], positions, trades, checks, decisions, look: storedLook(u), strategy: strategyOf(u.strategy),
+    alerts: [], positions, trades, checks, decisions, look: storedLook(u), persona: storedPersona(u), strategy: strategyOf(u.strategy),
   };
 }
 
@@ -87,7 +88,7 @@ export function liveAgent(u: UserRow, a: Agent, events: UserEvent[], owner = fal
   const own: Decision[] = events.filter((e) => e.code !== "show" && e.code !== "hide")
     .map((e) => ({ time: e.time, market: a.markets[0] ?? "BTC-USD", kind: "pause", code: e.code }));
   return {
-    ...a, id: u.id, name: u.name, owner: "Strike user", look: storedLook(u), since: a.since ?? u.created_at,
+    ...a, id: u.id, name: u.name, owner: "Strike user", look: storedLook(u), persona: storedPersona(u), since: a.since ?? u.created_at,
     strategy: strategyOf(u.strategy),
     status: u.status === "paused" ? "paused" : a.status,
     decisions: [...a.decisions, ...own].sort((x, y) => y.time - x.time).slice(0, 60),
@@ -147,11 +148,16 @@ export function storedLook(u: UserRow): Look | null {
   try { return u.look ? normalizeLook(JSON.parse(u.look)) : null; } catch { return null; }
 }
 
+/** Its personality and trade in the city, if its owner chose them (re-validated like the look). */
+export function storedPersona(u: UserRow): Persona | null {
+  try { return u.persona ? normalizePersona(JSON.parse(u.persona)) : null; } catch { return null; }
+}
+
 export interface Me {
   accountId: string; address: string; name: string; public: boolean; status: "active" | "paused"; agentStatus: string;
   risk: string; markets: string[]; equity: number | null; equity0: number | null; trades: number; mode: "paper" | "live"; createdAt: number;
   openPositions: { market: string; side: "long" | "short"; size: number; entry: number; stop: number | null; upnl: number | null }[];
-  decisions: Decision[]; feesPaid: null; look: Look | null; portfolio: Portfolio | null; strategy: string;
+  decisions: Decision[]; feesPaid: null; look: Look | null; persona: Persona | null; portfolio: Portfolio | null; strategy: string;
 }
 
 export function meView(u: UserRow, a: Agent, prices: Record<string, number>): Me {
@@ -159,7 +165,7 @@ export function meView(u: UserRow, a: Agent, prices: Record<string, number>): Me
     accountId: u.id, address: u.address, name: u.name, public: !!u.public, status: u.status === "paused" ? "paused" : "active",
     agentStatus: a.status, risk: u.risk, markets: a.markets, equity: a.cash ?? null, equity0: a.equity0 ?? PAPER_EQUITY, trades: a.trades.filter((t) => !t.test).length,   // tests never count
     mode: a.kind === "live" ? "live" : "paper", createdAt: u.created_at, feesPaid: null, decisions: a.decisions.slice(0, 20), look: storedLook(u),
-    portfolio: a.portfolio ?? null, strategy: strategyOf(u.strategy),
+    persona: storedPersona(u), portfolio: a.portfolio ?? null, strategy: strategyOf(u.strategy),
     openPositions: a.positions.map((p) => {
       const px = prices[p.market], dir = p.side === "long" ? 1 : -1, size = p.qty ?? 0;
       const upnl = p.upnl != null ? +p.upnl.toFixed(2) : px ? +((px - p.entry) * dir * size).toFixed(2) : null;   // a live account reports its own

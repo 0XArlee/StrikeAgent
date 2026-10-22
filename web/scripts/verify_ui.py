@@ -106,14 +106,14 @@ with sync_playwright() as p:
         detected = page.locator(".tag-ok").count()
         check(f"{tag}: detects every injected wallet once (alias de-duplicated, late wallet included)", detected == 3,
               f"detected={detected} rows={names}")
-        inside = page.evaluate("document.querySelector('[role=dialog]').contains(document.activeElement)")
+        inside = page.evaluate("document.querySelector('[aria-labelledby=cm-title]').contains(document.activeElement)")
         check(f"{tag}: focus moved into the dialog", inside)
         page.screenshot(path=str(OUT / f"02_wallets_{tag}.png"))
         if tag == "desktop":
-            axe(page, "dialog-wallets", "[role=dialog]")
+            axe(page, "dialog-wallets", "[aria-labelledby=cm-title]")
             page.keyboard.press("Escape")
             page.wait_for_timeout(200)
-            check("keyboard: Esc closes the dialog", page.locator("[role=dialog]").count() == 0)
+            check("keyboard: Esc closes the dialog", page.locator("[aria-labelledby=cm-title]").count() == 0)
             check("keyboard: focus returns to the opener", page.evaluate("document.activeElement.classList.contains('connect-desktop')"))
             page.locator(".header .connect-desktop").click()
             page.wait_for_selector("[role=dialog]")
@@ -122,21 +122,45 @@ with sync_playwright() as p:
             for _ in range(25):
                 page.keyboard.press("Tab")
             check("keyboard: Tab cycling stays inside the dialog",
-                  page.evaluate("document.querySelector('[role=dialog]').contains(document.activeElement)"))
+                  page.evaluate("document.querySelector('[aria-labelledby=cm-title]').contains(document.activeElement)"))
         page.get_by_role("button", name="Eternl").first.click()
         page.wait_for_selector("text=Create your character", timeout=5000)
         page.wait_for_timeout(200)
         page.screenshot(path=str(OUT / f"02b_creator_{tag}.png"))
         check(f"{tag}: character creator with a live preview", page.locator(".av-big").count() == 1)
         page.get_by_role("button", name="Continue").click()
+        # its personality (five questions) and its trade in the city: never how it trades
+        page.wait_for_selector("text=Its personality", timeout=5000)
+        for q in range(5):
+            page.locator(".pp-a").nth(q % 5).click()
+            page.wait_for_timeout(120)
+        result = page.locator(".pp-result").inner_text()
+        check(f"{tag}: five questions give a personality", result.startswith("Your agent is"), result[:80])
+        page.locator(".pp-job", has_text="Reporter").click()
+        check(f"{tag}: the trade shows on its building, the preview says a line",
+              "Reporter" in page.locator(".pp-who").inner_text() and len(page.locator(".pp-say").inner_text()) > 4,
+              page.locator(".pp-who").inner_text())
+        page.screenshot(path=str(OUT / f"02c_persona_{tag}.png"), full_page=False)
+        if tag == "desktop":
+            axe(page, "dialog-persona", "[aria-labelledby=cm-title]")
+        sw = page.evaluate("document.querySelector('[aria-labelledby=cm-title]').scrollWidth - document.querySelector('[aria-labelledby=cm-title]').clientWidth")
+        check(f"{tag}: personality step without horizontal overflow", sw <= 0, f"overflow={sw}px")
+        page.locator(".actions .btn-primary", has_text="Continue").click()
+        # strategy, markets and risk
+        page.wait_for_selector(".strat-pick, .chips", timeout=5000)
+        ticked = page.locator(".chips input:checked").count()
+        check(f"{tag}: strategy step with the proven markets ticked (BTC, ETH, SOL)", ticked >= 3, f"ticked={ticked}")
+        page.locator(".actions .btn-primary").click()
         page.wait_for_selector("text=Start your agent", timeout=5000)
         page.wait_for_timeout(200)
         sign_btn = page.locator(".actions .btn-primary")
         check(f"{tag}: sign button disabled until risk acknowledgement", sign_btn.is_disabled())
-        check(f"{tag}: every market preselected (the agent picks where to enter)", page.locator(".chips input:checked").count() == 8)
+        review = page.locator("[aria-labelledby=cm-title]").inner_text()
+        check(f"{tag}: the review names its personality and trade", "Cautious" in review or "Stoic" in review or "Analyst" in review
+              or "Optimist" in review or "Joker" in review, "")
         page.screenshot(path=str(OUT / f"03_review_{tag}.png"))
         if tag == "desktop":
-            axe(page, "dialog-review", "[role=dialog]")
+            axe(page, "dialog-review", "[aria-labelledby=cm-title]")
         page.locator(".check-ack").click()
         check(f"{tag}: sign button enabled after acknowledgement", sign_btn.is_enabled())
         sign_btn.click()
@@ -147,26 +171,38 @@ with sync_playwright() as p:
         msg_ok = bool(signed) and bytes.fromhex(signed[0]["payload"]).decode().startswith("Smart Flow · start my paper agent")
         check(f"{tag}: wallet signed the exact Smart Flow message (CIP-30 signData, hex payload)", msg_ok,
               (bytes.fromhex(signed[0]["payload"]).decode()[:60] if signed else "nothing signed"))
+        page.wait_for_timeout(900)   # the card draws its city at night
+        painted = page.evaluate("""(() => { const c = document.querySelector('.meet-canvas'); if (!c) return 0;
+          const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0;
+          for (let i = 0; i < d.length; i += 4 * 97) if (d[i] + d[i + 1] + d[i + 2] > 60) n++; return n; })()""")
+        check(f"{tag}: 'Meet your agent' card drawn (city, character, words)", painted > 500, f"lit samples={painted}")
+        msg = bytes.fromhex(signed[0]["payload"]).decode() if signed else ""
+        check(f"{tag}: the signed message names its personality (and that it never changes how it trades)",
+              "Personality in the city:" in msg and "/reporter" in msg, [l for l in msg.splitlines() if "Personality" in l][:1])
         page.screenshot(path=str(OUT / f"05_done_{tag}.png"))
-        page.get_by_role("button", name="Go to my agent").click()
-        page.wait_for_timeout(900)
-        top = page.evaluate("document.getElementById('agent-title').getBoundingClientRect().top")
-        check(f"{tag}: dashboard title not hidden under the sticky header", top >= 64, f"title top={top:.0f}px")
-        if tag == "mobile":
-            check("mobile: sticky CTA hidden once linked", not page.locator(".mobile-cta").is_visible())
-        page.screenshot(path=str(OUT / f"06_dashboard_{tag}.png"))
+        page.locator(".meet-canvas").screenshot(path=str(OUT / f"05b_meet_{tag}.png"))
         if tag == "desktop":
-            axe(page, "dashboard")
-        sw = page.evaluate("document.documentElement.scrollWidth")
-        check(f"{tag}: dashboard without horizontal overflow", sw <= vw, f"scrollWidth={sw}")
-        # Spanish
-        page.get_by_role("button", name="ES", exact=True).click()
+            axe(page, "dialog-done", "[aria-labelledby=cm-title]")
+        # "Go to my agent" opens My agent inside the city (#/city?me); with this simulated session the city's own API
+        # then refuses the fake token, so the dashboard itself is checked by verify_onboarding_live.py on QA
+        page.evaluate("window.__h = []; setInterval(() => window.__h.push(location.hash), 40)")
+        page.get_by_role("button", name="Go to my agent").click()
+        page.wait_for_timeout(600)
+        trail = page.evaluate("[...new Set(window.__h)]")
+        check(f"{tag}: 'Go to my agent' opens My agent in the city", "#/city?me" in trail, str(trail))
+        page.goto(BASE, wait_until="networkidle")
+        # Spanish (on phones the switch is in the menu)
+        if tag == "mobile":
+            page.locator(".mm-toggle, [aria-controls=mobile-menu]").first.click()
+            page.wait_for_timeout(300)
+        page.locator("button:visible", has_text="ES").filter(has_text="ES").first.click()
         page.wait_for_timeout(200)
         check(f"{tag}: Spanish switch updates text and lang attribute",
               page.evaluate("document.documentElement.lang") == "es" and page.get_by_text("Mi agente").count() > 0)
         page.evaluate("window.scrollTo(0,0)")
         page.screenshot(path=str(OUT / f"07_home_es_{tag}.png"))
-        check(f"{tag}: no JS errors", not errors, "; ".join(errors)[:300])
+        real = [e for e in errors if "401" not in e]   # the city's API refusing the simulated session (see above)
+        check(f"{tag}: no JS errors", not real, "; ".join(real)[:300])
         ctx.close()
     # no wallet installed: install list only
     ctx = b.new_context(viewport={"width": 390, "height": 844}, color_scheme="dark")

@@ -203,3 +203,33 @@ def test_checks_only_of_the_markets_it_trades_now(tmp_path):
     from smartflow.api.city import _ms
     s = snapshot(a, _ms("2026-10-19T08:01:00+00:00"))
     assert sorted(s["checks"]) == ["BTC-USD", "ETH-USD"] and s["markets"] == ["BTC-USD", "ETH-USD"]
+
+
+def test_feedback_goes_to_the_operator_and_is_acknowledged_only_once_sent():
+    from smartflow.api.push import Feedback
+    calls, out = [], []
+    fb = Feedback("https://site.example/api/internal/push", "s3cret", log=lambda m: None,
+                  send=lambda level, text, source="", key=None, cooldown_s=None: out.append((level, text, key)) or key != "b")
+
+    def req(method, path, body, payload):
+        calls.append((method, path, payload))
+        if method == "GET":
+            return {"items": [{"id": "a", "subject": "Idea", "message": "More regions", "user": "Agent X", "page": "#/city",
+                               "image": "https://site.example/api/feedback/image?id=a&sig=x"},
+                              {"id": "b", "subject": "Bug", "message": "...", "user": None, "page": None, "image": None}]}
+        return {"ok": True}
+    fb._req = req
+    fb.maybe_send()
+    assert out[0][0] == "feedback" and "Idea" in out[0][1] and "Image: https://site.example" in out[0][1] and "site.example" in out[0][1]
+    assert calls[0] == ("GET", "/api/internal/feedback", "GET /api/internal/feedback")
+    assert calls[1][0] == "POST" and '"ids":["a"]' in calls[1][2]          # "b" did not go out: it stays on the site
+    fb.maybe_send()
+    assert len(calls) == 2                                                 # once a minute
+
+
+def test_feedback_waits_on_the_site_without_a_webhook(monkeypatch):
+    from smartflow.api.push import Feedback
+    monkeypatch.delenv("SMARTFLOW_ALERT_WEBHOOK", raising=False)
+    fb = Feedback("https://site.example/api/internal/push", "s3cret", log=lambda m: None)
+    fb._req = lambda *a: (_ for _ in ()).throw(AssertionError("must not ask the site"))
+    fb.maybe_send()

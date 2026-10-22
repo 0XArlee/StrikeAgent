@@ -3,6 +3,7 @@
 // paper (`info.paper`). VITE_API_BASE="mock" runs an in-browser simulation (demos, screenshots, tests).
 import { utf8ToHex } from "./cardano/bech32";
 import type { Look } from "./city/look";
+import type { Persona } from "./city/persona";
 import type { Portfolio } from "./city/portfolio-types";
 
 export type RiskPreset = "conservative" | "standard" | "assertive";
@@ -51,13 +52,14 @@ export interface Linked {
   expiresAt?: string;
   token?: string;           // dashboard session (paper mode)
   cityId?: string;
+  citizen?: number | null;  // created: its citizen number in the city (the end card)
   mode?: "paper" | "live";
   live?: LiveView;
   signin?: boolean;         // signed in to an agent that already existed: its settings as they are
-  agent?: { name: string; markets: string[]; risk: RiskPreset; public: boolean; look: Look | null; strategy: string };
+  agent?: { name: string; markets: string[]; risk: RiskPreset; public: boolean; look: Look | null; persona?: Persona | null; strategy: string };
 }
 
-export interface StartOptions { risk: RiskPreset; markets: string[]; name: string; public: boolean; look?: Look; strategy?: string }
+export interface StartOptions { risk: RiskPreset; markets: string[]; name: string; public: boolean; look?: Look; persona?: Persona; strategy?: string }
 
 /** A journal entry as the city renders it (code + args, see city/text.ts). */
 export interface JournalEntry { time: number; market: string; kind: string; code: string; args?: Record<string, string | number | null>; text?: string }
@@ -80,10 +82,12 @@ export interface Me {
   trades?: number;
   createdAt?: number;
   look?: Look | null;
+  persona?: Persona | null;      // personality and trade in the city (never how it trades)
   live?: LiveView;
   portfolio?: Portfolio | null;   // connected to Strike: the real account (amounts: only the owner gets them)
   strategy?: string;
   hold?: { since: number; why: string[] } | null;   // its strategy's safety hold: new trades wait
+  admin?: boolean;                                   // reads the site's suggestions (My agent's inbox)
 }
 
 export class ApiError extends Error {
@@ -114,7 +118,7 @@ export interface Api {
   verify(sessionId: string, walletSignature: string): Promise<Linked>;
   me(link: { accountId: string; token?: string }): Promise<Me>;
   /** Every change needs a fresh wallet signature over an action challenge. */
-  actionChallenge(accountId: string, action: AgentAction, look?: Look, settings?: { strategy: string; markets: string[]; risk: string }): Promise<Challenge>;
+  actionChallenge(accountId: string, action: AgentAction, look?: Look, settings?: { strategy: string; markets: string[]; risk: string }, persona?: Persona): Promise<Challenge>;
   action(sessionId: string, walletSignature: string): Promise<Me | { deleted: true }>;
   /** Builder connect: Strike's message for the owner's wallet, then the signature; off needs only the session. */
   liveChallenge(token: string): Promise<LiveChallenge>;
@@ -124,7 +128,16 @@ export interface Api {
   /** Right after the wallet connects: whether it already has an agent and may trade for real now. */
   walletStatus(address: string): Promise<{ live: boolean; agent: boolean }>;
   signIn(address: string): Promise<Challenge>;
+  /** The Feedback button: private suggestions (with the session, it says which agent wrote it). */
+  feedback(f: FeedbackInput, token?: string): Promise<{ ok: true; id: string }>;
+  feedbackInbox(token: string): Promise<FeedbackInbox>;
+  feedbackRead(token: string, ids: string[]): Promise<{ ok: true }>;
 }
+
+export interface FeedbackInput { subject: string; message: string; image?: string | null; page?: string; lang?: string }
+export interface FeedbackItem { id: string; t: number; subject: string; message: string; image: string | null; page: string | null; lang: string | null;
+  user: { id: string; name: string | null } | null; read: boolean }
+export interface FeedbackInbox { unread: number; items: FeedbackItem[] }
 
 const real: Api = {
   info: () => call<AppInfo>("/api/info"),
@@ -133,8 +146,8 @@ const real: Api = {
   verify: (sessionId, walletSignature) =>
     call<Linked>("/api/connect/verify", { method: "POST", body: JSON.stringify({ sessionId, walletSignature }) }),
   me: (link) => call<Me>("/api/me", { token: link.token }),
-  actionChallenge: (accountId, action, look, settings) =>
-    call<Challenge>("/api/action/challenge", { method: "POST", body: JSON.stringify({ accountId, action, look, ...settings }) }),
+  actionChallenge: (accountId, action, look, settings, persona) =>
+    call<Challenge>("/api/action/challenge", { method: "POST", body: JSON.stringify({ accountId, action, look, persona, ...settings }) }),
   action: (sessionId, walletSignature) =>
     call<Me | { deleted: true }>("/api/action", { method: "POST", body: JSON.stringify({ sessionId, walletSignature }) }),
   liveChallenge: (token) => call<LiveChallenge>("/api/live/challenge", { method: "POST", body: "{}", token }),
@@ -143,6 +156,9 @@ const real: Api = {
   liveOff: (token) => call<LiveView>("/api/live/off", { method: "POST", body: "{}", token }),
   walletStatus: (address) => call<{ live: boolean; agent: boolean }>(`/api/live/eligible?address=${encodeURIComponent(address)}`),
   signIn: (address) => call<Challenge>("/api/connect/challenge", { method: "POST", body: JSON.stringify({ address, chain: "cardano", signin: true }) }),
+  feedback: (f, token) => call<{ ok: true; id: string }>("/api/feedback", { method: "POST", body: JSON.stringify(f), token }),
+  feedbackInbox: (token) => call<FeedbackInbox>("/api/feedback/inbox", { token }),
+  feedbackRead: (token, ids) => call<{ ok: true }>("/api/feedback/read", { method: "POST", body: JSON.stringify({ ids }), token }),
 };
 
 // ---------------------------------------------------------------- mock (same contract as web/server)
@@ -150,6 +166,7 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 let mockMe: Me | null = null;
 let pendingAction: AgentAction | null = null;
 let pendingLook: Look | undefined;
+let pendingPersona: Persona | undefined;
 let mockLive: LiveView = { env: "testnet", enabled: false, feeBps: 20, status: "none", accountId: null, since: null };
 
 const mock: Api = {
@@ -166,15 +183,16 @@ const mock: Api = {
     const now = Date.now();
     mockMe = { accountId: "u-1f2e3d4c5b6a", address, status: "active", risk: o.risk, markets: o.markets, equity: 10000,
       openPositions: [], decisions: [], feesPaid: null, name: o.name, public: o.public, mode: "paper", agentStatus: "waiting",
-      equity0: 10000, trades: 0, createdAt: now, look: o.look ?? null };
+      equity0: 10000, trades: 0, createdAt: now, look: o.look ?? null, persona: o.persona ?? null, admin: true };
+    const persona = o.persona ? `Personality in the city: ${o.persona.temper}/${o.persona.job} (never changes how it trades)\n` : "";
     return {
       sessionId: "mock-session", feeBps: 0, expiresAt: now + 5 * 60_000,
-      messageToSign: `Smart Flow · start my paper agent\n\nThis signature only proves that you own this wallet.\nIt cannot move funds, place orders or approve any fee.\n\nWallet: ${address}\nAgent name: ${o.name}\nMarkets: ${o.markets.join(", ")}\nMode: paper (no real money)\nNonce: 019d4a2b-1234-7890-abcd-ef1234567890`,
+      messageToSign: `Smart Flow · start my paper agent\n\nThis signature only proves that you own this wallet.\nIt cannot move funds, place orders or approve any fee.\n\nWallet: ${address}\nAgent name: ${o.name}\nMarkets: ${o.markets.join(", ")}\n${persona}Mode: paper (no real money)\nNonce: 019d4a2b-1234-7890-abcd-ef1234567890`,
     };
   },
   async verify() {
     await wait(700);
-    return { accountId: mockMe!.accountId, apiWalletPublicKey: "", token: "mock-token", cityId: mockMe!.accountId, mode: "paper" };
+    return { accountId: mockMe!.accountId, apiWalletPublicKey: "", token: "mock-token", cityId: mockMe!.accountId, mode: "paper", citizen: 42 };
   },
   async me() {
     await wait(300);
@@ -189,10 +207,11 @@ const mock: Api = {
       ] as JournalEntry[]),
     };
   },
-  async actionChallenge(_accountId, action, look) {
+  async actionChallenge(_accountId, action, look, _settings, persona) {
     await wait(300);
     pendingAction = action;
     pendingLook = look;
+    pendingPersona = persona;
     return { sessionId: "mock-action", feeBps: 0, expiresAt: Date.now() + 5 * 60_000,
       messageToSign: `Smart Flow · ${action} my paper agent\n\nWallet: ${mockMe?.address}\nAction: ${action}\nNonce: 7c1e…` };
   },
@@ -204,6 +223,7 @@ const mock: Api = {
     if (mockMe && pendingAction === "show") mockMe.public = true;
     if (mockMe && pendingAction === "hide") mockMe.public = false;
     if (mockMe && pendingAction === "look" && pendingLook) mockMe.look = pendingLook;
+    if (mockMe && pendingAction === "look" && pendingPersona) mockMe.persona = pendingPersona;
     return mock.me({ accountId: mockMe?.accountId ?? "" });
   },
   async liveChallenge() {
@@ -234,7 +254,17 @@ Wallet: ${address}
 Agent name: ${mockMe?.name ?? ""}
 Nonce: 5d2a…` };
   },
+  async feedback(f) {
+    await wait(500);
+    if (f.subject.trim().length < 2 || f.message.trim().length < 2) throw new ApiError(400, "write a subject and a message");
+    mockFeedback.unshift({ id: `fb-${mockFeedback.length + 1}`, t: Date.now(), subject: f.subject, message: f.message, image: f.image ?? null,
+      page: f.page ?? null, lang: f.lang ?? null, user: mockMe ? { id: mockMe.accountId, name: mockMe.name ?? null } : null, read: false });
+    return { ok: true, id: mockFeedback[0].id };
+  },
+  async feedbackInbox() { await wait(200); return { unread: mockFeedback.filter((x) => !x.read).length, items: mockFeedback }; },
+  async feedbackRead(_token, ids) { mockFeedback.forEach((x) => { if (ids.includes(x.id)) x.read = true; }); return { ok: true }; },
 };
+const mockFeedback: FeedbackItem[] = [];
 
 export const api: Api = BASE === "mock" ? mock : real;
 export const isMock = BASE === "mock";

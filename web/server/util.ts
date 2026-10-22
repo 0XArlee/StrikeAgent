@@ -78,7 +78,7 @@ export const ip = (req: Request) => req.headers.get("CF-Connecting-IP") ?? "loca
 
 export interface UserRow {
   id: string; address: string; name: string; risk: string; markets: string; public: number; status: string;
-  created_at: number; updated_at: number; look: string | null; strategy?: string;
+  created_at: number; updated_at: number; look: string | null; strategy?: string; persona?: string | null;
 }
 
 /** The strategies a user can pick: the live ones of the registry the agents' host also reads (config/strategies.json).

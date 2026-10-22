@@ -242,7 +242,7 @@
 /* "My agent" over the map (the dashboard), between the top bar and the dock */
 .city-me { position: absolute; inset: 0; z-index: 6; overflow-y: auto; overscroll-behavior: contain; background: var(--bg); animation: sheet-in .16s ease-out; }
 @keyframes sheet-in { from { transform: translateY(8px); } to { transform: none; } }
-.city-me-bar { position: sticky; top: 0; z-index: 2; padding: 8px 16px; background: rgba(10, 10, 10, .94); border-bottom: 1px solid var(--border); }
+.city-me-bar { position: relative; z-index: 2; padding: 8px 16px; background: rgba(10, 10, 10, .94); border-bottom: 1px solid var(--border); }
 .city-me .section { padding: 20px 0 40px; }
 @media (prefers-reduced-motion: reduce) { .city-me { animation: none; } }
 .city-zoom[hidden] { display: none; }
@@ -381,3 +381,124 @@
 .nl-z.big { color: var(--golden); font-weight: 600; }
 .city-checks { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; font-size: 12px; color: var(--text-muted); line-height: 1.4; }
 .city-checks b { color: var(--text); font-weight: 600; margin-right: 4px; }
+
+/* ---- inside the News Tower (TowerView): the scene on the left, what the agent looks at on the right; each floor
+   brings its own colour (--room) */
+.tw { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; background: #05060a; color: var(--text);
+  animation: tw-in .35s ease-out both; }
+@keyframes tw-in { from { opacity: 0; transform: scale(1.012); } to { opacity: 1; transform: none; } }
+.tw-top { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; padding: 10px 16px;
+  border-bottom: 1px solid var(--border-soft); background: linear-gradient(180deg, color-mix(in srgb, var(--room) 12%, #05060a), #05060a); }
+.tw-head { flex: 1 1 280px; min-width: 0; }
+.tw-head h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 20px; line-height: 1.2; }
+.tw-badge { display: inline-grid; place-items: center; min-width: 34px; height: 26px; padding: 0 6px; border-radius: 6px;
+  background: var(--room); color: #05060a; font-size: 13px; font-weight: 700; }
+.tw-about { margin: 3px 0 0; color: var(--text-muted); font-size: 13px; }
+.tw-markets { display: flex; flex-wrap: wrap; gap: 4px; }
+.tw-markets button, .tw-regions button { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 10px;
+  border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--text-muted); font: 600 12px var(--mono); cursor: pointer; }
+.tw-markets button[aria-pressed="true"], .tw-regions button[aria-pressed="true"] { border-color: var(--room); color: var(--text);
+  background: color-mix(in srgb, var(--room) 16%, transparent); }
+.tw-markets button:focus-visible, .tw-regions button:focus-visible, .tw-spots button:focus-visible, .tw-floors button:focus-visible,
+.tw-bymarket button:focus-visible, .tw-linkbtn:focus-visible { outline: none; box-shadow: var(--focus); }
+.tw-exit { flex: none; }
+.tw-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 440px; }
+.tw-scene { min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 12px; }
+.tw-stage { flex: 1 1 0; min-height: 200px; overflow: hidden; display: grid; place-items: center; }
+.tw-stage canvas { display: block; image-rendering: pixelated; border-radius: 10px; touch-action: manipulation;
+  box-shadow: 0 0 0 1px #1d2130, 0 24px 70px -24px color-mix(in srgb, var(--room) 55%, transparent); }
+.tw-spots { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.tw-spots button { min-height: 38px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2);
+  color: var(--text); font-size: 13px; cursor: pointer; }
+.tw-spots button[aria-pressed="true"] { border-color: var(--room); box-shadow: inset 0 -2px 0 var(--room); }
+.tw-spots button:disabled, .tw-floors button:disabled { opacity: .55; cursor: default; }
+.tw-floors { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.tw-floors button { display: grid; align-content: start; gap: 1px; min-height: 48px; padding: 7px 10px; text-align: left; cursor: pointer;
+  border: 1px solid var(--border-soft); border-left: 3px solid var(--fc); border-radius: 8px; background: var(--surface); color: var(--text); }
+.tw-floors button[aria-current] { border-color: var(--fc); background: color-mix(in srgb, var(--fc) 15%, var(--surface)); }
+.tw-fn { color: var(--fc); font-size: 11px; font-weight: 700; }
+.tw-fname { font-size: 13px; line-height: 1.25; }
+.tw-fpush { font-size: 12px; }
+.tw-note { margin: 0; text-align: center; }
+.tw-panel { min-height: 0; overflow: auto; padding: 16px 18px 28px; border-left: 1px solid var(--border-soft); background: var(--surface); }
+.tw-panel h3 { margin: 0 0 8px; padding-left: 10px; border-left: 3px solid var(--room); font-size: 18px; }
+.tw-hint { margin: 0 0 12px; color: var(--text-muted); font-size: 14px; line-height: 1.5; }
+.tw-going { margin: 0 0 10px; color: var(--room); }
+.tw-push { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 10px; padding: 10px 12px;
+  border: 1px solid var(--border-soft); border-radius: 8px; background: var(--surface-2); }
+.tw-push b { font-size: 22px; }
+.tw-push-note { flex-basis: 100%; margin: 2px 0 0; }
+.tw-bymarket { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-bottom: 12px; }
+.tw-bymarket button { display: flex; justify-content: space-between; gap: 6px; min-height: 32px; padding: 5px 8px; cursor: pointer;
+  border: 1px solid var(--border-soft); border-radius: 6px; background: transparent; color: var(--text-muted); font: 600 12px var(--mono); }
+.tw-bymarket button[aria-pressed="true"] { border-color: var(--room); color: var(--text); }
+.tw-list { margin: 0 0 12px; padding: 0; list-style: none; }
+.tw-floorlist { display: grid; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
+.tw-floorlist li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--fc); border-radius: 8px; background: var(--surface-2); }
+.tw-floorlist p { margin: 0; }
+.tw-fl-name { margin: 0 0 2px; font-weight: 600; }
+.tw-fl-name .num { color: var(--fc); }
+.tw-here { color: var(--fc); font-weight: 600; white-space: nowrap; }
+.tw-table { width: 100%; margin-top: 12px; font-size: 13px; }
+.tw-table tr[aria-current] th, .tw-table tr[aria-current] td { background: color-mix(in srgb, var(--room) 10%, transparent); }
+.tw-linkbtn { padding: 4px 0; border: 0; background: none; color: var(--text); font: 600 13px var(--mono); cursor: pointer; }
+.tw-evabout { display: grid; gap: 6px; margin: 12px 0; font-size: 13px; }
+.tw-evabout div { display: flex; gap: 10px; }
+.tw-evabout dt { min-width: 72px; font-weight: 600; }
+.tw-evabout dd { margin: 0; color: var(--text-muted); }
+.tw-regions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.tw-clocks { display: grid; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
+.tw-clocks li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border-soft); border-radius: 8px; background: var(--surface-2); }
+.tw-clocks p { margin: 0; }
+.tw-clock-r { text-align: right; }
+.tw-clock-t { font-size: 22px; font-weight: 600; }
+/* walking to the tower: a line over the map with "go in now" */
+.city-toast { position: absolute; left: 50%; bottom: 84px; z-index: 6; transform: translateX(-50%); display: flex; align-items: center; gap: 12px;
+  max-width: calc(100% - 32px); padding: 10px 12px 10px 16px; border: 1px solid #fbbf24; border-radius: 10px; background: rgba(10, 10, 10, .94); }
+.city-toast p { margin: 0; font-size: 14px; }
+@media (max-width: 1000px) {
+  .tw { overflow-y: auto; }
+  .tw-main { display: block; }
+  .tw-scene { padding: 0 12px 10px; }
+  /* the scene stays on top while what it looks at scrolls under it */
+  .tw-stage { position: sticky; top: 0; z-index: 2; flex: none; min-height: 0; overflow: visible; padding: 8px 0 6px; background: #05060a; }
+  .tw-floors { display: flex; overflow-x: auto; scrollbar-width: none; }
+  .tw-floors button { flex: 0 0 auto; min-width: 128px; }
+  .tw-panel { overflow: visible; border-left: 0; border-top: 1px solid var(--border-soft); }
+}
+@media (max-width: 560px) {
+  .tw-top { position: relative; gap: 8px; padding: 10px 12px; }
+  .tw-head { padding-right: 96px; }
+  .tw-exit { position: absolute; top: 10px; right: 12px; min-height: 36px; padding: 6px 10px; font-size: 13px; }
+  .tw-head h2 { font-size: 17px; }
+  .tw-about { font-size: 12px; }
+  .tw-markets { order: 3; width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .tw-markets button { flex: none; }
+  .tw-spots { justify-content: flex-start; }
+  .tw-bymarket { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .city-toast { bottom: 76px; }
+}
+@media (prefers-reduced-motion: reduce) { .tw { animation: none; } }
+.tw-floors .neg { color: #ff8fa0; }
+.tw-floors .pos { color: #7cf5c4; }
+/* the agent's voice and trade on its card */
+.city-persona { margin-top: 10px; padding: 8px 10px; border-left: 3px solid var(--tc); border-radius: 6px; background: color-mix(in srgb, var(--tc) 8%, transparent); }
+.city-persona p { margin: 0; }
+.city-say { font-size: 14px; font-style: italic; color: var(--text); margin-bottom: 2px !important; }
+.city-persona-t { color: var(--tc); font-weight: 600; }
+.city-persona-job { margin-top: 2px !important; color: var(--text-muted); }
+.city-fb-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 10px; border: 1px solid var(--border);
+  border-radius: 8px; background: transparent; color: var(--text-muted); font: 600 13px var(--font); cursor: pointer; }
+.city-fb-btn:hover { color: var(--text); border-color: #4a4a4a; }
+.city-fb-btn:focus-visible { outline: none; box-shadow: var(--focus); }
+/* the top bar fits at every width: labels give way to icons first (each keeps its name for screen readers), then the
+   tickers (also in Markets), then the "live" word, then the brand's words */
+@media (max-width: 1600px) {
+  .city-fb-btn, .city-weather { width: 34px; padding: 0; justify-content: center; }
+  .city-fb-btn .hide-sm, .city-news-btn > .hide-sm:not(.num) { display: none; }
+  .city-top .city-weather > .hide-sm { display: inline; position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+@media (max-width: 1380px) { .city-tickers { display: none; } .city-top-actions { margin-left: auto; } }
+@media (max-width: 1000px) { .city-live-txt { display: none; } .city-stats { gap: 12px; } }
+@media (min-width: 761px) and (max-width: 900px) { .city-word { display: none; } }
