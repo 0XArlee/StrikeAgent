@@ -1,0 +1,30 @@
+# Smart Flow -> Strike's copy trading for Strike City: the leads (Discover), who copies them and how it went (the public
+# subscriptions leaderboard), Strike's daily copy-trading totals and the leads' open positions, kept in
+# /var/lib/smartflow/copy/copy.db (the history outlives Strike's 30-day window). Writes copy.json, which the push services
+# send to the sites. Public data only; never copies anyone, never reads or touches the agents. Outbound HTTPS only.
+# Install: deploy/install_ct.sh
+[Unit]
+Description=Smart Flow copy trading (Strike City's Copy Arena data, outbound only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=smartflow
+Group=smartflow
+WorkingDirectory=/opt/smartflow/app
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/smartflow/app/.venv/bin/smartflow copy --dir /var/lib/smartflow/copy
+Restart=always
+RestartSec=60
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/smartflow/app
+ReadWritePaths=/var/lib/smartflow/copy
+MemoryMax=200M
+
+[Install]
+WantedBy=multi-user.target

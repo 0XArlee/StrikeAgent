@@ -14,7 +14,7 @@ WorkingDirectory=/opt/smartflow/app
 EnvironmentFile=/etc/smartflow/push.env
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONDONTWRITEBYTECODE=1
-ExecStart=/opt/smartflow/app/.venv/bin/smartflow push --city config/city.toml --live-env mainnet --news /var/lib/smartflow/news/news.json
+ExecStart=/opt/smartflow/app/.venv/bin/smartflow push --city config/city.toml --live-env mainnet --news /var/lib/smartflow/news/news.json --copy /var/lib/smartflow/copy/copy.json
 Restart=always
 RestartSec=20
 NoNewPrivileges=true

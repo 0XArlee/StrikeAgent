@@ -89,12 +89,13 @@ class Anchors:
 
 
 class News:
-    """The News Tower's document (news.json, written by ``smartflow news``), sent to the site's ``/api/internal/news``
-    when the file changes and at least every ``heartbeat`` seconds. A missing or unreadable file is skipped quietly:
-    the city never waits for the news."""
+    """A document the city shows besides its agents (the News Tower's news.json, Strike's copy trading's copy.json),
+    sent to the site's ``/api/internal/<name>`` when the file changes and at least every ``heartbeat`` seconds. A
+    missing or unreadable file is skipped quietly: the city never waits for it."""
 
-    def __init__(self, push_url: str, secret: str, path: Path, heartbeat: float = 600, log=print):
-        self.url = push_url.rsplit("/", 1)[0] + "/news"
+    def __init__(self, push_url: str, secret: str, path: Path, heartbeat: float = 600, log=print, name: str = "news"):
+        self.url = push_url.rsplit("/", 1)[0] + "/" + name
+        self.name = name
         self.secret, self.path, self.heartbeat, self.log = secret, Path(path), heartbeat, log
         self.sent_mtime, self.at, self.retry_at = 0, 0.0, 0.0
 
@@ -113,9 +114,9 @@ class News:
             if code == 200:
                 self.sent_mtime, self.at = mtime, now
                 return
-            self.log(f"news refused: HTTP {code} {text}")
+            self.log(f"{self.name} refused: HTTP {code} {text}")
         except Exception as e:
-            self.log(f"news push failed: {e!r}")
+            self.log(f"{self.name} push failed: {e!r}")
         self.retry_at = now + 60   # refused or failed: again in a minute, not every turn of the loop
 
 
@@ -171,19 +172,22 @@ def fingerprint(doc: dict) -> str:
 
 
 def run(city_toml: Path, url: str, secret: str, every: float = 30, heartbeat: float = 600, log=print,
-        live_env: str | None = None, runs_root: Path = Path("runs"), news: Path | None = None) -> None:
+        live_env: str | None = None, runs_root: Path = Path("runs"), news: Path | None = None, copy: Path | None = None) -> None:
     """``live_env``: also the users' agents of that network's fleet (they come and go: re-read every turn).
-    ``news``: also send the News Tower's news.json."""
+    ``news``: also send the News Tower's news.json; ``copy``: Strike's copy trading's copy.json."""
     official = load_city(city_toml)
     last_fp, last_at, last_sig, built_at = "", 0.0, None, 0.0
     anchors = Anchors(url, secret, Path(runs_root), log)
     tower = News(url, secret, news, heartbeat, log) if news else None
+    arena = News(url, secret, copy, heartbeat, log, name="copy") if copy else None
     feedback = Feedback(url, secret, log)
     while True:
         anchors.maybe_send()
         feedback.maybe_send()
         if tower:
             tower.maybe_send()
+        if arena:
+            arena.maybe_send()
         try:
             agents = official + (load_live(runs_root, live_env) if live_env else [])
             sig = files_signature(agents)

@@ -34,6 +34,7 @@ install -m 644 "$APP/deploy/smartflow-api.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-push.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-push-qa.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-news.service" /etc/systemd/system/
+install -m 644 "$APP/deploy/smartflow-copy.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-fleet.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-fleet-mainnet.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-backup.service" /etc/systemd/system/
@@ -80,6 +81,10 @@ install -d -o smartflow -g smartflow -m 750 /var/lib/smartflow/news
 [ -f /etc/smartflow/news.env ] && { chown root:smartflow /etc/smartflow/news.env; chmod 640 /etc/smartflow/news.env; }
 systemctl enable smartflow-news >/dev/null 2>&1
 systemctl restart smartflow-news
+# Strike's copy trading for the Copy Arena (public data only, never touches the agents)
+install -d -o smartflow -g smartflow -m 750 /var/lib/smartflow/copy
+systemctl enable smartflow-copy >/dev/null 2>&1
+systemctl restart smartflow-copy
 if [ -f /etc/smartflow/fleet.env ]; then   # site URL + secret + SMARTFLOW_LIVE_ACK, written from the operator's PC
   systemctl enable smartflow-fleet >/dev/null 2>&1
   systemctl restart smartflow-fleet
@@ -92,7 +97,7 @@ else
   systemctl disable --now smartflow-fleet-mainnet >/dev/null 2>&1 || true
 fi
 sleep 20
-systemctl --no-pager --lines=0 status $(for i in $PAPER; do echo "smartflow-paper@$i"; done) smartflow-api smartflow-push smartflow-push-qa smartflow-news smartflow-fleet smartflow-fleet-mainnet | grep -E "Loaded|Active|Main PID|Memory"
+systemctl --no-pager --lines=0 status $(for i in $PAPER; do echo "smartflow-paper@$i"; done) smartflow-api smartflow-push smartflow-push-qa smartflow-news smartflow-copy smartflow-fleet smartflow-fleet-mainnet | grep -E "Loaded|Active|Main PID|Memory"
 echo "--- push"
 journalctl -u smartflow-push -n 3 --no-pager | cut -c1-200
 echo "--- news"
