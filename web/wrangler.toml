@@ -16,6 +16,7 @@ BUILDER_CODE = "SmartFlowAgent-EdgeCraft"
 BUILDER_FEE_BPS = "20"
 # whose owners read the site's suggestions in My agent (Edgar's agent): not a secret, only an id
 ADMIN_IDS = "u-7f0fa0295e11"
+COPY_PILOT = "1"          # copy with your agent (Strike mainnet: real money), carried out by smartflow-copypilot-mainnet
 
 # Preview deployments (any branch but main, e.g. --branch qa -> https://qa.edgecraft-strikecity.pages.dev) use their own
 # database, so end-to-end tests can push test snapshots and create test agents without touching production.
