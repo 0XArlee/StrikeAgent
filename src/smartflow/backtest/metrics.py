@@ -83,7 +83,7 @@ def compute(trades: list, start_ms: int, end_ms: int, risk_per_trade: float = 0.
     t_stat = st.mean(rs) / (sd / math.sqrt(n)) if n > 1 and sd > 0 else nan
     lo, hi = bootstrap_ci(rs) if boot else (nan, nan)
     # drawdown on the cumulative R curve (by exit time)
-    peak, cum, dd, dd_start, dd_days, peak_t = 0.0, 0.0, 0.0, None, 0.0, start_ms
+    peak, cum, dd, dd_days, peak_t = 0.0, 0.0, 0.0, 0.0, start_ms
     for t, r in zip(trades, rs):
         cum += r
         if cum >= peak:

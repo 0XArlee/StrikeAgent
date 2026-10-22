@@ -371,12 +371,18 @@ def review_es(p):
     page = ctx.new_page()
     page.expose_function("pySign", lambda payload_hex: w.sign_data(bytes.fromhex(payload_hex)))
     page.add_init_script(f"({WALLET_JS})('{w.addr_bytes.hex()}', {NET})")
-    page.goto(f"{BASE}/#/city", wait_until="networkidle")
+    page.goto(f"{BASE}/#/city", wait_until="load")   # not "networkidle": TradingView keeps requests of its own open
     page.wait_for_selector(".city-dock-btn", timeout=30000)
     page.locator(".city-dock-btn", has_text="Ranking").click()
     page.get_by_role("button", name="Pon tu propio agente en la ciudad").click()
     page.get_by_role("button", name="TestWallet").click()
-    page.get_by_role("button", name="Continuar").click()
+    page.get_by_role("button", name="Continuar").click()                 # character -> personality
+    page.wait_for_selector("text=Su carácter", timeout=10000)
+    for q in range(5):
+        page.locator(".pp-a").nth((q * 2) % 5).click()
+        page.wait_for_timeout(120)
+    page.locator(".pp-job", has_text="Lector de cinta").click()
+    page.locator(".actions .btn-primary", has_text="Continuar").click()  # personality -> strategy
     page.wait_for_selector("text=Elige tu estrategia", timeout=10000)
     page.wait_for_timeout(400)
     page.screenshot(path=str(OUT / "o02d_strategy_es_mobile.png"), full_page=True)

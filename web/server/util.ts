@@ -88,8 +88,6 @@ export const STRATEGIES: Record<string, { ref: string; name: string; maxRisk: st
     .filter((s) => s.status === "live").map((s) => [s.id, { ref: s.paper?.city_id ?? "", name: s.name, maxRisk: s.max_risk }]));
 export const DEFAULT_STRATEGY: string = registry.default;
 export const strategyOf = (v: unknown): string => (typeof v === "string" && v in STRATEGIES ? v : DEFAULT_STRATEGY);
-/** A strategy the site offers (an unknown id is refused, never stored as another one). */
-export const isStrategy = (v: unknown): v is string => typeof v === "string" && v in STRATEGIES;
 
 export const cityCacheKey = (req: Request) => new Request(new URL("/api/city", req.url).toString());
 export const edgeCache = () => (caches as unknown as { default: Cache }).default;

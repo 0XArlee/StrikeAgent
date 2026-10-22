@@ -3,7 +3,7 @@
 // says a line in the chosen voice. Nothing here changes how the agent trades.
 import { useState } from "react";
 import type { Look } from "../city/look";
-import { JOBS, QUIZ, TEMPERS, TEMPER_COLOR, quizResult, type Job, type Persona, type Temper } from "../city/persona";
+import { JOBS, QUIZ, TEMPERS, TEMPER_COLOR, quizResult, type Job, type Moment, type Persona, type Temper } from "../city/persona";
 import type { Dict, Lang } from "../i18n";
 import { Sprite } from "./AvatarEditor";
 
@@ -24,7 +24,7 @@ export function placeArt(job: Job, w: number, h: number) {
 }
 
 /** A line in this temper's voice ({mk}: a market, {r}: an R value). */
-export function voiceLine(t: Dict, temper: Temper, moment: string, i = 0, mk = "BTC", r = "1,0"): string {
+export function voiceLine(t: Dict, temper: Temper, moment: Moment, i = 0, mk = "BTC", r = "1,0"): string {
   const lines = t.persona.voice[temper]?.[moment] ?? [];
   return (lines[i % Math.max(1, lines.length)] ?? "").replace("{mk}", mk).replace("{r}", r);
 }
@@ -46,7 +46,7 @@ export function PersonaPicker({ t, lang, value, onChange, look, idPrefix = "pp" 
     if (res) onChange({ ...value, temper: res });
     if (qi < QUIZ.length - 1) setQ(qi + 1);
   };
-  const moments = ["win", "loss", "enter", "wait"];
+  const moments: Moment[] = ["win", "loss", "enter", "wait"];
   const say = voiceLine(t, value.temper, moments[line % moments.length], 0, "ETH", r);
 
   return (

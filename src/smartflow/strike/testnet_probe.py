@@ -72,7 +72,7 @@ def main() -> int:
     step("set leverage 2x", lambda: c.set_leverage(sym, 2))
     step("create resting post-only limit (A)", lambda: c.create_order(order_body(cid_a)))
     time.sleep(1.5)
-    ra = step("lookup A by client_order_id", lambda: _o(c.order(sym, client_order_id=cid_a)))
+    step("lookup A by client_order_id", lambda: _o(c.order(sym, client_order_id=cid_a)))
     step("create DUPLICATE client_order_id (A again)", lambda: c.create_order(order_body(cid_a)))
     time.sleep(1.5)
     step("open orders after duplicate", lambda: [_o(o) for o in c.open_orders(sym) if o.client_order_id == cid_a])

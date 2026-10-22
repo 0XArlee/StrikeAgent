@@ -9,14 +9,12 @@ from __future__ import annotations
 import bisect
 import json
 import math
-import statistics as st
 import time
 from dataclasses import replace
 from pathlib import Path
 
 from ..core.config import BiasSource, ExitMode, Params
 from ..core.runner import run_history
-from ..core.timeframes import normalize
 from ..core.types import Candle
 from .metrics import Stats, compute
 from .sim import CostModel, ExecModel, simulate
@@ -308,7 +306,7 @@ def run(root: Path, out_dir: Path, quick: bool = False, log=print) -> Report:
     log(f"E9 done {time.time() - t0:.0f}s")
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    head = [f"# Registro de experimentos — Smart Flow Agent\n",
+    head = ["# Registro de experimentos — Smart Flow Agent\n",
             f"Generado por `smartflow research` en {time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime())}. "
             f"Datos: Binance spot (señal y precios) + funding de perpetuos Binance como proxy; ventana completa "
             f"2022-01-01 → 2026-10-18. Modelo base: {REALISTIC.label()}; {EXE.label()}. Riesgo por operación para "

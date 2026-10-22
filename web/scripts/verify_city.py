@@ -10,7 +10,6 @@ changes over time, live Strike prices, the deep link, keyboard control, reduced 
 import json
 import os
 import sys
-import time
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright

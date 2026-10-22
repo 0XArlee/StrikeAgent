@@ -1,4 +1,5 @@
-// Bech32 (BIP-173) encoding without the 90-character limit, as Cardano Shelley addresses (CIP-19) require.
+// Bech32 (BIP-173) without the 90-character limit, as Cardano Shelley addresses (CIP-19) require. Shared by the page
+// and the server (web/server/cardano.ts), which decodes and checks every address it is given.
 const CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
 const GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
 
@@ -44,6 +45,29 @@ export function utf8ToHex(s: string): string {
   return Array.from(new TextEncoder().encode(s), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/** Decodes and checks a bech32 string (lowercase, valid checksum, clean padding). */
+export function bech32Decode(s: string): { hrp: string; bytes: Uint8Array } {
+  if (s.length > 200 || s !== s.toLowerCase()) throw new Error("bech32: invalid string");
+  const pos = s.lastIndexOf("1");
+  if (pos < 1 || pos + 7 > s.length) throw new Error("bech32: no separator");
+  const hrp = s.slice(0, pos);
+  const data: number[] = [];
+  for (const c of s.slice(pos + 1)) {
+    const d = CHARSET.indexOf(c);
+    if (d < 0) throw new Error("bech32: invalid character");
+    data.push(d);
+  }
+  if (polymod([...hrpExpand(hrp), ...data]) !== 1) throw new Error("bech32: bad checksum");
+  let acc = 0, bits = 0;
+  const out: number[] = [];
+  for (const v of data.slice(0, -6)) {
+    acc = (acc << 5) | v; bits += 5;
+    while (bits >= 8) { bits -= 8; out.push((acc >> bits) & 0xff); }
+  }
+  if (bits >= 5 || ((acc << (8 - bits)) & 0xff)) throw new Error("bech32: bad padding");
+  return { hrp, bytes: new Uint8Array(out) };
+}
+
 export function bech32Encode(hrp: string, bytes: Uint8Array): string {
   const data = toWords(bytes);
   const values = [...hrpExpand(hrp), ...data, 0, 0, 0, 0, 0, 0];
@@ -62,24 +86,10 @@ export function addressHexToBech32(hex: string): string {
   return bech32Encode(network === 1 ? base : `${base}_test`, bytes);
 }
 
-/** The bytes of a bech32 address (checksum not verified: only used to compare addresses we already hold). */
-export function bech32Bytes(addr: string): Uint8Array {
-  const data = addr.slice(addr.lastIndexOf("1") + 1, -6).split("").map((c) => CHARSET.indexOf(c));
-  if (data.some((d) => d < 0)) throw new Error("invalid bech32");
-  let acc = 0, bits = 0;
-  const out: number[] = [];
-  for (const d of data) {
-    acc = ((acc << 5) | d) & 0xffff;
-    bits += 5;
-    if (bits >= 8) { bits -= 8; out.push((acc >> bits) & 0xff); }
-  }
-  return new Uint8Array(out);
-}
-
 /** Who an address belongs to: its stake credential for a base address (it stays the same whatever payment address an
  *  HD wallet hands out), else the whole address. Two addresses with the same key are the same wallet account. */
 export function walletKey(addr: string): string {
-  const b = bech32Bytes(addr);
+  const b = bech32Decode(addr).bytes;
   const type = b[0] >> 4;
   const hex = (x: Uint8Array) => Array.from(x, (v) => v.toString(16).padStart(2, "0")).join("");
   return type <= 3 && b.length >= 57 ? `stake:${hex(b.slice(29, 57))}` : `addr:${hex(b)}`;
