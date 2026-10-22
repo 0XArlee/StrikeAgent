@@ -7,7 +7,26 @@ import type { Persona } from "./city/persona";
 import type { Portfolio } from "./city/portfolio-types";
 
 export type RiskPreset = "conservative" | "standard" | "assertive";
-export type AgentAction = "pause" | "resume" | "revoke" | "show" | "hide" | "look" | "settings" | "test";
+export type AgentAction = "pause" | "resume" | "revoke" | "show" | "hide" | "look" | "settings" | "test" | "copy";
+
+/** Copy with your agent (web/server/copyplan.ts): the plan its owner signs. */
+export interface CopyPlan {
+  mode: "off" | "manual" | "pilot";
+  lead: string | null; platform: "strike" | "hyperliquid" | null;
+  sizing: { kind: "ratio"; amount: number } | { kind: "fixed"; margin: number; funding: number };
+  stopLoss: number; leverage: number; excluded: string[]; until: number | null; alarmPause: boolean;
+  pilot: { minScore: number; platforms: ("strike" | "hyperliquid")[]; review: number; maxSwitches: number } | null;
+}
+/** How it goes, as the agents' host reported it (smartflow/copytrade/pilot.py). */
+export interface CopyStatus {
+  state: "copying" | "starting" | "halted" | "off" | "waiting"; why?: string | null; version?: number | null;
+  lead?: string | null; platform?: "strike" | "hyperliquid" | null; since?: number | null; subAccount?: string | null;
+  reviewAt?: number | null; error?: string | null; at?: number;
+  copy?: { copy_amount: number | null; margin_per_entry_order: number | null; total_margin: number | null; total_worth: number | null;
+    realized_pnl: number | null; pnl: number | null; total_volume: number | null; stop_loss_amount: number | null; orders: number | null } | null;
+  log?: { t: number; kind: string; lead?: string; reason?: string; text?: string; step?: string; status?: number; available?: number; left?: number; mode?: string }[];
+}
+export interface CopyView { plan: CopyPlan | null; version: number | null; status: CopyStatus | null }
 
 export interface AppInfo {
   env: "mainnet" | "testnet";
@@ -23,6 +42,7 @@ export interface AppInfo {
   live?: { env: "mainnet" | "testnet"; enabled: boolean; invite?: boolean; feeBps: number; code?: string };   // builder connect offered (invite: only some wallets)
   pushedAt?: number | null; // when the agents' host last sent the agents
   holds?: Record<string, { since: number; why: string[] }>;   // strategies on a safety hold
+  copyPilot?: boolean;      // copy with your agent is open on this site
 }
 
 /** The agent trading the owner's own Strike account (builder connect). */
@@ -88,6 +108,7 @@ export interface Me {
   strategy?: string;
   hold?: { since: number; why: string[] } | null;   // its strategy's safety hold: new trades wait
   admin?: boolean;                                   // reads the site's suggestions (My agent's inbox)
+  copy?: CopyView;                                   // copy with your agent: the signed plan and how it goes
 }
 
 export class ApiError extends Error {
@@ -118,7 +139,8 @@ export interface Api {
   verify(sessionId: string, walletSignature: string): Promise<Linked>;
   me(link: { accountId: string; token?: string }): Promise<Me>;
   /** Every change needs a fresh wallet signature over an action challenge. */
-  actionChallenge(accountId: string, action: AgentAction, look?: Look, settings?: { strategy: string; markets: string[]; risk: string }, persona?: Persona): Promise<Challenge>;
+  actionChallenge(accountId: string, action: AgentAction, look?: Look, settings?: { strategy: string; markets: string[]; risk: string }, persona?: Persona,
+    copy?: CopyPlan): Promise<Challenge>;
   action(sessionId: string, walletSignature: string): Promise<Me | { deleted: true }>;
   /** Builder connect: Strike's message for the owner's wallet, then the signature; off needs only the session. */
   liveChallenge(token: string): Promise<LiveChallenge>;
@@ -146,8 +168,8 @@ const real: Api = {
   verify: (sessionId, walletSignature) =>
     call<Linked>("/api/connect/verify", { method: "POST", body: JSON.stringify({ sessionId, walletSignature }) }),
   me: (link) => call<Me>("/api/me", { token: link.token }),
-  actionChallenge: (accountId, action, look, settings, persona) =>
-    call<Challenge>("/api/action/challenge", { method: "POST", body: JSON.stringify({ accountId, action, look, persona, ...settings }) }),
+  actionChallenge: (accountId, action, look, settings, persona, copy) =>
+    call<Challenge>("/api/action/challenge", { method: "POST", body: JSON.stringify({ accountId, action, look, persona, copy, ...settings }) }),
   action: (sessionId, walletSignature) =>
     call<Me | { deleted: true }>("/api/action", { method: "POST", body: JSON.stringify({ sessionId, walletSignature }) }),
   liveChallenge: (token) => call<LiveChallenge>("/api/live/challenge", { method: "POST", body: "{}", token }),

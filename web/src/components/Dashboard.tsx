@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ApiError, api, messageHex, type AgentAction, type AppInfo, type JournalEntry, type Me } from "../api";
+import { ApiError, api, messageHex, type AgentAction, type AppInfo, type CopyPlan, type JournalEntry, type Me } from "../api";
 import { shortAddr } from "../cardano/bech32";
 import { connect, scanWallets, signMessage } from "../cardano/wallets";
 import type { Decision } from "../city/agents";
@@ -16,6 +16,13 @@ import { PortfolioView, useMarks } from "../city/portfolio";
 import { MIN_BALANCE, TEST_MIN_AVAILABLE, strategyId, strategyName } from "../strategies";
 import { StrategyPicker, type Plan } from "./StrategyPicker";
 import { Alert, Icon } from "./ui";
+import { CopyPlanDialog, CopySection, defaultPlan } from "./CopyPanel";
+
+/** #/city?me&copy=<trader>&pf=<platform>: "Copy with my agent" on a trader's card opens the plan with that trader. */
+const copyLink = () => {
+  const m = /[?&]copy=([\w-]+)(?:&pf=(strike|hyperliquid))?/.exec(location.hash);
+  return m ? { id: m[1], platform: (m[2] ?? (m[1].startsWith("0x") ? "hyperliquid" : "strike")) as "strike" | "hyperliquid" } : null;
+};
 
 interface Props {
   t: Dict; lang: Lang; info: AppInfo; link: LinkResult;
@@ -34,6 +41,11 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
   const [editing, setEditing] = useState<Look | null>(null);
   const [persona, setPersona] = useState<Persona | null>(null);   // the personality dialog
   const [plan, setPlan] = useState<Plan | null>(null);   // the strategy/markets/risk dialog
+  const [copyEdit, setCopyEdit] = useState<CopyPlan | null>(() => {   // the copy plan dialog
+    const l = copyLink();
+    return l ? defaultPlan("manual", { id: l.id, platform: l.platform } as Parameters<typeof defaultPlan>[1]) : null;
+  });
+  useEffect(() => { if (copyLink()) history.replaceState(null, "", location.hash.replace(/&copy=[\w-]+(&pf=\w+)?/, "")); }, []);
   const [notice, setNotice] = useState("");
   const loc = lang === "es" ? "es-ES" : "en-US";
   const usd = (v: number | null | undefined) => v == null ? "—" : v.toLocaleString(loc, { style: "currency", currency: "USD" });
@@ -54,7 +66,7 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
     return () => { alive = false; clearInterval(id); };
   }, [link, onUnlinked]);
 
-  async function act(action: AgentAction, look?: Look, settings?: Plan, nextPersona?: Persona) {
+  async function act(action: AgentAction, look?: Look, settings?: Plan, nextPersona?: Persona, copy?: CopyPlan) {
     setError("");
     setNotice("");
     setBusy(action);
@@ -62,7 +74,7 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
       const w = scanWallets().find((x) => x.name === link.walletName) ?? scanWallets()[0];
       if (!w) throw new Error(t.modal.noWallets);
       const conn = await connect(w);
-      const ch = await api.actionChallenge(link.accountId, action, look, settings, nextPersona);
+      const ch = await api.actionChallenge(link.accountId, action, look, settings, nextPersona, copy);
       const sig = await signMessage(conn, messageHex(ch.messageToSign));
       const r = await api.action(ch.sessionId, sig);
       if ("deleted" in r) { onUnlinked(); return; }
@@ -70,6 +82,7 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
       if (action === "look") { setEditing(null); setPersona(null); }
       if (action === "settings") { setPlan(null); if (r.live?.status === "active") setNotice(t.strategies.restart); }
       if (action === "test") setNotice(t.live.testAsked);
+      if (action === "copy") { setCopyEdit(null); setNotice(t.copyPlan.signed); }
     } catch (e) {
       setError(String((e as Error).message ?? e));
     } finally {
@@ -284,6 +297,8 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
             <PortfolioView p={me.portfolio} lang={lang} marks={marks} idPrefix="dash-pf" />
           </div>
         )}
+        {me?.copy && <CopySection t={t} lang={lang} view={me.copy} liveOn={liveOn} busy={!!busy} onEdit={(x) => { setError(""); setCopyEdit(x); }}
+                     onStop={() => me?.copy?.plan && act("copy", undefined, undefined, undefined, { ...me.copy.plan, mode: "off" })} />}
         <div className="card" style={{ marginTop: 16 }}>
           <h3>{d.decisions}</h3>
           {me && !me.decisions.length ? <p>{P.noDecisions}</p> : (
@@ -326,6 +341,10 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
             </div>
           </div>
         </div>
+      )}
+      {copyEdit && me?.copy && (
+        <CopyPlanDialog t={t} lang={lang} initial={copyEdit} busy={busy === "copy"} error={error}
+                        onSign={(x) => act("copy", undefined, undefined, undefined, x)} onCancel={() => setCopyEdit(null)} />
       )}
       {plan && (
         <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) setPlan(null); }}>

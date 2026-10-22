@@ -71,6 +71,8 @@ export interface AgentView {
   persona?: Persona;      // its personality and trade in the city (its owner's choice, or one derived from its id)
   seen?: number;          // time of the latest journal entry already acted on
   lead?: Trader;          // a lead of Strike's copy trading walking the city (city/copy.ts): never one of the agents
+  copying?: { lead: string; platform: string };   // its owner's copy plan: whom it copies on Strike now
+  copyPlace?: string;     // where that trader stands in the city (the Copy Arena when it does not walk it)
 }
 
 /** Whether the agent is doing something right now. Only then does it move, pulse or bob: one that waits for its
@@ -193,6 +195,7 @@ export interface ApiAgent {
   persona?: unknown;
   error?: string;
   portfolio?: Portfolio;
+  copy?: { lead: string; platform: string; since: number | null };   // copy with your agent (web/server/copyplan.ts)
 }
 
 /** API snapshot -> AgentView. Keeps the walker's place and path when it already exists; `post`: where a new one stands while it waits. */
@@ -223,6 +226,8 @@ export function fromApi(x: ApiAgent, prev: AgentView | undefined, R: () => numbe
   a.seen = Math.max(prev?.seen ?? 0, latest);
   a.name = x.name;
   a.portfolio = x.portfolio ?? undefined;
+  a.copying = x.copy ? { lead: x.copy.lead, platform: x.copy.platform } : undefined;
+  if (!a.copying) a.copyPlace = undefined;
   a.look = normalizeLook(x.look) ?? undefined;
   a.persona = normalizePersona(x.persona) ?? personaFor(x.id);
   a.owner = x.owner ?? "Smart Flow";
@@ -262,7 +267,9 @@ function placeFor(a: AgentView): string {
     case "offline": case "paused": case "unfunded": return "homes";
     case "analyzing": return "lab";
     case "in_trade": return a.position ? MARKET_TOWER[a.position.market] ?? "alts" : "plaza";
-    case "waiting": return a.persona && onShift(a.id, Date.now()) ? JOB_PLACE[a.persona.job] : "plaza";
+    case "waiting":   // copying a trader on Strike: it stands with them; otherwise its shifts and its spot in the plaza
+      if (a.copying && a.copyPlace) return a.copyPlace;
+      return a.persona && onShift(a.id, Date.now()) ? JOB_PLACE[a.persona.job] : "plaza";
     default: return "plaza";
   }
 }

@@ -213,6 +213,45 @@ def cmd_copy(a) -> int:
     return 0
 
 
+def cmd_copypilot(a) -> int:
+    """Copy with your agent: the copy plans the owners signed on the site, carried out on Strike (keys stay here)."""
+    from .copytrade.pilot import CopyPilot, Plans
+    from .live.fleet import Site
+    from .live.keypool import KeyPool
+    from .strike.client import MAINNET, TESTNET, StrikeClient
+    secret = os.environ.get("SMARTFLOW_FLEET_SECRET", "")
+    url = a.url or os.environ.get("SMARTFLOW_FLEET_URL", "")
+    if len(secret) < 32 or not url.startswith("https://"):
+        print("set SMARTFLOW_FLEET_URL (the site, https://...) and SMARTFLOW_FLEET_SECRET (its PUSH_SECRET, >= 32 chars)")
+        return 2
+    if a.env == "mainnet" and not a.allow_mainnet:
+        print("mainnet needs --allow-mainnet (real money)")
+        return 2
+    pool = KeyPool.from_files(Path(a.keys), Path(a.master), a.env)
+    base = TESTNET if a.env == "testnet" else MAINNET
+    clients: dict[str, StrikeClient] = {}
+
+    def client_for(pub: str) -> StrikeClient:
+        if pub not in clients:
+            clients[pub] = StrikeClient(base, signer=pool.signer(pub))
+            clients[pub].sync_clock()
+        return clients[pub]
+
+    def read(path: str):
+        try:
+            return json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+    log = lambda m: print(f"{dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M:%S} {m}", flush=True)
+    pilot = CopyPilot(Plans(Site(url, secret)), client_for, a.env, Path(a.dir) / f"pilot-{a.env}.json",
+                      lambda: read(str(Path(a.dir) / "copy.json")), lambda: read(a.news), log=log)
+    if a.once:
+        print(json.dumps(pilot.tick()))
+        return 0
+    pilot.run(a.every)
+    return 0
+
+
 def cmd_fleet(a) -> int:
     from .live.fleet import Fleet, Site, read_account
     from .live.keypool import KeyPool
@@ -426,6 +465,18 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--dir", default="/var/lib/smartflow/copy", help="its database and copy.json")
     s.add_argument("--once", action="store_true", help="one cycle and exit")
     s.set_defaults(fn=cmd_copy)
+
+    s = sub.add_parser("copypilot", help="copy with your agent: the owners' signed copy plans, carried out on Strike")
+    s.add_argument("--env", choices=["testnet", "mainnet"], default="testnet")
+    s.add_argument("--url", help="the Strike City site; default: $SMARTFLOW_FLEET_URL")
+    s.add_argument("--keys", default="/var/lib/smartflow/keys", help="encrypted API-wallet key pool")
+    s.add_argument("--master", default="/etc/smartflow/keys.key", help="master key of the pool (AES-256)")
+    s.add_argument("--dir", default="/var/lib/smartflow/copy", help="copy.json (the traders) and the pilot's state")
+    s.add_argument("--news", default="/var/lib/smartflow/news/news.json", help="the News Tower's document (security alarm)")
+    s.add_argument("--every", type=float, default=60.0)
+    s.add_argument("--once", action="store_true", help="one pass, print it and exit")
+    s.add_argument("--allow-mainnet", action="store_true")
+    s.set_defaults(fn=cmd_copypilot)
 
     s = sub.add_parser("fleet", help="run the users' agents connected with the builder code (keys stay on this host)")
     s.add_argument("--env", choices=["testnet", "mainnet"], default="testnet")

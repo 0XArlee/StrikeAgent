@@ -642,3 +642,20 @@
 .city-copy-top .city-row .grow { display: grid; gap: 1px; min-width: 0; }
 .city-copy-score { font-size: 18px; font-weight: 700; color: #fb7185; }
 
+/* the score tested on every copy */
+.cp-ev { padding: 12px 14px; border: 1px solid rgba(251, 113, 133, .35); border-radius: 10px; background: rgba(251, 113, 133, .05); }
+.cp-ev h4 { margin: 0 0 4px; font-size: 14px; }
+.cp-ev p { margin: 0; }
+.cp-ev ul { display: grid; gap: 6px; margin: 10px 0; padding: 0; list-style: none; }
+.cp-ev li { display: grid; grid-template-columns: minmax(0, 16em) minmax(0, 1fr) 4.5em; align-items: center; gap: 10px; font-size: 13px; }
+.cp-ev-bar { height: 8px; border-radius: 4px; background: var(--surface-3); overflow: hidden; }
+.cp-ev-bar span { display: block; height: 100%; }
+.cp-ev .ev-city .cp-ev-bar span { background: #fb7185; } .cp-ev .ev-strike .cp-ev-bar span { background: #93c5fd; } .cp-ev .ev-base .cp-ev-bar span { background: var(--text-faint); }
+.cp-ev li b { text-align: right; }
+.cp-ev .ev-city b { color: #fb7185; }
+@media (max-width: 760px) {
+  .cp-ev li { grid-template-columns: minmax(0, 1fr) 4.5em; }
+  .cp-ev-bar { grid-column: 1 / -1; grid-row: 2; }
+}
+.city-card-copying { margin: 10px 0 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+

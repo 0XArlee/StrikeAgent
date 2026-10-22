@@ -16,6 +16,7 @@ interface Env {
   LIVE_ENV?: string;        // "testnet" only on the QA site: Preprod wallets + Strike testnet. Default: mainnet
   BUILDER_FEE_BPS?: string; // fee the user approves at builder connect (20 = 0.20 % per execution)
   LIVE_ALLOW?: string;      // invite-only real trading: comma-separated wallet addresses (a Pages secret). Unset: everyone
+  COPY_PILOT?: string;      // "1": copy with your agent is open on this site (QA first, then production)
   ADMIN_IDS?: string;       // agents whose owners read the site's suggestions (comma-separated ids; My agent shows the inbox)
 }
 

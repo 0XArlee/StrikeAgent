@@ -216,3 +216,25 @@ class StrikeClient:
 
     def cancel_all(self, symbol: str | None = None) -> dict:
         return self._signed("DELETE", "/v2/order/cancel-all", body=self._with_scope({"symbol": symbol} if symbol else {}))
+
+    # ------------------------------------------------------------------ copy trading (API wallet)
+    def copy_subscribe(self, body: dict) -> dict:
+        """POST /v2/copy/subscribe: `active` (201) or, for a managed copy (its own sub-account), `creating_account`,
+        `funding`, `refunding` (202) until done; repeat the same body (same `request_id`) to poll."""
+        return self._signed("POST", "/v2/copy/subscribe", body=body) or {}
+
+    def copy_update(self, subscription_id: str, body: dict) -> None:
+        self._signed("PATCH", f"/v2/copy/subscribe/{subscription_id}", body=body)
+
+    def copy_stop(self, subscription_id: str, sub_account_id: str | None = None) -> None:
+        """Stops the copy and closes its copied positions (Strike pays a Strike lead its share of the profit)."""
+        self._signed("DELETE", f"/v2/copy/subscribe/{subscription_id}", {"sub_account_id": sub_account_id})
+
+    def copy_subscriptions(self, status: str | None = None) -> list[dict]:
+        """Every copy of the master account and its sub-accounts (each row with its `account_id`)."""
+        d = self._signed("GET", "/v2/copy/subscriptions", {"scope": "all", "status": status}) or {}
+        return list(d.get("subscriptions") or [])
+
+    def account_of(self, sub_account_id: str | None) -> dict:
+        """The raw account reading of the master account or of one of its sub-accounts."""
+        return self._signed("GET", "/v2/account", {"sub_account_id": sub_account_id}) or {}

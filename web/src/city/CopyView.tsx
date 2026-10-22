@@ -62,8 +62,8 @@ export function StrikeStats({ T, lang, doc }: { T: CityText; lang: Lang; doc: Co
 }
 
 /** The chooser: filters, the ranked list, and a trader's profile when one is open. */
-export function CopyChooser({ T, lang, doc, onFollow, initial, compact }:
-  { T: CityText; lang: Lang; doc: CopyState; onFollow?: (id: string) => void; initial?: string | null; compact?: boolean }) {
+export function CopyChooser({ T, lang, doc, onFollow, initial, compact, onCopy }:
+  { T: CityText; lang: Lang; doc: CopyState; onFollow?: (id: string) => void; initial?: string | null; compact?: boolean; onCopy?: (t: Trader) => void }) {
   const C = T.copy;
   const [platform, setPlatform] = useState<"all" | "strike" | "hyperliquid">("all");
   const [budget, setBudget] = useState("");
@@ -89,12 +89,13 @@ export function CopyChooser({ T, lang, doc, onFollow, initial, compact }:
 
   if (!d) return <p className="news-state" role="status">{doc === null ? C.loading : doc === "none" ? C.none : C.error}</p>;
   const t = open ? d.traders.find((x) => x.id === open) : null;
-  if (t) return <Profile T={T} lang={lang} t={t} onBack={() => setOpen(null)} onFollow={onFollow} />;
+  if (t) return <Profile T={T} lang={lang} t={t} onBack={() => setOpen(null)} onFollow={onFollow} onCopy={onCopy} />;
 
   return (
     <div className={`cp${compact ? " compact" : ""}`}>
       <p className="cp-lead small muted">{C.lead(d.traders.length, d.counts.active, d.historyDays)}</p>
       {!compact && <StrikeStats T={T} lang={lang} doc={d} />}
+      {d.evidence && <Evidence T={T} lang={lang} ev={d.evidence} />}
       <div className="cp-filters">
         <div className="cp-seg" role="group" aria-label={C.platform}>
           {(["all", "strike", "hyperliquid"] as const).map((p) => (
@@ -159,8 +160,8 @@ export function CopyChooser({ T, lang, doc, onFollow, initial, compact }:
 
 /** A lead selected on the map: what it holds now, what choosing it would mean (its score, its fall, what its copiers
  *  made), and the way to copy it on Strike. */
-export function LeadCard({ T, lang, t, following, followIcon, onFollow, onProfile, onClose }: { T: CityText; lang: Lang; t: Trader; following: boolean;
-  followIcon?: ReactNode; onFollow: () => void; onProfile: () => void; onClose: () => void }) {
+export function LeadCard({ T, lang, t, following, followIcon, onFollow, onProfile, onClose, onCopy }: { T: CityText; lang: Lang; t: Trader; following: boolean;
+  followIcon?: ReactNode; onFollow: () => void; onProfile: () => void; onClose: () => void; onCopy?: () => void }) {
   const C = T.copy, loc = lang === "es" ? "es-ES" : "en-US";
   const won = copiersWon(t);
   const w = warnings(t).filter((k) => k !== "noCopiers");
@@ -205,9 +206,34 @@ export function LeadCard({ T, lang, t, following, followIcon, onFollow, onProfil
       <div className="city-card-actions">
         <button type="button" className="btn btn-ghost" aria-pressed={following} onClick={onFollow}>{followIcon}{following ? T.card.following : T.card.follow}</button>
         <button type="button" className="btn btn-ghost" onClick={onProfile}>{C.open}</button>
-        <a className="btn btn-primary cp-card-copy" href={t.url} target="_blank" rel="noopener noreferrer">{C.copyOn} <Icon.external /><span className="sr-only">{C.newTab}</span></a>
+        {onCopy && <button type="button" className="btn btn-primary cp-card-copy" onClick={onCopy}>{C.withAgent}</button>}
+        <a className={`btn ${onCopy ? "btn-ghost" : "btn-primary"} cp-card-copy`} href={t.url} target="_blank" rel="noopener noreferrer">{C.copyOn} <Icon.external /><span className="sr-only">{C.newTab}</span></a>
       </div>
     </aside>
+  );
+}
+
+/** Does the score work? The live test on every copy Strike City has seen: the share in profit of the third each score
+ *  puts on top, against the average copy. */
+export function Evidence({ T, lang, ev }: { T: CityText; lang: Lang; ev: NonNullable<CopyDoc["evidence"]> }) {
+  const C = T.copy, E = C.evidence;
+  const max = Math.max(ev.top.city, ev.top.strike, ev.base, 0.01);
+  const bar = (label: string, v: number, cls: string) => (
+    <li className={cls}><span className="cp-ev-name">{label}</span>
+      <span className="cp-ev-bar" aria-hidden="true"><span style={{ width: `${(v / max) * 100}%` }} /></span>
+      <b className="num">{pct(v, lang, false)}</b></li>
+  );
+  return (
+    <section className="cp-ev" aria-labelledby="cp-ev-title">
+      <h4 id="cp-ev-title">{E.title}</h4>
+      <p className="small muted">{E.body(ev.copies, ev.leads)}</p>
+      <ul>
+        {bar(E.city, ev.top.city, "ev-city")}
+        {bar(E.strike, ev.top.strike, "ev-strike")}
+        {bar(E.base, ev.base, "ev-base")}
+      </ul>
+      <p className="small faint">{E.auc(ev.auc.city.toLocaleString(lang === "es" ? "es-ES" : "en-US"), ev.auc.strike.toLocaleString(lang === "es" ? "es-ES" : "en-US"))} {E.caveat}</p>
+    </section>
   );
 }
 
@@ -222,7 +248,7 @@ function ScoreParts({ T, lang, parts }: { T: CityText; lang: Lang; parts: Record
           const v = parts[k];
           return (
             <li key={k} className={v == null ? "unknown" : undefined}>
-              <span className="cp-part-name">{C.parts[k]} <span className="faint">· {PART_WEIGHTS[k]} %</span></span>
+              <span className="cp-part-name">{C.parts[k]} <span className="faint">· {PART_WEIGHTS[k] ? `${PART_WEIGHTS[k]} %` : C.partInfo}</span></span>
               <span className="cp-part-bar" aria-hidden="true"><span style={{ width: `${v ?? 0}%` }} /></span>
               <span className="num cp-part-v">{v == null ? C.partUnknown : v.toLocaleString(loc, { maximumFractionDigits: 0 })}</span>
             </li>
@@ -234,7 +260,8 @@ function ScoreParts({ T, lang, parts }: { T: CityText; lang: Lang; parts: Record
   );
 }
 
-function Profile({ T, lang, t, onBack, onFollow }: { T: CityText; lang: Lang; t: Trader; onBack: () => void; onFollow?: (id: string) => void }) {
+function Profile({ T, lang, t, onBack, onFollow, onCopy }: { T: CityText; lang: Lang; t: Trader; onBack: () => void; onFollow?: (id: string) => void;
+  onCopy?: (t: Trader) => void }) {
   const C = T.copy, loc = lang === "es" ? "es-ES" : "en-US";
   const won = copiersWon(t);
   const w = warnings(t);
@@ -300,7 +327,8 @@ function Profile({ T, lang, t, onBack, onFollow }: { T: CityText; lang: Lang; t:
         </section>
       )}
       <div className="cp-actions">
-        <a className="btn btn-primary" href={t.url} target="_blank" rel="noopener noreferrer">{C.copyOn} <Icon.external /><span className="sr-only">{C.newTab}</span></a>
+        {onCopy && <button type="button" className="btn btn-primary" onClick={() => onCopy(t)}>{C.withAgent}</button>}
+        <a className={`btn ${onCopy ? "btn-ghost" : "btn-primary"}`} href={t.url} target="_blank" rel="noopener noreferrer">{C.copyOn} <Icon.external /><span className="sr-only">{C.newTab}</span></a>
         {t.walks && onFollow && <button type="button" className="btn btn-ghost" onClick={() => onFollow(t.id)}>{C.follow}</button>}
       </div>
       <p className="small faint cp-note">{C.note}</p>

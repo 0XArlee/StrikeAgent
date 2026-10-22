@@ -7,7 +7,7 @@ import type { Lang } from "../i18n";
 import { Icon } from "../components/ui";
 import type { AgentView } from "./agents";
 import { copiersWon, curveOf, traderName, type CopyDoc, type CopyState, type Trader } from "./copy";
-import { CopyChooser, Spark, StrikeStats, pct, usd } from "./CopyView";
+import { CopyChooser, Evidence, Spark, StrikeStats, pct, usd } from "./CopyView";
 import { drawFrame, lookFor, onSheet, sheetOf, type Anim, type Dir } from "./sprites";
 import { ARENA, ROOM_H, ROOM_W, TILE, arenaArt, roomPath } from "./tower";
 import { bubble, led, plain, txt } from "./TowerView";
@@ -292,6 +292,7 @@ function SpotBody({ T, lang, doc, spot, open, onProfile, onFollow, onExit }: { T
         <>
           <p className="tw-hint">{C.hints.copiers}</p>
           {share != null && <p className="ar-big"><b className="num">{pct(share, lang, false)}</b><span>{C.copiesWon(doc.counts.inProfit, doc.counts.subs, pct(share, lang, false))}</span></p>}
+          {doc.evidence && <Evidence T={T} lang={lang} ev={doc.evidence} />}
           <h4 className="ar-h">{C.bestCopiers}</h4>
           <ul className="ar-copies">
             {doc.copiers.map((x, i) => {

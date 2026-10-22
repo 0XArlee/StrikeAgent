@@ -120,3 +120,21 @@ def test_city_score_trusts_long_records_and_real_accounts_more():
     assert big_old > tiny_new
     # a part not known yet is left out: the others share its weight
     assert CopyService.city_score({"strike": 80, "copiers": None, "fall": None, "record": None, "size": None}) == 80
+
+
+def test_evidence_scores_each_copy_with_what_came_before_it(tmp_path):
+    s = Store(":memory:")
+    s.add_traders([trader("good", score="60"), trader("bad", score="95")], NOW, {})
+    entries = []
+    for i in range(20):   # the good lead's copies mostly win, the bad one's lose: Strike's score says the opposite
+        entries.append({"follower": {"account_id": f"g{i}"}, "lead_account_id": "good", "created_at": NOW - (40 - i) * DAY,
+                        "status": "stopped", "realized_pnl": "10" if i % 5 else "-5", "copy_mode": "fixed_ratio"})
+        entries.append({"follower": {"account_id": f"b{i}"}, "lead_account_id": "bad", "created_at": NOW - (40 - i) * DAY,
+                        "status": "stopped", "realized_pnl": "-10" if i % 5 else "5", "copy_mode": "fixed_ratio"})
+    s.add_subs(entries, NOW)
+    svc = CopyService(s, tmp_path / "copy.json", get=lambda *a, **k: {}, hl=lambda u: {}, log=lambda *a: None)
+    ev = svc.evidence(NOW)
+    assert ev["copies"] == 40 and ev["leads"] == 2 and ev["base"] == 0.5
+    assert ev["auc"]["strike"] < 0.5 < ev["auc"]["city"]          # what earlier copiers made beats the copy score here
+    assert ev["top"]["city"] > ev["top"]["strike"]
+    assert svc.evidence(NOW + 60_000) is ev                       # once an hour

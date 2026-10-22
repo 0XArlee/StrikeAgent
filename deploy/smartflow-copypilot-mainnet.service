@@ -1,0 +1,30 @@
+# Smart Flow -> copy with your agent (the production site, Strike mainnet: real money): each owner's copy plan, signed with their wallet on the site, carried out
+# on Strike's own copy trading from a sub-account of its own (Strike creates and funds it), with the owner's stop-loss.
+# Pulls the plans (GET /api/internal/copyplans) and reports how they go (POST /api/internal/copystatus), HMAC like the
+# fleet. Signs with the owners' API-wallet keys (only read here, never written). Never touches the agents' trading.
+[Unit]
+Description=Smart Flow copy with your agent (mainnet)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=smartflow
+Group=smartflow
+WorkingDirectory=/opt/smartflow/app
+EnvironmentFile=/etc/smartflow/fleet-mainnet.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/smartflow/app/.venv/bin/smartflow copypilot --env mainnet --allow-mainnet
+Restart=always
+RestartSec=60
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/smartflow/app /var/lib/smartflow/keys /var/lib/smartflow/news
+ReadWritePaths=/var/lib/smartflow/copy
+MemoryMax=200M
+
+[Install]
+WantedBy=multi-user.target

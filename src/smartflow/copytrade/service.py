@@ -30,7 +30,12 @@ PICK_STRIKE, PICK_HL = 60, 30                       # the traders the Copy Arena
 EQUITY_POINTS = 365
 # Strike City's score: each part 0-100, weighed; a part that cannot be known yet (fewer than 3 copiers, no fall measured,
 # no account value) is left out and the others share its weight
-SCORE_WEIGHTS = {"strike": 45, "copiers": 20, "fall": 15, "record": 10, "size": 10}
+# Weighed on every copy Strike's leaderboard shows (2026-10-22: 346 copies of 63 leads, each scored only with the copies
+# made before it): what earlier copiers made predicted best, then the record and the account's size; Strike's copy score
+# alone did not (AUC 0.49), nor did a smooth PnL (0.35: market makers' smooth curves are the hardest to copy), so the fall
+# is shown but not weighed. evidence() repeats the test on every copy seen, live.
+SCORE_WEIGHTS = {"strike": 30, "copiers": 30, "fall": 0, "record": 20, "size": 20}
+EVIDENCE_EVERY_MS = 60 * 60_000
 RECORD_DAYS = 60                                       # days of history kept for full marks on track record
 STATS = {   # Strike's daily copy-trading series: (path, key in the answer, metric)
     "volume": ("/stat/v1/dashboard/copy-trading-volumes", "total_volume_daily"),
@@ -70,6 +75,7 @@ class CopyService:
         self.at = {"discover": 0, "stats": 0, "positions": 0}
         self.last_fp = ""
         self.summary: dict = {}
+        self._evidence: tuple[int, dict | None] | None = None
 
     @staticmethod
     def _hl(user: str) -> dict:
@@ -204,9 +210,49 @@ class CopyService:
         """Strike City's score for choosing whom to copy (0-100): the weighed mean of the parts known."""
         if parts.get("strike") is None:
             return None
-        known = {k: v for k, v in parts.items() if v is not None}
+        known = {k: v for k, v in parts.items() if v is not None and SCORE_WEIGHTS.get(k)}
         weight = sum(SCORE_WEIGHTS[k] for k in known)
         return round(sum(SCORE_WEIGHTS[k] * v for k, v in known.items()) / weight, 1)
+
+    def evidence(self, now: int) -> dict | None:
+        """Does the score pick leads whose copiers did well? Every copy with a known lead is scored with the copies of
+        that lead made before it (nothing it could not have known), then: the chance that a copy that ended in profit
+        scored higher than one that did not (AUC, 0.5 = a coin), for Strike's copy score and for Strike City's, and the
+        share in profit of the third each puts on top. Retrospective (the leads' scores are today's); once an hour."""
+        if self._evidence and now - self._evidence[0] < EVIDENCE_EVERY_MS:
+            return self._evidence[1]
+        traders = {str(t["address"]).lower(): t for t in self.store.traders()}
+        subs = [x for x in self.store.subs() if x.get("realized_pnl") is not None]
+        by_lead: dict[str, list[dict]] = {}
+        for x in subs:
+            by_lead.setdefault(str(x["lead"]).lower(), []).append(x)
+        metrics: dict[str, dict] = {}
+        rows = []
+        for x in subs:
+            lead = str(x["lead"]).lower()
+            t = traders.get(lead)
+            score = num(t.get("copy_score")) if t else None
+            if score is None:
+                continue
+            earlier = [y for y in by_lead[lead] if (y["created_at"] or 0) < (x["created_at"] or 0)]
+            won = {"n": len(earlier), "won": sum((y["realized_pnl"] or 0) > 0 for y in earlier)}
+            m = metrics.setdefault(lead, self.store.metrics(t["address"]))
+            city = self.city_score(self.score_parts(score, won, m, num(t.get("account_value"))))
+            rows.append((score, city, (x["realized_pnl"] or 0) > 0, lead))
+        out = None
+        if len(rows) >= 30 and 0 < sum(r[2] for r in rows) < len(rows):
+            def auc(i: int) -> float:
+                w = [r[i] for r in rows if r[2]]
+                lo = [r[i] for r in rows if not r[2]]
+                return round((sum(1 for a in w for b in lo if a > b) + 0.5 * sum(1 for a in w for b in lo if a == b)) / (len(w) * len(lo)), 3)
+
+            def top(i: int) -> float:
+                xs = sorted(rows, key=lambda r: -(r[i] or 0))[: max(1, len(rows) // 3)]
+                return round(sum(r[2] for r in xs) / len(xs), 3)
+            out = {"copies": len(rows), "leads": len({r[3] for r in rows}), "base": round(sum(r[2] for r in rows) / len(rows), 3),
+                   "auc": {"strike": auc(0), "city": auc(1)}, "top": {"strike": top(0), "city": top(1)}, "at": now}
+        self._evidence = (now, out)
+        return out
 
     def document(self, now: int) -> dict:
         fol, won = self.store.followers(), self.store.copiers()
@@ -257,6 +303,7 @@ class CopyService:
             "traders": traders,
             "copiers": [{"lead": y["lead"], "follower": y["follower"][:8], "platform": y["platform"], "mode": y["mode"], "status": y["status"],
                          "pnl": round(y["realized_pnl"] or 0, 2), "volume": round(y["volume"] or 0, 2), "since": y["created_at"]} for y in best],
+            "evidence": self.evidence(now),
             "about": "Strike's public copy-trading data, kept by Strike City (the history goes beyond Strike's 30 days). "
                      "Past results do not predict future ones.",
         }

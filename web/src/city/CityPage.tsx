@@ -32,6 +32,7 @@ interface Props {
   onFeedback?: () => void;   // the Feedback dialog (the site's, opened over the city)
   myAgent?: ReactNode;   // the owner's dashboard (null until they sign in with their wallet)
   owner?: { id: string; token: string } | null;   // signed in: their own agent shows with its amounts
+  copyPilot?: boolean;   // copy with your agent is open: a trader's card offers it
 }
 
 const SCALE = [1, 10, 50, 250, 1000, 5000];
@@ -53,7 +54,7 @@ function readDeepLink(): string | null {
 /** #/city?lead=<account>: a lead of Strike's copy trading, selected and followed once the city has it. */
 const readLeadLink = () => /[?&]lead=([\w-]+)/.exec(location.hash)?.[1] ?? null;
 
-export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent, owner }: Props) {
+export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent, owner, copyPilot }: Props) {
   const T = cityText[lang];
   const store = useMemo(() => new CityStore(), []);
   store.owner = owner?.token ? owner : null;
@@ -149,9 +150,18 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   }, [copyDoc, leadR]);
   useEffect(() => {
     if (!ready) return;
-    const id = window.setInterval(() => { const now = performance.now(); for (const a of leads.current) leadTick(a, now, leadR); }, 400);
+    const id = window.setInterval(() => {
+      const now = performance.now();
+      for (const a of leads.current) leadTick(a, now, leadR);
+      for (const a of store.agents) {   // an agent copying a trader stands where that trader is
+        if (!a.copying) continue;
+        const l = leads.current.find((x) => x.lead && x.lead.id.toLowerCase() === a.copying!.lead.toLowerCase());
+        const place = l?.target || "arena";
+        if (a.copyPlace !== place) { a.copyPlace = place; a.nextAt = 0; }
+      }
+    }, 400);
     return () => window.clearInterval(id);
-  }, [ready, leadR]);
+  }, [ready, leadR, store]);
 
   // keep the followed agent visible beside the side panel (desktop) or above the bottom card (mobile)
   useEffect(() => {
@@ -293,6 +303,12 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   const agent = sel?.kind === "agent" ? store.agent(sel.id) : undefined;
   const lead = sel?.kind === "agent" && sel.id.startsWith("lead:") ? leads.current.find((a) => a.id === sel.id) : undefined;
   const bld = sel?.kind === "building" ? BUILDINGS.find((b) => b.id === sel.id) : undefined;
+  // copy with your agent: My agent opens with the plan for this trader (signing in first without a session)
+  const copyWithAgent = (t: { id: string; platform: string }) => {
+    if (!myAgent) { onConnect(); return; }
+    setCopy(null);
+    location.hash = `#/city?me&copy=${t.id}&pf=${t.platform}`;
+  };
   // from the chooser: the lead walking the city, selected and followed
   const followLead = (id: string) => {
     setCopy(null);
@@ -406,7 +422,8 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
         {lead?.lead && !me && !(panel && isSmall()) && (
           <LeadCard T={T} lang={lang} t={lead.lead} following={engine.current?.following === lead.id} followIcon={<Ico.target />}
                     onFollow={() => { engine.current?.setFollow(engine.current.following !== lead.id); force((x) => x + 1); }}
-                    onProfile={() => setCopy({ open: lead.lead!.id })} onClose={() => choose(null)} />
+                    onProfile={() => setCopy({ open: lead.lead!.id })} onClose={() => choose(null)}
+                    onCopy={copyPilot ? () => copyWithAgent(lead.lead!) : undefined} />
         )}
         {bld && !me && !(panel && isSmall()) && (
           <aside className="city-card" aria-labelledby="bld-title">
@@ -509,7 +526,8 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
             <h2 id="copy-title" className="grow">{T.copy.choose}</h2>
             <button type="button" className="icon-btn" aria-label={T.card.close} data-autofocus onClick={() => setCopy(null)}><Icon.close /></button>
           </div>
-          <div className="cp-body"><CopyChooser T={T} lang={lang} doc={copyDoc} initial={copy.open} onFollow={followLead} /></div>
+          <div className="cp-body"><CopyChooser T={T} lang={lang} doc={copyDoc} initial={copy.open} onFollow={followLead}
+                                                 onCopy={copyPilot ? copyWithAgent : undefined} /></div>
         </Modal>
       )}
       {arena === "inside" && (
@@ -638,6 +656,10 @@ function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks,
         <button type="button" className="icon-btn" aria-label={T.card.close} onClick={onClose}><Icon.close /></button>
       </div>
       <div className="city-card-status"><KindTag T={T} a={a} />{strategyDef(a.strategy ?? "").tag && a.strategy !== DEFAULT_STRATEGY && <span className="city-tag strat">{strategyDef(a.strategy!).tag}</span>}<StatusPill T={T} a={a} /><span className="faint small">{a.real ? `${tfLabel(a.real.tf)} · ` : ""}{marketList(a.markets)}</span></div>
+      {a.copying && (
+        <p className="city-card-copying small"><span className="city-tag lead">{T.copy.leadTag}</span>{" "}
+          {T.copy.agentCopies(traderName({ id: a.copying.lead, platform: a.copying.platform === "hyperliquid" ? "hyperliquid" : "strike" }))}</p>
+      )}
       <p className="city-card-label">{T.card.now}</p>
       <p className="city-card-text">{a.status === "unfunded" ? T.unfundedNow : last ? describe(last, T, lang).text : T.status[a.status]}</p>
       {last?.code === "checks" && a.status !== "unfunded" && (   // each market it checked, and why it did not trade it

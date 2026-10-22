@@ -4,6 +4,7 @@
 /// <reference path="./env.d.ts" />
 import { REFERENCE_ID, liveAgent, meView, startingAgent, stoppedAgent, storedLook, storedPersona, strikePrices, userAgent, type Agent, type CityDoc } from "./agents";
 import { burnKey, finishLink, inviteOnly, linkFor, liveAllowed, liveEnv, liveFee, liveForAll, liveView, startLink, walletNetwork } from "./live";
+import { copyView, copying, normalizePlan, planLines, savePlan, type CopyPlan } from "./copyplan";
 import { lookId, normalizeLook } from "../src/city/look";
 import { normalizePersona, personaId } from "../src/city/persona";
 import { isAdmin } from "./feedback";
@@ -51,6 +52,7 @@ export async function info({ env }: Ctx): Promise<Response> {
     pushedAt: await snapshotAt(env.DB).catch(() => null), holds: doc?.holds ?? {},
     connect: false, paper: true,   // agents start on paper; real trading is a separate opt-in (live)
     live: { env: liveEnv(env), enabled: liveForAll(env), invite: inviteOnly(env), feeBps: liveFee(env), code: env.BUILDER_CODE ?? "" },
+    copyPilot: env.COPY_PILOT === "1",   // copy with your agent is open here
   }, 200, "public, max-age=30");
 }
 
@@ -65,13 +67,14 @@ export async function city(c: Ctx): Promise<Response> {
   const ev = await eventsFor(c.env.DB, users.map((u) => u.id));
   const { official, live } = split(doc);
   const linked = await linkedUsers(c.env, users.map((u) => u.id));
+  const copies = await copying(c.env.DB, users.map((u) => u.id), liveEnv(c.env));   // whom each one's agent copies on Strike
   // only public users appear; a connected one shows its real agent (starting, until the host pushes it). Where real
   // trading is open to everyone one that stopped is shown stopped; only invite-only sites still have paper agents,
   // which follow their strategy's paper agent
   const forAll = liveForAll(c.env);
   const mine = users.map((u) => {
     const a = live.get(u.id), evs = ev.get(u.id) ?? [];
-    if (a) return liveAgent(u, a, evs);
+    if (a) return { ...liveAgent(u, a, evs), copy: copies.get(u.id) };
     if (linked.has(u.id)) return { ...startingAgent(u, liveEnv(c.env), evs, now), portfolio: undefined };
     return forAll ? stoppedAgent(u, liveEnv(c.env), evs, now) : userAgent(u, refOf(official, u), evs, now);
   });
@@ -250,7 +253,8 @@ async function meFor(env: Env, id: string, now: number): Promise<Response> {
   // hold: its strategy's safety hold, if any (new trades wait; open ones keep their stop)
   return json({ ...meView(u, a, a.positions.length ? await strikePrices() : {}), live: liveView(env, await linkFor(env.DB, id), liveAllowed(env, u.address)),
     admin: isAdmin(env, id),   // reads the site's suggestions (My agent's inbox)
-    agent: a, hold: doc?.holds?.[strategyOf(u.strategy)] ?? null });
+    agent: a, hold: doc?.holds?.[strategyOf(u.strategy)] ?? null,
+    copy: env.COPY_PILOT === "1" ? await copyView(env.DB, id, liveEnv(env)) : undefined });   // copy with your agent: the signed plan and how it goes
 }
 
 export async function me({ request, env }: Ctx): Promise<Response> {
@@ -261,12 +265,19 @@ export async function me({ request, env }: Ctx): Promise<Response> {
 }
 
 const ACTIONS: Record<string, string> = { pause: "pause", resume: "resume", revoke: "delete", show: "show in EdgeCraft-StrikeCity", hide: "hide from EdgeCraft-StrikeCity",
-  look: "change the character of", settings: "change the strategy, markets and risk of", test: "run a test trade with" };
+  look: "change the character of", settings: "change the strategy, markets and risk of", test: "run a test trade with",
+  copy: "set the copy trading of" };
 
 export async function actionChallenge({ request, env }: Ctx): Promise<Response> {
   const now = Date.now();
-  const b = await body<{ accountId?: unknown; action?: unknown; look?: unknown; persona?: unknown; strategy?: unknown; markets?: unknown; risk?: unknown }>(request);
+  const b = await body<{ accountId?: unknown; action?: unknown; look?: unknown; persona?: unknown; strategy?: unknown; markets?: unknown; risk?: unknown; copy?: unknown }>(request);
   if (!b || typeof b.accountId !== "string" || typeof b.action !== "string" || !(b.action in ACTIONS)) return fail(400, "invalid request");
+  let copy: CopyPlan | null = null;
+  if (b.action === "copy") {
+    const v = normalizePlan(b.copy, now);
+    if (typeof v === "string") return fail(400, v);
+    copy = v;
+  }
   const look = b.action === "look" && b.look != null ? normalizeLook(b.look) : null;
   const persona = b.action === "look" && b.persona != null ? normalizePersona(b.persona) : null;
   if (b.action === "look" && ((b.look != null && !look) || (b.persona != null && !persona) || (!look && !persona))) return fail(400, "invalid character");
@@ -280,6 +291,11 @@ export async function actionChallenge({ request, env }: Ctx): Promise<Response> 
     const strategy = strategyOf(b.strategy);
     if (!riskAllowed(strategy, risk)) return fail(400, `${STRATEGIES[strategy].name} goes up to the ${STRATEGIES[strategy].maxRisk} risk (${RISK[STRATEGIES[strategy].maxRisk]}% per trade)`);
     settings = { strategy, markets, risk };
+  }
+  if (b.action === "copy") {   // the copy runs with the agent's API wallet: it must be connected to Strike here
+    if (env.COPY_PILOT !== "1") return fail(409, "copying with your agent is not open on this site yet");
+    const link = await linkFor(env.DB, u.id);
+    if (!link || link.status !== "active" || link.env !== liveEnv(env)) return fail(409, "connect your agent to Strike first");
   }
   if (b.action === "test") {
     const link = await linkFor(env.DB, u.id);
@@ -298,13 +314,14 @@ export async function actionChallenge({ request, env }: Ctx): Promise<Response> 
     `Smart Flow · ${ACTIONS[b.action]} my agent`, "",
     b.action === "test"
       ? "My agent opens the smallest trade Strike allows (about 11 $) with its stop, holds it about 2 minutes and closes it. It costs a few cents in fees."
+      : copy ? planLines(copy).join("\n")
       : "This signature only proves that you own this wallet.", "",
     `Wallet: ${u.address}`, `Agent: ${u.name}`, `Action: ${b.action}`, ...(look ? [`Character: ${lookId(look)}`] : []),
     ...(persona ? [`Personality in the city: ${personaId(persona)} (never changes how it trades)`] : []),
     ...(settings ? [`Strategy: ${STRATEGIES[settings.strategy].name}`, `Markets: ${settings.markets.join(", ")}`, `Risk per trade: ${RISK[settings.risk]}%`] : []),
     `Site: ${new URL(request.url).host}`, `Nonce: ${id}`, `Issued: ${iso(now)}`, `Expires: ${iso(now + CHALLENGE_TTL)}`,
   ].join("\n");
-  await newChallenge(env.DB, { address: u.address, kind: "action", payload: { action: b.action, id: u.id, look, persona, settings }, message, ip: ip(request) }, id, now);
+  await newChallenge(env.DB, { address: u.address, kind: "action", payload: { action: b.action, id: u.id, look, persona, settings, copy }, message, ip: ip(request) }, id, now);
   return json({ sessionId: id, messageToSign: message, feeBps: 0, expiresAt: now + CHALLENGE_TTL });
 }
 
@@ -316,7 +333,8 @@ export async function action(c: Ctx): Promise<Response> {
   const ch = await consumeChallenge(env.DB, b.sessionId, "action", now);
   if (!ch) return fail(410, "this request expired or was already used: start again");
   const why = await verifyCip30(ch.address, b.walletSignature, new TextEncoder().encode(ch.message));
-  const p = JSON.parse(ch.payload) as { action: string; id: string; look?: unknown; persona?: unknown; settings?: { strategy: string; markets: string[]; risk: string } | null };
+  const p = JSON.parse(ch.payload) as { action: string; id: string; look?: unknown; persona?: unknown; settings?: { strategy: string; markets: string[]; risk: string } | null;
+    copy?: CopyPlan | null };
   const proof = { user: p.id, address: ch.address, action: p.action, message: ch.message, signature: b.walletSignature };
   if (why) {
     await auditNow(env.DB, request, liveEnv(env), { ...proof, ok: false, detail: { error: `invalid wallet signature (${why})` } }, now);
@@ -353,11 +371,12 @@ export async function action(c: Ctx): Promise<Response> {
     stmts.push(db.prepare("UPDATE live_links SET test_at = ?2, updated_at = ?2 WHERE user_id = ?1 AND status = 'active'").bind(u.id, now),
       addEvent(db, u.id, "test", now));
   }
+  if (p.action === "copy" && p.copy) stmts.push(savePlan(db, u.id, liveEnv(env), p.copy, now));
   // every signed action is kept, also the ones that changed nothing (pausing a paused agent)
   stmts.push(audit(db, request, liveEnv(env), { ...proof, ok: true, detail: {
     changed: stmts.length > 0, before: was,
     ...(p.settings ? { ...p.settings, riskPct: RISK[p.settings.risk] ?? null } : {}), ...(newLook ? { look: lookId(newLook) } : {}), ...(newPersona ? { persona: personaId(newPersona) } : {}),
-    ...(p.action === "test" ? { at: now } : {}),
+    ...(p.action === "test" ? { at: now } : {}), ...(p.copy ? { copy: p.copy } : {}),
   } }, now));
   await db.batch(stmts);
   purgeCity(c);

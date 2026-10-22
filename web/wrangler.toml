@@ -32,3 +32,4 @@ LIVE_ENV = "testnet"
 BUILDER_CODE = "SmartFlowAgent-EdgeCraft"
 BUILDER_FEE_BPS = "20"
 ADMIN_IDS = "u-bf732c51a8e0"
+COPY_PILOT = "1"          # copy with your agent: open on QA (Strike testnet) first

@@ -27,11 +27,13 @@ export interface CopyDoc {
   counts: { traders: number; active: number; subs: number; inProfit: number };
   traders: Trader[];
   copiers: { lead: string; follower: string; platform: string; mode: string; status: string; pnl: number; volume: number; since: number }[];
+  /** The score tested on every copy seen (each scored only with what came before it): smartflow/copytrade evidence(). */
+  evidence?: { copies: number; leads: number; base: number; auc: { strike: number; city: number }; top: { strike: number; city: number }; at: number } | null;
 }
 export type CopyState = CopyDoc | null | "none" | "error";
 export type Part = "strike" | "copiers" | "fall" | "record" | "size";
 /** The weight of each part of the city score (smartflow/copytrade/service.py SCORE_WEIGHTS). */
-export const PART_WEIGHTS: Record<Part, number> = { strike: 45, copiers: 20, fall: 15, record: 10, size: 10 };
+export const PART_WEIGHTS: Record<Part, number> = { strike: 30, copiers: 30, fall: 0, record: 20, size: 20 };
 
 /** Its PnL day by day (its equity in documents written before). */
 export const curveOf = (t: Trader): [number, number][] => t.curve ?? t.equity ?? [];
