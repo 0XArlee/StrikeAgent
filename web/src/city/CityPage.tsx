@@ -940,7 +940,7 @@ function jobLabel(a: AgentView, doc: ReturnType<typeof useNews>, prices: Prices,
       return rd?.net != null ? `${tk} ${signed(rd.net, lang)} ${rd.label ? cityText[lang].news.labels[rd.label].toLocaleLowerCase(loc) : ""}`.trim()
         : `${tk} ${PT.noReading}`;
     }
-    case "tape": { const px = prices[m]; return px ? `${tk} ${fmtPct(px.change, lang)} 24h` : null; }
+    case "tape": { const px = prices[m]; return px ? `${tk} ${fmtPrice(px.price, lang)} · ${fmtPct(px.change, lang)} 24h` : null; }
     case "guardian": return `${PT.today} ${fmtR(a.rToday, lang)} · ${a.risk.toLocaleString(loc)} %`;
   }
 }

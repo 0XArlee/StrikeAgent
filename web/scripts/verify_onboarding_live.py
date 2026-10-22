@@ -260,8 +260,15 @@ def run(p, tag, viewport, mobile):
     page.wait_for_timeout(300)
     page.screenshot(path=str(OUT / f"o09_signin_{tag}.png"))
     axe(page, f"{tag} sign-in dialog", "[role=dialog]")
+    page.evaluate("() => { window.__h = []; setInterval(() => window.__h.push(location.hash + '|' + !!document.querySelector('.city-me') + '|' + !!document.querySelector('[aria-labelledby=cm-title]')), 100) }")
     page.get_by_role("button", name="Sign in with TestWallet").click()
-    page.wait_for_selector(".city-me #agent-title", timeout=30000)
+    try:
+        page.wait_for_selector(".city-me #agent-title", timeout=30000)
+    except Exception:
+        page.screenshot(path=str(OUT / f"o09b_signin_failed_{tag}.png"))
+        print("sign in failed:", page.evaluate("() => [...new Set(window.__h)]"), errors[-4:],
+              page.locator("[aria-labelledby=cm-title]").inner_text()[:300].replace(chr(10), " | ") if page.locator("[aria-labelledby=cm-title]").count() else "no dialog")
+        raise
     page.wait_for_timeout(800)
     again = page.locator("#agent").inner_text()
     check(f"{tag}: signing in opens My agent, the agent unchanged", len(signed) == n_signed + 1

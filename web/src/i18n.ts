@@ -249,7 +249,7 @@ const en = {
     jobs: {
       chartist: { name: "Chartist", place: "Lab", desc: "Studies its markets' charts: range, displacement and volume of the last candle." },
       reporter: { name: "Reporter", place: "News Tower", desc: "Reads its markets' headlines in the News Tower and tells you the reading." },
-      tape: { name: "Tape reader", place: "Exchange", desc: "Watches its markets' price, day change and funding on Strike." },
+      tape: { name: "Tape reader", place: "Exchange", desc: "Watches its markets' price and how much it moved in the day on Strike." },
       guardian: { name: "Risk keeper", place: "Risk office", desc: "Keeps track of its day: result so far and risk per trade." },
     } as Record<string, { name: string; place: string; desc: string }>,
     temper: "Personality", job: "Trade", says: "Says", worksAt: (place: string) => `Works at the ${place}`,
@@ -624,7 +624,7 @@ const es: Dict = {
     jobs: {
       chartist: { name: "Analista de gráficos", place: "Laboratorio", desc: "Estudia los gráficos de sus mercados: rango, desplazamiento y volumen de la última vela." },
       reporter: { name: "Reportero", place: "Torre de noticias", desc: "Lee los titulares de sus mercados en la Torre de noticias y te cuenta la lectura." },
-      tape: { name: "Lector de cinta", place: "Exchange", desc: "Vigila el precio, el cambio del día y la financiación de sus mercados en Strike." },
+      tape: { name: "Lector de cinta", place: "Exchange", desc: "Vigila en Strike el precio de sus mercados y cuánto se han movido en el día." },
       guardian: { name: "Guardián del riesgo", place: "Oficina de riesgo", desc: "Lleva la cuenta de su día: el resultado y el riesgo por operación." },
     },
     temper: "Carácter", job: "Oficio", says: "Dice", worksAt: (place: string) => `Trabaja en: ${place}`,
