@@ -694,3 +694,4 @@
 .city-legend-lead.pos { color: #4efab0; }
 .city-legend-trail { flex: none; width: 18px; height: 6px; border-radius: 3px;
   background: radial-gradient(circle, #fb7185 2px, transparent 2.5px) 0 0 / 6px 6px repeat-x; opacity: .8; }
+.nowrap { white-space: nowrap; }

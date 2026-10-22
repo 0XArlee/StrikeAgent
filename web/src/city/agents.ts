@@ -66,7 +66,8 @@ export interface AgentView {
   look?: Look;            // chosen by the owner (character creator); otherwise derived from the id
   tour?: number;          // live: the market its card shows first while it waits (two agents never show the same one)
   post?: { x: number; y: number };     // its own spot in the plaza: where it stands still while it waits
-  trip?: { to: string; until: number }; // a real event just happened (order, exit, risk check): it goes there
+  trip?: { to: string; until: number; market?: string }; // a real event just happened (order, exit, risk check, a market's
+                                        // news reading turned: that market): it goes there
   rush?: boolean;         // its owner is taking it into the News Tower: it runs
   persona?: Persona;      // its personality and trade in the city (its owner's choice, or one derived from its id)
   seen?: number;          // time of the latest journal entry already acted on
@@ -260,6 +261,22 @@ export function fromApi(x: ApiAgent, prev: AgentView | undefined, R: () => numbe
 const TRIP: Partial<Record<Decision["kind"], string>> = { signal: "exchange", order: "exchange", risk: "risk", exit: "alley" };
 const TRIP_MS = 75_000;
 
+/** The news reading of markets it trades just turned (neutral -> bearish...): the agent goes to the News Tower to read
+ *  it, then back to its place. Only where it stands: the agents never use the news to trade. An agent at home (paused,
+ *  offline) stays there, and a trip already under way (an order, a risk check) goes first. */
+export function newsTrip(a: AgentView, turned: string[]): void {
+  const m = a.markets.find((x) => turned.includes(x));
+  if (!m || a.lead || a.trip || HOME.has(a.status)) return;
+  a.trip = { to: "news", until: performance.now() + TRIP_MS, market: m };
+  a.nextAt = 0;
+}
+const HOME = new Set<Status>(["offline", "paused", "unfunded"]);
+
+/** At the News Tower reading a market whose reading just turned (see newsTrip). */
+export function readingNews(a: AgentView): boolean {
+  return a.trip?.to === "news" && !!a.trip.market && a.target === "news" && !a.path.length;
+}
+
 /** Where its state keeps it: paused or offline at home, analysing in the lab, in a trade at the market's tower,
  *  waiting for a setup at its own spot in the plaza, except during its shifts at its trade's building. */
 function placeFor(a: AgentView): string {
@@ -376,11 +393,10 @@ export function stats(a: AgentView) {
 
 // ---------------------------------------------------------------- leads of Strike's copy trading (/api/copy)
 /** Where a lead stands: at the tower of the market of its biggest open position (the exchange for a market the city
- *  has no tower for), or, while it holds nothing, at its own spot in the plaza, waiting like the agents do (they all
- *  stood at the Copy Arena's door before: half of them out of the opening view). */
+ *  has no tower for), or at the Copy Arena's door while it holds nothing (the agents copying it wait there with it). */
 function leadPlace(t: Trader): string {
   const p = mainPosition(t);
-  return p ? MARKET_TOWER[p.market] ?? "exchange" : "plaza";
+  return p ? MARKET_TOWER[p.market] ?? "exchange" : "arena";
 }
 
 /** A lead as a walker of the city (its id "lead:" + its account). Keeps its place and path when it already walks; a
@@ -404,8 +420,7 @@ export function leadView(t: Trader, prev: AgentView | undefined, R: () => number
     stopKnown: false, upnl: p.upnl } : null;
   a.focus = p?.market ?? "";
   if (!prev) {   // first appearance: already at its place
-    a.post = nearFountain(R);
-    const place = leadPlace(t), q = place === "plaza" ? { x: a.post.x * TILE + 8, y: a.post.y * TILE + 12 } : spot(place, R);
+    const place = leadPlace(t), q = spot(place, R);
     a.x = q.x; a.y = q.y; a.target = place;
   }
   return a;
@@ -419,7 +434,5 @@ export function leadTick(a: AgentView, now: number, R: () => number): void {
     a.trip = undefined;
   }
   const place = leadPlace(a.lead);
-  if (a.target === place) return;
-  if (place === "plaza") goToTile(a, a.post ?? (a.post = nearFountain(R)), "plaza");
-  else goTo(a, place, R);
+  if (a.target !== place) goTo(a, place, R);
 }

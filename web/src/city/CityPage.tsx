@@ -6,7 +6,7 @@ import "@fontsource/ibm-plex-mono/700.css";
 import "./city.css";
 import type { Lang } from "../i18n";
 import { Icon, Mark } from "../components/ui";
-import { atWork, lastChecks, leadTick, leadView, mulberry, nowDecision, stats, type AgentView, type FeedItem, type Prices, type Status } from "./agents";
+import { atWork, lastChecks, leadTick, leadView, mulberry, newsTrip, nowDecision, readingNews, stats, type AgentView, type FeedItem, type Prices, type Status } from "./agents";
 import { CityEngine, SCREEN_BOOK, SCREEN_CHART, STATUS_COLOR, drawIcon, type Sel } from "./engine";
 import type { Look } from "./look";
 import { FEET, FW, HEAD_TOP, frameAt, onSheet, sheetFor } from "./sprites";
@@ -162,12 +162,24 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
     }, 400);
     return () => window.clearInterval(id);
   }, [ready, leadR, store]);
+  // a market's news reading turned (neutral -> bearish...): the agents trading it go to the News Tower to read it. The
+  // first reading the page gets is where things stand, not a change
+  const newsLabels = useRef<Record<string, string | null> | null>(null);
+  useEffect(() => {
+    if (!newsDoc || typeof newsDoc !== "object") return;
+    const now = Object.fromEntries(Object.entries(newsDoc.markets).map(([m, r]) => [m, r.label]));
+    const prev = newsLabels.current;
+    newsLabels.current = now;
+    const turned = prev ? Object.keys(now).filter((m) => prev[m] && now[m] && prev[m] !== now[m]) : [];
+    if (turned.length) for (const a of store.agents) newsTrip(a, turned);
+  }, [newsDoc, store]);
 
-  // keep the followed agent visible beside the side panel (desktop) or above the bottom card (mobile)
+  // keep the followed agent visible between the card (left) and the side panel (right) on desktop, above the bottom
+  // card on mobile
   useEffect(() => {
     const small = isSmall();
     const card = document.querySelector<HTMLElement>(".city-card");
-    engine.current?.setInsets(panel && !small ? 384 : 0, small && card ? card.offsetHeight + 8 : 0);
+    engine.current?.setInsets(panel && !small ? 384 : 0, small && card ? card.offsetHeight + 8 : 0, !small && card ? card.offsetWidth + 12 : 0);
   });
 
   // shareable deep link to the selected agent
@@ -709,6 +721,7 @@ function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks,
           <p className="small"><span className="city-persona-t">{PT.tempers[a.persona.temper].name}</span>
             <span className="faint"> · {PT.jobs[a.persona.job].name}{job ? ` · ${atWork(a) ? PT.atWork(PT.jobs[a.persona.job].place) : PT.worksAt(PT.jobs[a.persona.job].place)}` : ""}</span></p>
           {job && <p className="small mono city-persona-job">{job}</p>}
+          {a.trip?.to === "news" && a.trip.market && <p className="small faint">{PT.newsTurned(ticker(a.trip.market))}</p>}
         </div>
       )}
       {p && context && <p className="city-card-context small"><span className="muted">{T.news.context}:</span> {context} <span className="faint">({T.news.contextNote})</span></p>}
@@ -1118,11 +1131,18 @@ const Ico = {
 };
 
 /** What an agent's trade reads where it works, from real data: the chartist its last candle's range and volume, the
- *  reporter the news reading, the tape reader the price change, the risk keeper its day. One market at a time. */
+ *  reporter the news reading, the tape reader the price change, the risk keeper its day. One market at a time. At the
+ *  News Tower because a market's reading just turned (newsTrip): that market's reading. */
 function jobLabel(a: AgentView, doc: ReturnType<typeof useNews>, prices: Prices, lang: Lang): string | null {
+  const PT = dict[lang].persona, loc = lang === "es" ? "es-ES" : "en-US";
+  const reading = (m: string) => {
+    const rd = doc && typeof doc === "object" ? doc.markets[m] : undefined;
+    return rd?.net != null ? `${ticker(m)} ${signed(rd.net, lang)} ${rd.label ? cityText[lang].news.labels[rd.label].toLocaleLowerCase(loc) : ""}`.trim()
+      : `${ticker(m)} ${PT.noReading}`;
+  };
+  if (readingNews(a)) return reading(a.trip!.market!);
   const job = a.persona?.job;
   if (!job) return null;
-  const PT = dict[lang].persona, loc = lang === "es" ? "es-ES" : "en-US";
   const ms = a.markets.length ? a.markets : ["BTC-USD"];
   const m = ms[Math.floor(performance.now() / 3000) % ms.length], tk = ticker(m);
   const f = (v: unknown, d: number) => Number(v).toLocaleString(loc, { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -1132,11 +1152,7 @@ function jobLabel(a: AgentView, doc: ReturnType<typeof useNews>, prices: Prices,
       const parts = c ? [c.range != null ? `${f(c.range, 2)} ATR` : "", c.vol != null ? `vol ×${f(c.vol, 2)}` : ""].filter(Boolean) : [];
       return parts.length ? `${tk} ${parts.join(" · ")}` : null;
     }
-    case "reporter": {
-      const rd = doc && typeof doc === "object" ? doc.markets[m] : undefined;
-      return rd?.net != null ? `${tk} ${signed(rd.net, lang)} ${rd.label ? cityText[lang].news.labels[rd.label].toLocaleLowerCase(loc) : ""}`.trim()
-        : `${tk} ${PT.noReading}`;
-    }
+    case "reporter": return reading(m);
     case "tape": { const px = prices[m]; return px ? `${tk} ${fmtPrice(px.price, lang)} · ${fmtPct(px.change, lang)} 24h` : null; }
     case "guardian": return `${PT.today} ${fmtR(a.rToday, lang)} · ${a.risk.toLocaleString(loc)} %`;
   }

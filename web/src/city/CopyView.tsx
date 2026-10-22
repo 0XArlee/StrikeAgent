@@ -144,8 +144,8 @@ export function CopyChooser({ T, lang, doc, onFollow, initial, compact, onCopy }
                   <span className="cp-num"><span className="faint small">{C.cityScore}</span><b className="num cp-big">{x.city?.toLocaleString(lang === "es" ? "es-ES" : "en-US", { maximumFractionDigits: 0 }) ?? "—"}</b></span>
                   <span className="cp-num"><span className="faint small">{C.roi30}</span><b className={`num ${tone(x.roi["30d"])}`}>{pct(x.roi["30d"], lang)}</b></span>
                   <span className="cp-num hide-sm"><span className="faint small">{C.dd}</span><b className="num">{x.metrics.dd == null ? "—" : pct(-x.metrics.dd, lang)}</b></span>
-                  <span className="cp-num hide-sm"><span className="faint small">{C.copiers}</span>
-                    <b className={`num ${tone(x.copiers.n ? x.copiers.pnl : null)}`}>{x.copiers.n ? `${x.copiers.n} · ${won == null ? usd(x.copiers.pnl, lang, true) : pct(won, lang, false)}` : "—"}</b></span>
+                  <span className="cp-num hide-sm"><span className="faint small">{C.parts.copiers}</span>
+                    <b className={`num ${won == null ? "" : won >= 0.5 ? "pos" : "neg"}`}>{x.copiers.n ? C.inProfit(x.copiers.won, x.copiers.n) : "—"}</b></span>
                   <span className="hide-sm"><Spark points={curveOf(x)} /></span>
                   {w.length > 0 && <span className="cp-warn" title={w.map((k) => C.warn[k]).join(" · ")} aria-label={w.map((k) => C.warn[k]).join(". ")}>!</span>}
                 </button>
@@ -154,7 +154,7 @@ export function CopyChooser({ T, lang, doc, onFollow, initial, compact, onCopy }
           })}
         </ol>
       )}
-      <p className="small faint cp-note">{C.note}</p>
+      <p className="small faint cp-note">{onCopy ? C.notePilot : C.note}</p>
     </div>
   );
 }
@@ -194,12 +194,14 @@ export function LeadCard({ T, lang, t, following, followIcon, onFollow, onProfil
         <div><dt>{C.cityScore}</dt><dd className="num cp-score">{t.city?.toLocaleString(loc, { maximumFractionDigits: 0 }) ?? "—"}</dd></div>
         <div><dt>{C.roi30}</dt><dd className={`num ${tone(t.roi["30d"])}`}>{pct(t.roi["30d"], lang)}</dd></div>
         <div><dt>{C.dd}</dt><dd className="num">{t.metrics.dd == null ? "—" : pct(-t.metrics.dd, lang)}</dd></div>
-        <div><dt>{C.copiers}</dt><dd className={`num ${tone(t.copiers.n ? t.copiers.pnl : null)}`}>
-          {t.copiers.n ? `${t.copiers.n} · ${usd(t.copiers.pnl, lang, true)}` : "—"}</dd></div>
+        {/* who copies it now, apart from every copy it ever had: "3 copiers" read as three people copying it today */}
+        <div><dt>{C.copyingNow}</dt><dd className="num">{t.copiers.active}</dd></div>
+        <div><dt>{C.copiesAll}</dt><dd className="num">{t.copiers.n || "—"}</dd></div>
       </dl>
       <Spark points={curveOf(t)} w={300} h={40} label={`${C.curve} · ${C.history(Math.max(t.metrics.days, curveOf(t).length))}`} />
       <p className="small cp-card-copiers">
-        {t.copiers.n ? <>{C.copiersLine(t.copiers.active, t.copiers.n)}{won != null && <> · <span className={won >= 0.5 ? "pos" : "neg"}>{C.copiersWon(pct(won, lang, false))}</span></>}</>
+        {t.copiers.n ? <><span className={won == null ? undefined : won >= 0.5 ? "pos" : "neg"}>{C.inProfit(t.copiers.won, t.copiers.n)}</span>
+          {" · "}<span className={tone(t.copiers.pnl)}>{C.copiersPnl(usd(t.copiers.pnl, lang, true))}</span></>
           : <span className="muted">{C.noCopiersYet}</span>}
         {shown > 0 && <span className="faint"> · {C.trail(shown, t.copiers.active)}</span>}
       </p>
@@ -301,10 +303,10 @@ function Profile({ T, lang, t, onBack, onFollow, onCopy }: { T: CityText; lang: 
         <div><dt>{C.assets}</dt><dd>{t.assets.join(" · ") || "—"}</dd></div>
         <div><dt>{C.from}</dt><dd className="num" title={C.recHint}>{usd(t.recommended, lang)}</dd></div>
       </dl>
-      <section className="cp-copiers" aria-label={C.copiers}>
-        <h4>{C.copiers}</h4>
+      <section className="cp-copiers" aria-label={C.copiesAll}>
+        <h4>{C.copiesAll}</h4>
         {t.copiers.n ? (
-          <p>{C.copiersLine(t.copiers.active, t.copiers.n)}{won != null && <> · <span className={won >= 0.5 ? "pos" : "neg"}>{C.copiersWon(pct(won, lang, false))}</span></>}
+          <p>{C.copiersLine(t.copiers.active, t.copiers.n)} · <span className={won == null ? undefined : won >= 0.5 ? "pos" : "neg"}>{C.inProfit(t.copiers.won, t.copiers.n)}</span>
             {" · "}<span className={tone(t.copiers.pnl)}>{C.copiersPnl(usd(t.copiers.pnl, lang, true))}</span></p>
         ) : <p className="muted">{C.noCopiersYet}</p>}
       </section>
@@ -333,7 +335,7 @@ function Profile({ T, lang, t, onBack, onFollow, onCopy }: { T: CityText; lang: 
         <a className={`btn ${onCopy ? "btn-ghost" : "btn-primary"}`} href={t.url} target="_blank" rel="noopener noreferrer">{C.copyOn} <Icon.external /><span className="sr-only">{C.newTab}</span></a>
         {t.walks && onFollow && <button type="button" className="btn btn-ghost" onClick={() => onFollow(t.id)}>{C.follow}</button>}
       </div>
-      <p className="small faint cp-note">{C.note}</p>
+      <p className="small faint cp-note">{onCopy ? C.notePilot : C.note}</p>
     </div>
   );
 }

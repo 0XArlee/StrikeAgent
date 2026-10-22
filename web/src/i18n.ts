@@ -309,6 +309,7 @@ const en = {
     } as Record<string, { name: string; place: string; desc: string }>,
     temper: "Personality", job: "Trade", says: "Says", worksAt: (place: string) => `Works at the ${place}`,
     atWork: (place: string) => `At work in the ${place}`, today: "today", noReading: "no reading",
+    newsTurned: (tk: string) => `${tk}'s news reading just turned: off to the News Tower to read it (it never trades on news)`,
     never: "Only in the city: its orders follow the strategy, never its personality.",
     next: "Continue", edit: "Edit personality",
     voice: {
@@ -739,6 +740,7 @@ const es: Dict = {
     },
     temper: "Carácter", job: "Oficio", says: "Dice", worksAt: (place: string) => `Trabaja en: ${place}`,
     atWork: (place: string) => `Trabajando en: ${place}`, today: "hoy", noReading: "sin lectura",
+    newsTurned: (tk: string) => `La lectura de noticias de ${tk} acaba de cambiar: va a la Torre de Noticias a leerla (nunca opera con noticias)`,
     never: "Solo en la ciudad: sus órdenes siguen la estrategia, nunca su carácter.",
     next: "Continuar", edit: "Editar carácter",
     voice: {

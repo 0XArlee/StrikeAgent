@@ -1,6 +1,6 @@
 // Strike City renderer: camera, input, picking and the per-frame dynamic layers over the pre-rendered city.
 import type { AgentView, Prices, Status } from "./agents";
-import { atWork, isActive, step } from "./agents";
+import { atWork, isActive, readingNews, step } from "./agents";
 import { FEET, HEAD_TOP, drawFrame, hash, sheetFor, type Anim, type Dir } from "./sprites";
 import type { Book } from "./store";
 import { ART2, BUILDINGS, FOUNTAIN, H, SCREEN, TILE, W, footprint, renderGlow, renderLight, renderStatic } from "./world";
@@ -80,7 +80,7 @@ export class CityEngine {
   private last = performance.now();
   private dpr = Math.min(2, window.devicePixelRatio || 1);
   private cx = FOUNTAIN.x; private cy = FOUNTAIN.y - 40; private zoom = 1.5;
-  private inset = { right: 0, bottom: 0 };   // screen px covered by panels / cards
+  private inset = { left: 0, right: 0, bottom: 0 };   // screen px covered by panels / cards
   // preview a time of day with #/city?night=1 (read once: the page rewrites the hash afterwards)
   private forcedNight = ((m) => (m ? +m[1] : null))(/[?&]night=([01](?:\.\d+)?)/.exec(location.hash));
   private follow: string | null = null;
@@ -132,8 +132,10 @@ export class CityEngine {
     const minZoom = Math.max(this.vw / W, this.vh / H);
     this.zoom = Math.min(4, Math.max(minZoom, this.zoom));
     const hw = this.vw / 2 / this.zoom, hh = this.vh / 2 / this.zoom;
-    this.cx = Math.min(W - hw, Math.max(hw, this.cx));
-    this.cy = Math.min(H - hh, Math.max(hh, this.cy));
+    // a side panel or a bottom card covers part of the map: the camera may go that far past the edge, so whoever stands
+    // by the map's edge (the Copy Arena's door) can still be shown beside the panel, above the card
+    this.cx = Math.min(W - hw + this.inset.right / this.zoom, Math.max(hw - this.inset.left / this.zoom, this.cx));
+    this.cy = Math.min(H - hh + this.inset.bottom / this.zoom, Math.max(hh, this.cy));
   }
   zoomBy(f: number, sx = this.vw / 2, sy = this.vh / 2) {
     const before = this.toWorld(sx, sy);
@@ -154,7 +156,11 @@ export class CityEngine {
     this.clamp();
   }
   recenter() { this.follow = null; this.home(); }
-  setInsets(right: number, bottom: number) { this.inset = { right, bottom }; }
+  setInsets(right: number, bottom: number, left = 0) {
+    if (left === this.inset.left && right === this.inset.right && bottom === this.inset.bottom) return;
+    this.inset = { left, right, bottom };
+    this.clamp();   // the panel or the card closed: back inside the map
+  }
   /** Select from the UI (lists, cards) or from a click on the map; agents are followed, buildings centred. */
   select(sel: Sel | null, notify = true) {
     this.selected = sel;
@@ -272,7 +278,7 @@ export class CityEngine {
       if (a) {
         const k = this.o.reducedMotion ? 1 : Math.min(1, dt * 4);
         // keep the followed agent in the middle of the part of the map that panels do not cover
-        const tx = a.x + this.inset.right / 2 / this.zoom, ty = a.y - 20 + this.inset.bottom / 2 / this.zoom;
+        const tx = a.x + (this.inset.right - this.inset.left) / 2 / this.zoom, ty = a.y - 20 + this.inset.bottom / 2 / this.zoom;
         this.cx += (tx - this.cx) * k; this.cy += (ty - this.cy) * k; this.clamp();
       }
     }
@@ -621,8 +627,8 @@ export class CityEngine {
       const r = a.trades[0].r;
       label = `${r > 0 ? "+" : "−"}${Math.abs(r).toFixed(1)}R`;
       color = r > 0 ? "#4efab0" : "#f43f5e";
-    } else if (a.real && a.status === "waiting" && atWork(a) && this.o.getJobLabel?.(a)) {
-      label = this.o.getJobLabel(a)!;                     // at work: the real data its trade reads there
+    } else if (a.real && (readingNews(a) || (a.status === "waiting" && atWork(a))) && this.o.getJobLabel?.(a)) {
+      label = this.o.getJobLabel(a)!;                     // at work, or at the News Tower: the real data it reads there
     } else if (a.real && a.status === "waiting") {
       label = countdown(a.real.nextCheck - Date.now());   // real schedule: next 4h candle close
     } else if (a.real && a.status === "analyzing") {

@@ -330,7 +330,7 @@ function SpotBody({ T, lang, doc, spot, open, onProfile, onFollow, onExit, onCop
             <figcaption className="small faint">{C.dailyProfits} · {C.history(S.daily.profits.length)}</figcaption></figure>
           <p className="small">{C.subs30(S.subscriptions30d)} · {C.copiersLine(doc.counts.active, doc.counts.subs)}</p>
           <p className="small faint">{C.lead(doc.traders.length, doc.counts.active, doc.historyDays)}</p>
-          <p className="small faint">{C.note}</p>
+          <p className="small faint">{onCopy ? C.notePilot : C.note}</p>
         </>
       );
     }
@@ -351,7 +351,7 @@ function PodiumCard({ T, lang, t, place, onProfile, onCopy }: { T: CityText; lan
         <p className="ar-name"><b className="mono">{traderName(t)}</b> <span className={`cp-plat ${t.platform}`}>{t.platform === "strike" ? "Strike" : "Hyperliquid"}</span></p>
         <p className="small"><span className="faint">{C.roi30}</span> <b className={`num ${(t.roi["30d"] ?? 0) >= 0 ? "pos" : "neg"}`}>{pct(t.roi["30d"], lang)}</b>
           <span className="faint"> · {C.dd}</span> <b className="num">{t.metrics.dd == null ? "—" : pct(-t.metrics.dd, lang)}</b>
-          <span className="faint"> · {C.copiers}</span> <b className="num">{t.copiers.n ? (won == null ? t.copiers.n : pct(won, lang, false)) : "—"}</b></p>
+          <span className="nowrap"><span className="faint"> · {C.parts.copiers}</span> <b className={`num ${won == null ? "" : won >= 0.5 ? "pos" : "neg"}`}>{t.copiers.n ? C.inProfit(t.copiers.won, t.copiers.n) : "—"}</b></span></p>
         {t.assets.length > 0 && <p className="small faint">{t.assets.slice(0, 4).map((a) => ticker(a)).join(" · ")}</p>}
         <Spark points={curveOf(t)} w={260} h={30} label={C.curve} />
         <div className="ar-actions">
