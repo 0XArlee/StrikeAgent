@@ -4,6 +4,7 @@ import { atWork, isActive, step } from "./agents";
 import { FEET, HEAD_TOP, drawFrame, hash, sheetFor, type Anim, type Dir } from "./sprites";
 import type { Book } from "./store";
 import { ART2, BUILDINGS, FOUNTAIN, H, SCREEN, TILE, W, footprint, renderGlow, renderLight, renderStatic } from "./world";
+import { ticker } from "./text";
 
 export type Sel = { kind: "agent" | "building"; id: string };
 type Hit = Sel | { kind: "screen"; id: string };
@@ -598,7 +599,7 @@ export class CityEngine {
     if (a.lead) {
       color = LEAD_COLOR;
       const p = a.position;
-      label = p ? `${p.side === "long" ? "LONG" : "SHORT"} ${p.market.replace("-USD", "")}` : `★${Math.round(a.lead.city ?? a.lead.score ?? 0)}`;
+      label = p ? `${p.side === "long" ? "LONG" : "SHORT"} ${ticker(p.market)}` : `★${Math.round(a.lead.city ?? a.lead.score ?? 0)}`;
       text = p ? (p.side === "long" ? "#4efab0" : "#f43f5e") : LEAD_COLOR;
     } else if (a.status === "in_trade" && a.position) {
       const r = a.position.rOpen;

@@ -96,6 +96,7 @@ export function CopyChooser({ T, lang, doc, onFollow, initial, compact, onCopy }
       <p className="cp-lead small muted">{C.lead(d.traders.length, d.counts.active, d.historyDays)}</p>
       {!compact && <StrikeStats T={T} lang={lang} doc={d} />}
       {d.evidence && <Evidence T={T} lang={lang} ev={d.evidence} />}
+      {!!d.copyingOthers?.length && <p className="small faint cp-note">{C.leftOut(d.copyingOthers.length)}</p>}
       <div className="cp-filters">
         <div className="cp-seg" role="group" aria-label={C.platform}>
           {(["all", "strike", "hyperliquid"] as const).map((p) => (
@@ -173,7 +174,7 @@ export function LeadCard({ T, lang, t, following, followIcon, onFollow, onProfil
         <Face id={t.id} size={2} />
         <div className="grow">
           <h2 id="lead-card-title" className="city-card-name mono">{traderName(t)}</h2>
-          <p className="faint small">{C.leadWho}</p>
+          <p className="faint small">{t.subOf ? C.subOf(t.subOf === "?" ? null : t.subOf) : C.leadWho}</p>
         </div>
         <button type="button" className="icon-btn" aria-label={T.card.close} onClick={onClose}><Icon.close /></button>
       </div>
@@ -273,7 +274,8 @@ function Profile({ T, lang, t, onBack, onFollow, onCopy }: { T: CityText; lang: 
         <Face id={t.id} size={4} />
         <div className="grow">
           <h3>{traderName(t)} <span className={`cp-plat ${t.platform}`}>{t.platform === "strike" ? "Strike" : "Hyperliquid"}</span></h3>
-          <p className="small muted">{[t.style ? C.styles[t.style] : null, t.bias ? C.biases[t.bias] : null].filter(Boolean).join(" · ")}
+          <p className="small muted">{[t.subOf ? C.subOf(t.subOf === "?" ? null : t.subOf) : null, t.style ? C.styles[t.style] : null,
+            t.bias ? C.biases[t.bias] : null].filter(Boolean).join(" · ")}
             {t.lastTrade ? ` · ${ago(t.lastTrade)}` : ""}</p>
         </div>
         <div className="cp-p-score">

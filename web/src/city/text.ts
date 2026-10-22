@@ -8,7 +8,9 @@ export function fmtPrice(v: number, lang: Lang): string {
 }
 export const fmtR = (r: number, lang: Lang) => `${r > 0 ? "+" : r < 0 ? "−" : ""}${Math.abs(r).toLocaleString(lang === "es" ? "es-ES" : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}R`;
 export const fmtPct = (v: number, lang: Lang, digits = 2) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toLocaleString(lang === "es" ? "es-ES" : "en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}%`;
-export const ticker = (m: string) => m.replace("-USD", "");
+/** A market's short name as Strike's app shows it (gold and silver by name, not XAU and XAG). */
+const SHOWN_AS: Record<string, string> = { XAU: "GOLD", XAG: "SILVER" };
+export const ticker = (m: string) => { const b = m.replace("-USD", ""); return SHOWN_AS[b] ?? b; };
 /** A trade's money result: cents for small amounts, signed. */
 export const money = (v: number, loc: string) => v.toLocaleString(loc, { style: "currency", currency: "USD", minimumFractionDigits: 2,
   maximumFractionDigits: Math.abs(v) < 1 ? 4 : 2, signDisplay: "exceptZero" });
@@ -210,6 +212,8 @@ const en = {
     say: { board: (n: number) => `${n} traders to choose from`, podium: (name: string) => `Number one: ${name}`, copiers: (v: string) => `Best copy: ${v}`,
       stats: (v: string) => `${v} copied in 30 days` },
     floor: "Copy Arena", floorAbout: "Strike's copy trading, live: the traders people copy, and what copying them really made.",
+    subOf: (name: string | null) => (name ? `A sub-account of ${name}` : "A sub-account on Strike"),
+    leftOut: (n: number) => `${n} accounts Strike lists are copying other traders right now. Strike never passes their copied orders on to whoever copies them, so the Copy Arena leaves them out.`,
     ranksTitle: "The best to copy on Strike", withAgent: "Copy with my agent", agentCopies: (name: string) => `Copies ${name} on Strike`,
     exit: "Leave the arena", entering: (name: string) => `${name} is walking to the Copy Arena…`,
     top3: "The three best by Strike City's score right now", podiumEmpty: "The podium fills as soon as Strike's copy trading has been read.",
@@ -575,6 +579,8 @@ const es: CityText = {
     say: { board: (n: number) => `${n} traders para elegir`, podium: (name: string) => `Número uno: ${name}`, copiers: (v: string) => `Mejor copia: ${v}`,
       stats: (v: string) => `${v} copiados en 30 días` },
     floor: "Copy Arena", floorAbout: "El copy trading de Strike, en vivo: los traders que la gente copia y lo que de verdad dio copiarlos.",
+    subOf: (name: string | null) => (name ? `Una subcuenta de ${name}` : "Una subcuenta en Strike"),
+    leftOut: (n: number) => `${n} cuentas que lista Strike están copiando ahora a otros traders. Strike nunca pasa sus órdenes copiadas a quien las copia, así que la Copy Arena las deja fuera.`,
     ranksTitle: "Los mejores para copiar en Strike", withAgent: "Copiar con mi agente", agentCopies: (name: string) => `Copia a ${name} en Strike`,
     exit: "Salir de la arena", entering: (name: string) => `${name} va hacia la Copy Arena…`,
     top3: "Los tres mejores según la puntuación Strike City ahora mismo", podiumEmpty: "El podio se llena en cuanto se lee el copy trading de Strike.",

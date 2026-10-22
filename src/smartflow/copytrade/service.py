@@ -25,6 +25,7 @@ APP = "https://app.strikefinance.org"
 DISCOVER_EVERY_MS = 10 * 60_000
 STATS_EVERY_MS = 30 * 60_000
 POSITIONS_EVERY_MS = 2 * 60_000
+ACCOUNTS_EVERY_MS = 30 * 60_000   # Strike traders' accounts: their name, whether they are a sub-account, whom they copy
 STRIKE_LEADS, HL_LEADS, MAX_LEADS = 14, 6, 24    # the leads that walk the city (and whose positions it follows)
 PICK_STRIKE, PICK_HL = 60, 30                       # the traders the Copy Arena lets you choose from
 EQUITY_POINTS = 365
@@ -52,11 +53,12 @@ def _get(path: str, params: dict | None = None):
     return doc
 
 
-def app_url(platform: str, address: str, chain: str | None) -> str:
-    """The trader's public page in Strike's app, where Copy is one click away."""
+def app_url(platform: str, address: str, chain: str | None = None) -> str:
+    """The trader's public page in Strike's app, where Copy is one click away. A Strike trader by its account id: the
+    wallet address opens the main account, and many traders Strike lists are sub-accounts of it (checked in the app)."""
     if platform == "hyperliquid":
         return f"{APP}/public-portfolio/{address}?platform=hyperliquid"
-    return f"{APP}/public-portfolio/{chain or address}"
+    return f"{APP}/public-portfolio/{address}"
 
 
 def recommended(coverage: list | None) -> float | None:
@@ -72,7 +74,7 @@ class CopyService:
         self.store, self.out, self.log = store, Path(out), log
         self.get = get or _get
         self.hl = hl or self._hl
-        self.at = {"discover": 0, "stats": 0, "positions": 0}
+        self.at = {"discover": 0, "stats": 0, "positions": 0, "accounts": 0}
         self.last_fp = ""
         self.summary: dict = {}
         self._evidence: tuple[int, dict | None] | None = None
@@ -102,15 +104,47 @@ class CopyService:
         every lead people copy most right now."""
         fol = self.store.followers()
         recent = now - 3 * DISCOVER_EVERY_MS
-        strike = [t for t in self.store.traders("strike", recent) if t.get("recommended_direction") == "copy"]
+        out = self.copying_others()
+        strike = [t for t in self.store.traders("strike", recent) if t.get("recommended_direction") == "copy" and t["address"] not in out]
         hl = [t for t in self.store.traders("hyperliquid", recent) if t.get("recommended_direction") == "copy"]
         key = lambda t: -(num(t.get("copy_score")) or 0)
         chosen = sorted(strike, key=key)[:STRIKE_LEADS] + sorted(hl, key=key)[:HL_LEADS]
         have = {t["address"] for t in chosen}
         known = {t["address"]: t for t in self.store.traders(None, recent)}
-        popular = sorted((a for a, f in fol.items() if f["active"] and a in known and a not in have), key=lambda a: -fol[a]["active"])
+        popular = sorted((a for a, f in fol.items() if f["active"] and a in known and a not in have and a not in out), key=lambda a: -fol[a]["active"])
         chosen += [known[a] for a in popular]
         return chosen[:MAX_LEADS]
+
+    def accounts(self, now: int) -> int:
+        """Reads the account of every Strike trader Strike recommends copying (and every Strike lead people copy): its
+        name, the main account it belongs to, and whom it copies right now. A trader that copies others is left out:
+        Strike never passes on the orders a copier places as a copy, so copying it would not copy those trades."""
+        recent = now - 3 * DISCOVER_EVERY_MS
+        fol = self.store.followers()
+        addrs = [t["address"] for t in self.store.traders("strike", recent)
+                 if t.get("recommended_direction") == "copy" or fol.get(t["address"], {}).get("active")]
+        info = json.loads(self.store.get("accounts", "{}") or "{}")
+        for a in addrs[:120]:
+            acct = self.get("/v2/account", {"account_id": a}) or {}
+            subs = (self.get("/v2/copy/subscriptions", {"account_id": a, "status": "active"}) or {}).get("subscriptions") or []
+            # a main account's name is its nickname; a sub-account's, the name its owner gave it
+            info[a] = {"name": acct.get("nickname") or acct.get("name") or None, "parent": acct.get("parent_account_id") or None,
+                       "copies": sorted({str(x.get("lead_account_id")) for x in subs if x.get("lead_account_id")}), "at": now}
+        names = {a: v.get("name") for a, v in info.items()}
+        for parent in {v["parent"] for v in info.values() if v.get("parent")} - set(names):   # the main accounts' names too
+            par = self.get("/v2/account", {"account_id": parent}) or {}
+            names[parent] = par.get("nickname") or par.get("name")
+        for v in info.values():
+            v["parentName"] = names.get(v.get("parent")) if v.get("parent") else None
+        self.store.set("accounts", json.dumps(info, separators=(",", ":")))
+        self.store.commit()
+        return len(addrs)
+
+    def account_info(self) -> dict[str, dict]:
+        return json.loads(self.store.get("accounts", "{}") or "{}")
+
+    def copying_others(self) -> set[str]:
+        return {a for a, v in self.account_info().items() if v.get("copies")}
 
     def positions_of(self, t: dict) -> list[dict]:
         if t.get("platform") == "hyperliquid":
@@ -166,6 +200,12 @@ class CopyService:
                 self.at["stats"] = now
             except (HttpError, ValueError, TypeError) as e:
                 s["errors"].append(f"stats: {e!s}"[:200])
+        if now - self.at["accounts"] >= ACCOUNTS_EVERY_MS:
+            try:
+                s["accounts"] = self.accounts(now)
+                self.at["accounts"] = now
+            except (HttpError, OSError, ValueError) as e:
+                s["errors"].append(f"accounts: {e!s}"[:200])
         if now - self.at["positions"] >= POSITIONS_EVERY_MS:
             for t in self.leads(now):
                 try:
@@ -185,7 +225,8 @@ class CopyService:
         Strike recommends copying, best first by Strike's copy score."""
         recent = now - 3 * DISCOVER_EVERY_MS
         key = lambda t: -(num(t.get("copy_score")) or 0)
-        strike = sorted((t for t in self.store.traders("strike", recent) if t.get("recommended_direction") == "copy"), key=key)
+        out = self.copying_others()
+        strike = sorted((t for t in self.store.traders("strike", recent) if t.get("recommended_direction") == "copy" and t["address"] not in out), key=key)
         hl = sorted((t for t in self.store.traders("hyperliquid", recent) if t.get("recommended_direction") == "copy"), key=key)
         return strike[:PICK_STRIKE] + hl[:PICK_HL]
 
@@ -256,6 +297,7 @@ class CopyService:
 
     def document(self, now: int) -> dict:
         fol, won = self.store.followers(), self.store.copiers()
+        info = self.account_info()
         summary = self.summary or json.loads(self.store.get("summary", "{}") or "{}")
         walkers = self.leads(now)
         walking = {t["address"] for t in walkers}
@@ -271,7 +313,8 @@ class CopyService:
             score, value = num(t.get("copy_score")), num(t.get("account_value"))
             parts = self.score_parts(score, w, m, value)
             x = {
-                "id": a, "platform": platform, "url": app_url(platform, a, t.get("blockchain_address")),
+                "id": a, "platform": platform, "url": app_url(platform, a),
+                "name": (info.get(a) or {}).get("name"), "subOf": (info.get(a) or {}).get("parentName") or ((info.get(a) or {}).get("parent") and "?"),
                 "score": score, "scores": t.get("copy_scores") or {}, "direction": t.get("recommended_direction"),
                 "city": self.city_score(parts), "parts": parts, "style": t.get("style"), "bias": t.get("bias"), "value": value,
                 "pnl": {k: num(v) for k, v in (t.get("pnl") or {}).items()}, "roi": {k: num(v) for k, v in (t.get("roi") or {}).items()},
@@ -301,6 +344,9 @@ class CopyService:
             "counts": {"traders": len(self.store.traders()), "active": sum(1 for y in subs if y["status"] == "active"), "subs": len(subs),
                        "inProfit": sum(1 for y in subs if (y.get("realized_pnl") or 0) > 0)},
             "traders": traders,
+            # Strike traders left out because they copy others (their copied orders are not passed on to their copiers)
+            "copyingOthers": sorted(({"id": a, "name": v.get("name"), "copies": v["copies"][:3]} for a, v in info.items() if v.get("copies")),
+                                    key=lambda y: y["id"]),
             "copiers": [{"lead": y["lead"], "follower": y["follower"][:8], "platform": y["platform"], "mode": y["mode"], "status": y["status"],
                          "pnl": round(y["realized_pnl"] or 0, 2), "volume": round(y["volume"] or 0, 2), "since": y["created_at"]} for y in best],
             "evidence": self.evidence(now),

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Lang } from "../i18n";
 
 import { accountResult, type PfPosition, type Portfolio } from "./portfolio-types";
+import { ticker as tick } from "./text";
 export type { PfFill, PfOrder, PfPosition, Portfolio } from "./portfolio-types";
 
 const TXT = {
@@ -73,7 +74,6 @@ export function livePosition(p: PfPosition, marks: Record<string, number>) {
   return { mark, move, upnl, pct };
 }
 
-const tick = (m: string) => m.replace("-USD", "");
 
 function agoText(lang: Lang, ms: number): string {
   const s = Math.max(0, Math.round((Date.now() - ms) / 1000));

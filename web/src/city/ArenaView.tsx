@@ -293,6 +293,7 @@ function SpotBody({ T, lang, doc, spot, open, onProfile, onFollow, onExit }: { T
           <p className="tw-hint">{C.hints.copiers}</p>
           {share != null && <p className="ar-big"><b className="num">{pct(share, lang, false)}</b><span>{C.copiesWon(doc.counts.inProfit, doc.counts.subs, pct(share, lang, false))}</span></p>}
           {doc.evidence && <Evidence T={T} lang={lang} ev={doc.evidence} />}
+          {!!doc.copyingOthers?.length && <p className="small faint">{C.leftOut(doc.copyingOthers.length)}</p>}
           <h4 className="ar-h">{C.bestCopiers}</h4>
           <ul className="ar-copies">
             {doc.copiers.map((x, i) => {

@@ -56,7 +56,7 @@ def test_document_for_the_city(tmp_path):
         calls.append(path)
         if path == "/v2/copy/discover":
             if params["platform"] == "strike":
-                return {"items": [trader("s1", score="95"), trader("s2", score="60", direction="none")]}
+                return {"items": [trader("s1", score="95"), trader("s2", score="60", direction="none"), trader("s3", score="99")]}
             return {"items": [trader("0xhl", platform="hyperliquid", score="80")]}
         if path == "/v2/copy/leaderboard":
             return {"entries": [{"follower": {"account_id": "f1"}, "lead_account_id": "s1", "status": params["status"], "created_at": 5,
@@ -64,6 +64,10 @@ def test_document_for_the_city(tmp_path):
                     if params["status"] == "active" else []}
         if path == "/v2/positions":
             return {"positions": [{"symbol": "BTC-USD", "size": "-0.5", "entry_price": "80000", "upnl": "12", "leverage": 5}]}
+        if path == "/v2/account":
+            return {"name": {"s1": "Beatrice", "s3": "Copy 1"}.get(params["account_id"]), "parent_account_id": "m1" if params["account_id"] == "s1" else None}
+        if path == "/v2/copy/subscriptions":   # s3 copies someone: it is left out
+            return {"subscriptions": [{"lead_account_id": "0xwhale"}] if params["account_id"] == "s3" else []}
         if path.endswith("copy-trading-summary"):
             return {"open_interest_usd": "1000", "total_allocated_usd": "2000"}
         if path.endswith("copy-trading-volumes"):
@@ -79,10 +83,12 @@ def test_document_for_the_city(tmp_path):
     assert sorted(ids) == ["0xhl", "s1"]                             # "none" direction is not offered
     s1 = next(x for x in doc["traders"] if x["id"] == "s1")
     hl1 = next(x for x in doc["traders"] if x["id"] == "0xhl")
+    assert s1["name"] == "Beatrice" and s1["subOf"] == "?" and s1["url"].endswith("/public-portfolio/s1")   # by account id
+    assert doc["copyingOthers"] == [{"id": "s3", "name": "Copy 1", "copies": ["0xwhale"]}]
     assert s1["walks"] and s1["city"] is not None and s1["metrics"]["days"] == 0 and set(s1["parts"]) == {"strike", "copiers", "fall", "record", "size"}
     assert s1["copiers"]["active"] == 1 and s1["positions"][0] == {"market": "BTC-USD", "side": "short", "size": 0.5, "entry": 80000,
                                                                    "upnl": 12, "leverage": 5}
-    assert s1["recommended"] == 1000 and s1["url"].endswith("/public-portfolio/addr1s1")
+    assert s1["recommended"] == 1000 and s1["url"].endswith("/public-portfolio/s1")
     assert hl1["positions"][0]["market"] == "ETH-USD" and hl1["url"].endswith("?platform=hyperliquid")
     assert doc["strike"]["allocated"] == 2000 and doc["strike"]["volume30d"] == 150
     assert doc["copiers"][0]["follower"] == "f1"
@@ -91,6 +97,7 @@ def test_document_for_the_city(tmp_path):
 
 def test_helpers():
     assert app_url("hyperliquid", "0xabc", None).endswith("/public-portfolio/0xabc?platform=hyperliquid")
+    assert app_url("strike", "019d-sub", "addr1parent").endswith("/public-portfolio/019d-sub")   # never the main account's wallet
     assert recommended([{"copy_amount": "1", "coverage": "0.1"}]) is None
 
 

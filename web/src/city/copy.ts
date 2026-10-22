@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 
 export interface Trader {
   id: string; platform: "strike" | "hyperliquid"; url: string;
+  name?: string | null;                      // its name on Strike, when it has one
+  subOf?: string | null;                     // a sub-account: the name of the main account it belongs to ("?" unknown)
   score: number | null; scores: Record<string, string>; direction: string | null;
   city: number | null;                       // Strike City's score to choose whom to copy (0-100)
   style: string | null; bias: string | null; value: number | null;
@@ -27,6 +29,8 @@ export interface CopyDoc {
   counts: { traders: number; active: number; subs: number; inProfit: number };
   traders: Trader[];
   copiers: { lead: string; follower: string; platform: string; mode: string; status: string; pnl: number; volume: number; since: number }[];
+  /** Strike traders left out because they copy others: Strike never passes a copier's copied orders on. */
+  copyingOthers?: { id: string; name: string | null; copies: string[] }[];
   /** The score tested on every copy seen (each scored only with what came before it): smartflow/copytrade evidence(). */
   evidence?: { copies: number; leads: number; base: number; auc: { strike: number; city: number }; top: { strike: number; city: number }; at: number } | null;
 }
@@ -63,8 +67,9 @@ export function useCopy(on: boolean): CopyState {
   return doc;
 }
 
-/** "#019D8B" for a Strike account, "0x0526…63FE" for a Hyperliquid wallet: Strike gives no names. */
-export function traderName(t: Pick<Trader, "id" | "platform">): string {
+/** Its name on Strike when it has one; else "#019D8B" for a Strike account, "0x0526…63FE" for a Hyperliquid wallet. */
+export function traderName(t: Pick<Trader, "id" | "platform"> & { name?: string | null }): string {
+  if (t.name) return t.name.length > 18 ? `${t.name.slice(0, 17)}…` : t.name;
   return t.platform === "hyperliquid" ? `${t.id.slice(0, 6)}…${t.id.slice(-4)}` : `#${t.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 }
 
