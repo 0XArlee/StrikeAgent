@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import time
 from pathlib import Path
 
 from .feeds import Headline, norm
@@ -23,7 +24,7 @@ CREATE TABLE IF NOT EXISTS readings (
   t INTEGER NOT NULL, market TEXT NOT NULL, net REAL NOT NULL, price REAL NOT NULL, ret4 REAL, PRIMARY KEY (t, market));
 CREATE TABLE IF NOT EXISTS notes (market TEXT PRIMARY KEY, t INTEGER NOT NULL, body TEXT NOT NULL);
 """
-VERSION = 2
+VERSION = 3
 KEEP_ITEMS_MS = 14 * 86400_000
 KEEP_READINGS_MS = 365 * 86400_000
 SAME_STORY = 0.8          # two titles sharing this share of their words (in a day) are the same story
@@ -41,7 +42,8 @@ class Store:
         self.db = sqlite3.connect(str(path))
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
-        if self.db.execute("PRAGMA user_version").fetchone()[0] < VERSION:
+        version = self.db.execute("PRAGMA user_version").fetchone()[0]
+        if version < 2:
             # 1: reactions on Strike's mark price (the first ones, on its last-trade price, are measured again)
             # 2: sources by tier, the feeds' summaries, stories, the calibrated model and reactions against the normal
             #    move: every headline is classified and measured again, the scoreboard starts over
@@ -52,6 +54,12 @@ class Store:
             self.db.execute("UPDATE items SET react = NULL, cls = NULL, tries = 0, story = NULL")
             self.db.execute("DELETE FROM readings")
             self.db.execute("DELETE FROM notes")
+        if version < 3:
+            # 3: geopolitics as its own category and each headline's region (the tower's map): the last 4 days are
+            #    classified again; their reactions, the readings and the scoreboard stay
+            self.db.execute("UPDATE items SET cls = NULL, tries = 0, story = NULL WHERE t >= ?",
+                            (int(time.time() * 1000) - 4 * 86400_000,))
+        if version < VERSION:
             self.db.execute(f"PRAGMA user_version = {VERSION}")
             self.db.commit()
         self._recent: list[tuple[int, set[str]]] | None = None

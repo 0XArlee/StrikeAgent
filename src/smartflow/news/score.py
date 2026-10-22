@@ -137,6 +137,8 @@ def reading(headlines: list[dict], market: str, now: int, groups: list[dict] | N
             "up": [row(c) for c in sorted(cats.values(), key=lambda c: -c["push"]) if c["push"] > 0.5][:3],
             "down": [row(c) for c in sorted(cats.values(), key=lambda c: c["push"]) if c["push"] < -0.5][:3],
         },
+        # every category's share of the reading and its stories (the tower's floors: each sums its own categories)
+        "cats": {c["cat"]: {"push": round(c["push"], 1), "n": c["n"]} for c in cats.values()},
     }
 
 

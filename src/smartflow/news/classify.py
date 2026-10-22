@@ -1,6 +1,7 @@
 """Each headline classified by Claude Haiku (Anthropic Messages API, forced tool call so the answer is structured):
-the markets it is about, whether it moves the whole crypto market, a category, a direction and strength (-100..+100)
-for the next hours, the impact, the model's confidence, and the headline in Spanish for the site.
+the markets it is about, whether it moves the whole crypto market, a category, where in the world it happens (the
+News Tower's map), a direction and strength (-100..+100) for the next hours, the impact, the model's confidence, and
+the headline in Spanish for the site.
 
 Only the headline, its outlet and the feed's short summary are sent, never anything about the agents or the users.
 The prompt fixes the scale with anchors (the same kind of news, the same score) and asks for a story key, so one event
@@ -20,7 +21,10 @@ API = "https://api.anthropic.com/v1/messages"
 MODEL = "claude-haiku-5-5"
 MARKETS = {"BTC": "BTC-USD", "ETH": "ETH-USD", "SOL": "SOL-USD", "XRP": "XRP-USD", "BNB": "BNB-USD", "ADA": "ADA-USD",
            "NEAR": "NEAR-USD", "ZEC": "ZEC-USD"}
-CATEGORIES = ["macro", "regulation", "etf", "institutional", "exchange", "security", "legal", "tech", "flows", "price", "other"]
+CATEGORIES = ["macro", "geopolitics", "regulation", "etf", "institutional", "exchange", "security", "legal", "tech", "flows",
+              "price", "other"]
+REGIONS = ["us", "canada", "latam", "uk", "europe", "russia", "ukraine", "middle_east", "africa", "india", "china", "japan",
+           "korea", "southeast_asia", "oceania", "global"]
 IMPACTS = ["high", "medium", "low"]
 BATCH = 10
 PER_ITEM_TOKENS = 320   # the answer per headline (with its story key and Spanish title): 25 at 220 were cut (2026-10-21)
@@ -28,21 +32,26 @@ PER_ITEM_TOKENS = 320   # the answer per headline (with its story key and Spanis
 SYSTEM = """You classify crypto news for a market dashboard read by traders. Each headline comes with its outlet and,
 when the feed gives one, a short summary. For each headline decide:
 - markets: the tickers it is specifically about, from BTC, ETH, SOL, XRP, BNB, ADA, NEAR, ZEC (empty if none of them).
-- broad: true if it moves the whole crypto market (US macro data, the Fed, rates, the dollar, equities, crypto-wide
-  regulation, ETF flows in general, a major exchange failing), false otherwise.
-- category: macro (Fed, rates, inflation, jobs, dollar, equities), regulation (laws, regulators, government policy),
+- broad: true if it moves the whole crypto market (US macro data, the Fed, rates, the dollar, equities, a war or
+  tariff shock, crypto-wide regulation, ETF flows in general, a major exchange failing), false otherwise.
+- category: macro (Fed, rates, inflation, jobs, dollar, equities), geopolitics (wars and military conflicts,
+  sanctions, tariffs and trade disputes, elections, political crises, government shutdowns, diplomacy), regulation
+  (laws, regulators, government policy on crypto),
   etf (ETF filings, approvals, flows), institutional (companies, banks, funds buying, selling or adopting), exchange
   (exchanges, listings, outages, insolvency), security (hacks, exploits, scams), legal (lawsuits, courts, arrests),
   tech (upgrades, forks, network news), flows (whales, on-chain flows, liquidations, derivatives positioning), price
   (a recap of a move that already happened, or someone's price prediction), other.
+- region: where the news happens or comes from: us, canada, latam, uk, europe, russia, ukraine, middle_east, africa,
+  india, china, japan, korea, southeast_asia, oceania, or global (no single place: crypto-wide, online, worldwide).
 - score: the likely effect of the NEWS on the price of those markets over the next few hours, -100 to +100. Use this
   scale and these anchors, so the same kind of news always gets the same score:
     0: no new information about supply, demand or risk: price recaps ("Bitcoin rises 3% as stocks rally": the move
        already happened), predictions ("analyst sees BTC at $150K"), explainers, opinion, routine updates.
     10 to 25: mild. A company buys $50M of BTC (+15), a minor listing, an upgrade date set (+10), a small hack under $10M
-       (-15), a routine regulatory comment.
+       (-15), a routine regulatory comment, a ceasefire agreed in a regional war (+15).
     30 to 55: meaningful. Notable ETF inflows or outflows, a corporate purchase over $500M, an exchange outage, a hack of
-       $10M to $100M (-40), a major lawsuit against a large firm, US data clearly off the forecast (hot CPI: -45).
+       $10M to $100M (-40), a major lawsuit against a large firm, US data clearly off the forecast (hot CPI: -45), new
+       US tariffs on a major economy announced (-40), a military escalation that shakes markets (-45).
     60 to 80: strong. A Fed decision that surprises (an unexpected 50 bp cut: +60), regulators approving or blocking
        major products (SEC approves the first spot SOL ETFs: SOL +70), a hack over $100M or an exchange halting
        withdrawals (-65).
@@ -71,6 +80,7 @@ TOOL = {
                 "markets": {"type": "array", "items": {"type": "string", "enum": list(MARKETS)}},
                 "broad": {"type": "boolean"},
                 "category": {"type": "string", "enum": CATEGORIES},
+                "region": {"type": "string", "enum": REGIONS},
                 "score": {"type": "integer", "minimum": -100, "maximum": 100},
                 "impact": {"type": "string", "enum": IMPACTS},
                 "confidence": {"type": "number", "minimum": 0, "maximum": 1},
@@ -78,7 +88,7 @@ TOOL = {
                 "story": {"type": "string"},
                 "es": {"type": "string"},
             },
-            "required": ["id", "markets", "broad", "category", "score", "impact", "confidence", "relevant", "story", "es"],
+            "required": ["id", "markets", "broad", "category", "region", "score", "impact", "confidence", "relevant", "story", "es"],
         }}},
         "required": ["items"],
     },
@@ -108,6 +118,7 @@ def _clean(v: dict) -> dict | None:
         return {
             "markets": [MARKETS[m] for m in dict.fromkeys(v.get("markets") or []) if m in MARKETS],
             "broad": bool(v.get("broad")), "cat": cat, "score": max(-100, min(100, score)), "impact": impact,
+            "region": v.get("region") if v.get("region") in REGIONS else "global",   # only for the map: never worth a retry
             "conf": round(max(0.0, min(1.0, float(v.get("confidence", 0)))), 2), "relevant": bool(v.get("relevant", True)),
             "story": "-".join(re.findall(r"[a-z0-9]+", str(v.get("story") or "").lower()))[:60] or None,
             "es": str(v.get("es") or "")[:300],
@@ -196,4 +207,4 @@ def from_env(env: dict) -> Haiku | None:
     return Haiku(key, env.get("SMARTFLOW_NEWS_MODEL") or MODEL) if key else None
 
 
-__all__ = ["Haiku", "from_env", "HttpError", "MODEL"]
+__all__ = ["Haiku", "from_env", "HttpError", "MODEL", "REGIONS"]

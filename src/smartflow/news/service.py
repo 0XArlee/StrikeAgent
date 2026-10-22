@@ -21,7 +21,7 @@ from .store import Store
 
 H = 3_600_000
 MARKETS = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "BNB-USD", "ADA-USD", "NEAR-USD", "ZEC-USD"]
-SHOWN = 150                 # headlines in the document (newest first, within the window)
+SHOWN_OTHER = 80            # besides every story that counts: the newest headlines that do not (recaps, unscored...)
 CLASSIFY_PER_CYCLE = 300   # steady state: a few dozen a cycle; this lets a fresh start catch up in a few cycles
 FLIP_EVERY_MS = H
 READ_EVERY_MS = H           # the scoreboard's readings: on the hour
@@ -195,7 +195,7 @@ class NewsService:
                    "z15": r.get("z15"), "z60": r.get("z60"), "rm": r.get("m")}
             if score.scored(h):
                 out.update(es=c["es"], broad=c["broad"], cat=c["cat"], score=c["score"], impact=c["impact"], conf=c["conf"],
-                           catalyst=score.catalyst(h))
+                           catalyst=score.catalyst(h), region=c.get("region") or "global")
                 g = story_of.get(h["id"])
                 if g:   # a catalyst: its story, the other outlets that told it, and its weight now
                     m = (g["markets"] or ["BTC-USD"])[0]
@@ -206,8 +206,9 @@ class NewsService:
                 out.update(es=c.get("es", ""), skip=True)   # not market news (the model said so)
             return out
 
-        # one entry per story (its best headline), then everything that is not a catalyst, newest first
-        shown, seen = [], set()
+        # one entry per story (its best headline): every story the readings count is listed, so what a page lists
+        # adds up to the reading; then the newest of what does not count; newest first
+        shown, seen, others = [], set(), 0
         for h in headlines:
             g = story_of.get(h["id"])
             if g:
@@ -215,6 +216,10 @@ class NewsService:
                     continue
                 seen.add(g["key"])
                 h = by_id[g["id"]]
+            elif others >= SHOWN_OTHER:
+                continue
+            else:
+                others += 1
             shown.append(h)
 
         notes = {m: n[1] for m in readings if (n := self.store.note(m)) and n[1].get("label") == readings[m]["label"]}
@@ -225,7 +230,7 @@ class NewsService:
             "markets": {m: {**rd, "flip": {k: v for k, v in notes[m].items() if k in ("en", "es")} if m in notes else None}
                         for m, rd in readings.items()},
             "following": score.following(headlines, now, groups),
-            "headlines": [view(h) for h in shown[:SHOWN]],
+            "headlines": [view(h) for h in shown],
             "counts": {"72h": len(headlines), "scored": sum(1 for h in headlines if score.scored(h)),
                        "catalysts": sum(len(g["members"]) for g in groups), "stories": len(groups)},
             "events": {"next": cal["next"], "just": cal["just"]},

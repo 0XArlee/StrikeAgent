@@ -8,7 +8,7 @@ from smartflow.news.classify import Haiku
 from smartflow.news.feeds import Headline, headline_id, parse, title_markets
 from smartflow.news.reaction import MIN, Prices, measure
 from smartflow.news.service import NewsService, as_of
-from smartflow.news.store import Store
+from smartflow.news.store import VERSION, Store
 
 H = 3_600_000
 NOW = 1_792_600_000_000 // MIN * MIN
@@ -157,6 +157,7 @@ def test_reading_blend_and_labels():
     assert abs(rd["net"] - round(0.6 * n72 + 0.4 * 80, 1)) < 0.05 and rd["label"] == "very_bullish"
     assert score.label(10) == "neutral" and score.label(-20) == "bearish"
     assert rd["drivers"]["up"][0]["cat"] == "macro" and rd["drivers"]["up"][0]["top"] == "a"
+    assert rd["cats"]["macro"]["push"] == rd["drivers"]["up"][0]["push"] and sum(c["n"] for c in rd["cats"].values()) == rd["n"]
 
 
 def test_whipsaw_and_alts():
@@ -313,7 +314,7 @@ def test_old_reactions_are_measured_again(tmp_path):
     s = Store(db)
     row = s.window(NOW - 72 * H)[0]
     assert row["react"] is None and row["cls"] is None and s.last_reading_t() is None   # measured and classified again
-    assert row["tier"] == 2 and row["summary"] == "" and s.db.execute("PRAGMA user_version").fetchone()[0] == 2
+    assert row["tier"] == 2 and row["summary"] == "" and s.db.execute("PRAGMA user_version").fetchone()[0] == VERSION
     s.set_react(headline_id("A headline about bitcoin"), {"done": True}); s.commit(); s.close()
     assert Store(db).window(NOW - 72 * H)[0]["react"] == {"done": True}   # only once
     sqlite3.connect(db).close()
@@ -367,3 +368,58 @@ def test_outlets_outside_the_list_are_left_out():
     s.add([Headline("a", "From a local outlet", "https://x/a", "Local Paper", "wires", NOW - H),
            Headline("b", "From Reuters", "https://x/b", "Reuters", "wires", NOW - H)], NOW, 72 * H)
     assert s.keep_outlets("wires", ["Reuters"]) == 1 and [r["source"] for r in s.window(NOW - 72 * H)] == ["Reuters"]
+
+
+def test_geopolitics_and_the_region_for_the_map():
+    def post(payload):
+        assert "geopolitics" in payload["tools"][0]["input_schema"]["properties"]["items"]["items"]["properties"]["category"]["enum"]
+        return tool_answer([
+            {"id": "a", "markets": [], "broad": True, "category": "geopolitics", "region": "china", "score": -40, "impact": "medium",
+             "confidence": 0.8, "relevant": True, "story": "us-tariffs-china", "es": "x"},
+            {"id": "b", "markets": ["BTC"], "broad": False, "category": "etf", "region": "mars", "score": 30, "impact": "medium",
+             "confidence": 0.8, "relevant": True, "story": "etf-inflows", "es": "x"},
+            {"id": "c", "markets": ["BTC"], "broad": False, "category": "etf", "score": 30, "impact": "medium",
+             "confidence": 0.8, "relevant": True, "story": "etf-flows", "es": "x"},
+        ])
+    got = Haiku("k", post=post).classify([{"id": i, "title": i, "source": "S"} for i in "abc"])
+    assert got["a"]["cat"] == "geopolitics" and got["a"]["region"] == "china"
+    assert got["b"]["region"] == "global" and got["c"]["region"] == "global"   # unknown or missing: only the map loses it
+
+
+def test_version_3_classifies_the_last_days_again_and_keeps_the_scoreboard(tmp_path):
+    import time
+    db = tmp_path / "n.db"
+    now = int(time.time() * 1000)
+    s = Store(db)
+    s.add([h("New tariffs shake markets", now - 2 * H), h("An old story about ether", now - 6 * 24 * H)], now, 14 * 24 * H)
+    s.add_reading(now - H, "BTC-USD", 20, 100)
+    s.commit()
+    s.db.execute("UPDATE items SET cls = '{\"cat\": \"macro\"}', tries = 1, story = 'x'")
+    s.db.execute("PRAGMA user_version = 2")
+    s.db.commit(); s.close()
+    s = Store(db)
+    rows = {r["title"]: r for r in s.window(now - 14 * 24 * H)}
+    assert rows["New tariffs shake markets"]["cls"] is None                     # classified again (geopolitics, region)
+    assert rows["An old story about ether"]["cls"] == {"cat": "macro"}          # out of the window: left as it was
+    assert s.last_reading_t() is not None and s.db.execute("PRAGMA user_version").fetchone()[0] == VERSION
+
+
+def test_every_story_that_counts_is_listed():
+    svc = NewsService.__new__(NewsService)
+    from smartflow.news import service as S
+    assert S.SHOWN_OTHER >= 20
+    hs = [{"id": f"s{i}", "t": NOW - i * 60_000, "title": f"story {i}", "source": "S", "url": "https://x", "hint": [], "tier": 2,
+           "cls": {"markets": ["BTC-USD"], "broad": False, "cat": "etf", "score": 30, "impact": "medium", "conf": 0.9,
+                   "relevant": True, "story": f"k{i}", "es": "x"}} for i in range(S.SHOWN_OTHER + 40)]
+    hs += [{"id": f"o{i}", "t": NOW - i * 60_000 - 30_000, "title": f"recap {i}", "source": "S", "url": "https://x", "hint": [], "tier": 2,
+            "cls": {"markets": ["BTC-USD"], "broad": False, "cat": "price", "score": 0, "impact": "low", "conf": 0.9,
+                    "relevant": True, "story": f"r{i}", "es": "x"}} for i in range(S.SHOWN_OTHER + 40)]
+    hs.sort(key=lambda h: -h["t"])
+    groups = score.stories(hs)
+    svc.store = type("St", (), {"note": lambda self, m: None, "readings": lambda self, t: []})()
+    svc.classifier, svc.classify_error, svc.feeds = None, None, {}
+    doc = svc.document(NOW, hs, {}, {"next": [], "just": []}, groups)
+    ids = {h["id"] for h in doc["headlines"]}
+    assert all(f"s{i}" in ids for i in range(S.SHOWN_OTHER + 40))                         # every story
+    assert sum(1 for i in ids if i.startswith("o")) == S.SHOWN_OTHER                        # and the newest of the rest
+    assert [h["t"] for h in doc["headlines"]] == sorted((h["t"] for h in doc["headlines"]), reverse=True)
