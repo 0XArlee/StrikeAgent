@@ -4,7 +4,7 @@ import registry from "../../config/strategies.json";
 
 export const MARKETS = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "BNB-USD", "ADA-USD", "NEAR-USD", "ZEC-USD"];
 // risk per trade of each preset, % (smartflow/live/fleet.py RISK); each strategy caps it (config/strategies.json
-// max_risk: Smart Flow Pyramid stacks up to 3 entries per market and goes up to the standard preset, docs/08)
+// max_risk: Smart Flow Pyramid stacks up to 3 entries per market and goes up to the standard preset, docs/OPERATIONS.md)
 export const RISK: Record<string, number> = { conservative: 0.5, standard: 1.0, assertive: 2.0 };
 /** Whether this risk preset is allowed with this strategy. */
 export const riskAllowed = (strategy: string, risk: string) => (RISK[risk] ?? Infinity) <= RISK[STRATEGIES[strategyOf(strategy)].maxRisk];

@@ -1,5 +1,5 @@
 # Smart Flow -> the News Tower's data: headlines from public feeds, scored by Claude Haiku (if /etc/smartflow/news.env has
-# ANTHROPIC_API_KEY; root:smartflow 0640, written from the operator's PC, docs/08), reactions measured on Strike's public
+# ANTHROPIC_API_KEY; root:smartflow 0640, written from the operator's PC, docs/OPERATIONS.md), reactions measured on Strike's public
 # prices. Writes /var/lib/smartflow/news/news.json, which the push services send to the sites. Never reads or touches
 # the agents. Outbound HTTPS only. Install: deploy/install_ct.sh
 [Unit]

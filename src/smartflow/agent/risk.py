@@ -171,7 +171,7 @@ class RiskEngine:
         # the lowest leverage whose initial margin fits in 90 % of the available balance, up to the cap. On Strike's
         # cross margin the leverage only sets the initial margin (notional / leverage); maintenance margin and so the
         # liquidation depend on the notional, which the stop already sizes. The lowest one (1x) would leave no room
-        # for a second or third position at 1-2 % risk and skip trades the strategy takes (docs/08 "Niveles de riesgo")
+        # for a second or third position at 1-2 % risk and skip trades the strategy takes (docs/STRATEGY.md "Risk levels")
         low = max(1, math.ceil(notional / a.equity))
         leverage = next((float(x) for x in range(low, int(lev_cap) + 1) if notional / x <= a.available * 0.9), None)
         if leverage is None:

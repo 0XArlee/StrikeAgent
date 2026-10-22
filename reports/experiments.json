@@ -341,7 +341,7 @@
     "maxDD equity": "50.1%"
    }
   ],
-  "verdict": "Ver tablas y puntos de equilibrio; interpretación en docs/05_informe_cuantitativo.md."
+  "verdict": "Ver tablas y puntos de equilibrio; interpretación en docs/STRATEGY.md."
  },
  "E3": {
   "title": "Estabilidad temporal: desarrollo / validación / test",
@@ -444,7 +444,7 @@
     "por activo": "BTC +1.54 (14)  ETH +1.31 (18)  SOL -0.55 (15)"
    }
   ],
-  "verdict": "Ver tabla; interpretación en docs/05_informe_cuantitativo.md."
+  "verdict": "Ver tabla; interpretación en docs/STRATEGY.md."
  },
  "E4": {
   "title": "Por año y por régimen",

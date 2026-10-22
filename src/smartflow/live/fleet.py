@@ -38,7 +38,7 @@ TRANSFERS_KEPT = 500
 FLOWS_V = 2   # how account.json keeps its transfers: an older file has its "base" marks worked out again
 WEB_AUDIT_EVERY_S = 60      # the site's record of what owners signed, copied here every minute
 # risk per trade of each preset (web/server/util.ts RISK); each strategy caps it (config/strategies.json max_risk:
-# Smart Flow Pyramid stacks up to 3 entries per market and goes up to the standard preset, docs/08 "Niveles de riesgo")
+# Smart Flow Pyramid stacks up to 3 entries per market and goes up to the standard preset, docs/STRATEGY.md "Risk levels")
 RISK = {"conservative": 0.005, "standard": 0.01, "assertive": 0.02}
 DEFAULT_RISK = "standard"
 

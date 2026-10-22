@@ -99,6 +99,6 @@ class Params:
 
 
 # The official Smart Flow configuration every user's agent runs, in both strategies (Edgar, 2026-10-20): the script's
-# parameters plus the wide-range filter and a 4 ATR chandelier stop on the exchange (docs/10_estudio_salidas_y_stops.md).
+# parameters plus the wide-range filter and a 4 ATR chandelier stop on the exchange (docs/STRATEGY.md).
 OFFICIAL = Params(range_filter=True, chand_atr=4.0)
 

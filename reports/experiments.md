@@ -64,7 +64,7 @@ Punto de equilibrio 60: ≈ 7 bps por fill.
 
 Punto de equilibrio 240: ≈ 69 bps por fill.
 
-**Veredicto:** Ver tablas y puntos de equilibrio; interpretación en docs/05_informe_cuantitativo.md.
+**Veredicto:** Ver tablas y puntos de equilibrio; interpretación en docs/STRATEGY.md.
 
 
 ## E3 — Estabilidad temporal: desarrollo / validación / test
@@ -82,7 +82,7 @@ Punto de equilibrio 240: ≈ 69 bps por fill.
 | 240 test | 96 | +0.680 | [-0.07, +1.59] | 1.6 | 28% | 1.96 | +65 | 22 | BTC +0.93 (30)  ETH +1.10 (35)  SOL -0.04 (31) |
 | 240 strike | 47 | +0.784 | [-0.53, +2.46] | 1.0 | 21% | 1.97 | +37 | 18 | BTC +1.54 (14)  ETH +1.31 (18)  SOL -0.55 (15) |
 
-**Veredicto:** Ver tabla; interpretación en docs/05_informe_cuantitativo.md.
+**Veredicto:** Ver tabla; interpretación en docs/STRATEGY.md.
 
 
 ## E4 — Por año y por régimen

@@ -1,12 +1,12 @@
 """Smart Flow public API, read-only: ``/api/health``, ``/api/info``, ``/api/city`` and ``/api/news`` (the News Tower's
 news.json, when given).
 
-Standard library only (``http.server``). It serves small JSON documents built from local files and holds no keys, so
-it can run next to the paper agents. TLS and the public hostname come from a reverse proxy or a named Cloudflare
-Tunnel in front of it.
+Standard library only (``http.server``). It serves small JSON documents built from local files, reads no keys and
+cannot place orders. The public site (Cloudflare Pages, ``web/``) gets the same data from ``smartflow push``; this
+server is for local development (``npm run preview`` against a host on the same network).
 
-Wallet onboarding (``/api/connect/*``, ``/api/me``, ``/api/action*``) answers 501 until the Smart Flow builder code is
-registered on Strike (docs/03): the page shows that error instead of pretending the account was linked.
+Wallet onboarding (``/api/connect/*``, ``/api/me``, ``/api/action*``) lives on the site: here it answers 501 so a page
+pointed at this server shows that error instead of pretending an account was linked.
 """
 
 from __future__ import annotations
@@ -120,8 +120,7 @@ def make_handler(cache: CityCache, raw: dict, allow_origin: str = "*", news: Pat
                 self._send(405 if urlparse(self.path).path.startswith("/api/") else 404, {"error": "method not allowed"})
 
         def _not_enabled(self):
-            self._send(501, {"error": "Wallet onboarding is not enabled yet: the Smart Flow builder code is pending "
-                                      "registration on Strike."})
+            self._send(501, {"error": "Wallet onboarding runs on the Strike City site, not on this local API."})
 
     return Handler
 

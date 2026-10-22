@@ -46,3 +46,7 @@ strike-api-key*.json
 
 # third-party art packs (LimeZu): licensed for use, not for redistribution; only the pieces we use go in the web
 art/limezu/
+
+# the operator's working notes and task log (Spanish), kept on the development PC only
+notes-es/
+tasks/

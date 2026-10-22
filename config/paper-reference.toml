@@ -14,7 +14,7 @@ paper_equity = 10000.0
 
 strategy = "smartflow"   # config/strategies.json: this is its official paper agent
 [params]
-# the official Smart Flow configuration (core.config.OFFICIAL, docs/10)
+# the official Smart Flow configuration (core.config.OFFICIAL, docs/STRATEGY.md)
 range_filter = true
 chand_atr = 4.0
 

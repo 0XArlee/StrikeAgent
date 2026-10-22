@@ -4,7 +4,7 @@
 name = "smartflow-4h"
 mode = "analysis"          # analysis | simulation (paper) | confirmation (asks before each order) | autonomous
 env = "testnet"            # testnet | mainnet
-tf = "240"                 # 4h: the only timeframe with a statistically significant measured edge (see docs/05)
+tf = "240"                 # 4h: the only timeframe with a statistically significant measured edge (see docs/STRATEGY.md)
 
 # Strike market -> Binance spot signal feed
 markets = [
@@ -13,7 +13,7 @@ markets = [
 ]
 
 builder_code = ""          # from app.strikefinance.org/builder-codes once registered
-builder_fee_bps = 0        # Smart Flow fee: 20 (docs/03); above ~20 the 4h edge stops being significant
+builder_fee_bps = 0        # Smart Flow fee: 20 (docs/STRATEGY.md); above ~20 the 4h edge stops being significant
 paper_equity = 10000.0
 max_entry_slippage_bps = 20.0
 

@@ -107,21 +107,21 @@ def cmd_analyze(a) -> int:
         from .net import get_json
         spot = float(get_json("https://api.binance.com/api/v3/ticker/price", {"symbol": m.signal})["price"])
         basis = (q.mark / spot - 1) * 1e4
-        trend = {1: "alcista", -1: "bajista", 0: "sin tendencia", None: "desconocido"}[st.htf_trend]
-        print(f"\n== {m.strike} (señal: Binance {m.signal} {a.tf}) · última vela cerrada {t} UTC · close {st.close:g}")
-        print(f"   Strike mark {q.mark:g} (vs Binance spot ahora {spot:g}: {basis:+.1f} bps) · bid/ask {q.bid:g}/{q.ask:g} · funding/h {q.funding_rate:+.6f}")
+        trend = {1: "bullish", -1: "bearish", 0: "no trend", None: "unknown"}[st.htf_trend]
+        print(f"\n== {m.strike} (signal: Binance {m.signal} {a.tf}) · last closed candle {t} UTC · close {st.close:g}")
+        print(f"   Strike mark {q.mark:g} (vs Binance spot now {spot:g}: {basis:+.1f} bps) · bid/ask {q.bid:g}/{q.ask:g} · funding/h {q.funding_rate:+.6f}")
         print(f"   ATR {st.atr:.4g} ({100 * st.atr / st.close:.2f}%) · vol x{st.rel_vol:.2f} · money flow {st.flow:+.0f} · "
-              f"HTF {m.runner.htf} {trend} · EMAs {'alcistas' if st.ema_trend == 1 else 'bajistas' if st.ema_trend == -1 else 'planas'}")
+              f"HTF {m.runner.htf} {trend} · EMAs {'rising' if st.ema_trend == 1 else 'falling' if st.ema_trend == -1 else 'flat'}")
         if st.sig_dir:
             stop = st.close - st.sig_dir * p.stop_atr * st.atr
-            print(f"   >>> SEÑAL {'COMPRA' if st.sig_dir == 1 else 'VENTA'}: entrada ~{st.close:g}, stop {stop:g} "
-                  f"(1R = {100 * p.stop_atr * st.atr / st.close:.2f}% del precio), salida: cierre más allá del canal de {p.chan_n} velas")
+            print(f"   >>> SIGNAL {'BUY' if st.sig_dir == 1 else 'SELL'}: entry ~{st.close:g}, stop {stop:g} "
+                  f"(1R = {100 * p.stop_atr * st.atr / st.close:.2f}% of the price), exit: a close back through the {p.chan_n}-candle channel")
         else:
-            print("   Sin señal: " + "; ".join(st.why_no_signal(p)))
-        print(f"   Para comprar la próxima vela necesitaría cerrar > {m.runner.engine._prev['hi_n']:g} "
-              f"(máximo de {p.look_n} velas) con rango ≥ {p.range_min:g} ATR, cuerpo ≥ {100 * p.body_min:.0f}% y "
-              f"volumen ≥ x{p.vol_min:g}; venta: cerrar < {m.runner.engine._prev['lo_n']:g}.")
-    print("\n(Análisis informativo: no es una recomendación ni una promesa de resultado; ver docs/05.)")
+            print("   No signal: " + "; ".join(st.why_no_signal(p)))
+        print(f"   To buy, the next candle would need to close > {m.runner.engine._prev['hi_n']:g} "
+              f"(the {p.look_n}-candle high) with a range ≥ {p.range_min:g} ATR, a body ≥ {100 * p.body_min:.0f}% and "
+              f"volume ≥ x{p.vol_min:g}; to sell: close < {m.runner.engine._prev['lo_n']:g}.")
+    print("\n(For information only: not a recommendation nor a promise of results; see docs/STRATEGY.md.)")
     return 0
 
 

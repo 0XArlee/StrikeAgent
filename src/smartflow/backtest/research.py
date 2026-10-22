@@ -125,7 +125,7 @@ def run(root: Path, out_dir: Path, quick: bool = False, log=print) -> Report:
             prev = (b, s.avg_r)
         rep.table(["config", "n", "R/op neto", "IC95", "coste builder R/op", "CAGR (0,5% riesgo/op)", "maxDD equity"], rows)
         rep.text(f"Punto de equilibrio {tf}: ≈ {be:.0f} bps por fill." if be else f"{tf}: sin punto de equilibrio en el rango.")
-    rep.verdict("Ver tablas y puntos de equilibrio; interpretación en docs/05_informe_cuantitativo.md.")
+    rep.verdict("Ver tablas y puntos de equilibrio; interpretación en docs/STRATEGY.md.")
     log(f"E2 done {time.time() - t0:.0f}s")
 
     # ---------------------------------------------------------------- E3
@@ -138,7 +138,7 @@ def run(root: Path, out_dir: Path, quick: bool = False, log=print) -> Report:
             r = srow(f"{tf} {w}", s) + ["  ".join(f"{k[:3]} {v.avg_r:+.2f} ({v.n})" for k, v in per.items())]
             rows.append(r)
     rep.table(SHDR + ["por activo"], rows)
-    rep.verdict("Ver tabla; interpretación en docs/05_informe_cuantitativo.md.")
+    rep.verdict("Ver tabla; interpretación en docs/STRATEGY.md.")
     log(f"E3 done {time.time() - t0:.0f}s")
 
     # ---------------------------------------------------------------- E4

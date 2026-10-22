@@ -1,76 +1,125 @@
-# Smart Flow Agent (EdgeCraft) — PRIVADO
+# EdgeCraft-StrikeCity
 
-Agente de trading para **Strike Finance** basado en el indicador propietario *Smart Flow Signals [EdgeCraft]*
-(`SmartFlowSignals.txt`, referencia inmutable, no publicar). Código propietario: este repositorio no debe ser público.
+**A living city where trading agents and Strike's copy traders walk the streets, driven by real data from Strike Finance.**
+Create an agent with your Cardano wallet, connect it to your own Strike account with Strike's builder code, watch it
+work in the city, and let it copy the best traders on Strike for you, with every rule signed by your wallet.
 
-## Estado (2026-10-19)
+- **Live:** https://edgecraft-strikecity.pages.dev (Strike mainnet) · **Staging:** https://qa.edgecraft-strikecity.pages.dev (Strike testnet)
+- **Built for:** the Strike Hackathon (October 2026)
+- **Built by:** EdgeCraft
 
-| Fase | Estado |
+---
+
+## What it is
+
+| | |
 |---|---|
-| 0 Investigación | ✅ `docs/00-07` |
-| 1 Motor de señales | ✅ traducción completa + 58 tests · ✅ verificada contra re-traducción en PyneCore: 4h idéntico (6.000 velas, 123 señales) |
-| 2 Datos y backtest | ✅ Binance 2020-09 → hoy (8 activos) · simulador realista · experimentos E1-E9 (`reports/`) |
-| 3 Adaptador Strike | ✅ firma y lecturas autenticadas verificadas en testnet · ✅ mecánica de órdenes sin fills verificada en testnet · ⏳ ciclo con fill (testnet tiene libros rotos) |
-| 4 Riesgo y paper | ✅ motor de riesgo, ciclo de vida, journal, paper trading sobre el libro real de Strike · ⏳ 4 agentes paper 24/7 en the agents' host (referencia + 3 variantes de prueba) |
-| 5 Monetización | ⛔ requiere registro de builder (tú) — **no verificada** |
-| 6 Publicación | ⛔ no hay marketplace de agentes documentado (`docs/07`) |
-| 7 Web | ✅ **https://edgecraft-strikecity.pages.dev** (Cloudflare): Strike City con los agentes oficiales en papel y los de los usuarios · ✅ alta con wallet de Cardano → agente real en su cuenta de Strike (builder code, abierto a todos desde 2026-10-20) |
-| 8 Operación | ✅ (2026-10-21) cuenta vacía y depósitos tratados aparte del resultado · vigilancia del CT y externa (GitHub) · salud de cada estrategia frente al backtest con pausa de seguridad · secretos del PC cifrados · repositorio privado (`docs/08`) |
+| **Smart Flow agents** | Autonomous trading agents that run the Smart Flow strategy (trend breakouts with volume, 4h) on the user's own Strike account. The user signs one message with their wallet; Strike authorises an API wallet for the agent under our builder code. The agent's private key never leaves our host; Strike locks any withdrawal to the user's own wallet, and our agents never request one. |
+| **EdgeCraft-StrikeCity** | A pixel-art city (96 × 64 tiles) where every agent and every copied trader is a character. Nobody moves for show: a candle close sends an agent to the Signal Lab, an order to the Strike Exchange, a risk check to the Risk Office, a stop to Liquidation Alley, an open position to that market's tower. |
+| **Copy Arena** | Strike's copy trading, made visible: the traders people copy on Strike walk the city with the people copying them behind them. A leaderboard ranks them with the **Strike City score**, which is weighted on what real copies made and re-tested every hour against every copy Strike has published. |
+| **Copy with your agent** | Sign a copy plan with your wallet (a trader, or "my agent chooses" with your rules: minimum score, platforms, review period, amount, stop-loss, leverage, excluded markets, end date) and your agent runs it on Strike's own copy trading, in a managed sub-account that Strike funds from your account, with Strike enforcing the stop-loss. |
+| **News Tower** | A six-floor building with the news that moves crypto: headlines from official and tier-one sources, scored by a model, de-duplicated by story, and checked against Strike's mark price after publication. When a market's reading changes level, the agents trading it walk over to read it (they never trade on news). |
 
-**Resultado cuantitativo clave** (`docs/05`): con ejecución realista, **4h** tiene ventaja estadísticamente
-significativa (≈ +0,54 R/operación, IC95 > 0); **1h no** es significativo; **1D** tiene muy pocas operaciones. Una
-builder fee del **1 % hace perder al usuario**. **Fee elegida: 20 bps por ejecución** (2026-10-19): en 4h quedan +0,38 R/op
-(IC95 [+0,02, +0,78]); por encima de ~20 bps la ventaja deja de ser estadísticamente significativa (`docs/03`).
+## How it uses Strike
 
-## Uso rápido (PowerShell, dentro de esta carpeta)
+Every part of the product reads or writes Strike. In short (the full list of endpoints is in
+[docs/STRIKE_INTEGRATION.md](docs/STRIKE_INTEGRATION.md)):
 
-```powershell
-uv venv .venv; uv pip install -e ".[dev]"            # una vez
-.venv\Scripts\python -m pytest                        # tests
-.venv\Scripts\smartflow data                          # descarga/actualiza Binance
-.venv\Scripts\smartflow backtest --tf 240             # backtest realista 4h BTC/ETH/SOL
-.venv\Scripts\smartflow backtest --tf 240 --builder-bps 10
-.venv\Scripts\smartflow research                      # todos los experimentos -> reports/
-.venv\Scripts\smartflow analyze --tf 240              # estado actual explicado (sin órdenes)
-.venv\Scripts\smartflow strike-check --env mainnet    # conformidad de la API pública
-.venv\Scripts\smartflow keys testnet                  # genera API wallet local (ver docs/CONECTAR_WALLET.md)
-.venv\Scripts\python -m smartflow.strike.keys import <archivo.json> testnet   # importa una clave descargada de Strike
-.venv\Scripts\smartflow auth-check --env testnet      # lecturas firmadas (no envía órdenes)
-copy config\agent.example.toml config\agent.toml
-.venv\Scripts\smartflow agent run --config config\agent.toml           # modo del archivo (por defecto: análisis)
-.venv\Scripts\smartflow agent approve <trade_id> --config config\agent.toml   # modo confirmación
-.venv\Scripts\smartflow verify-tv export.csv --tf 60  # fidelidad vs TradingView
-.venv\Scripts\smartflow api --city config\city.toml   # API de solo lectura para Strike City (:8787)
-.venv\Scripts\smartflow secrets status                # secrets/ cifrados con DPAPI (lock: cifrar los que estén en claro)
-.venv\Scripts\smartflow site-check                    # ¿recibe la web de producción los datos de los agentes?
+- **Builder connect and builder code** (`SmartFlowAgent-EdgeCraft`, 0.20 % per execution): the onboarding asks Strike for
+  the message to sign, the user's wallet signs it, and the site checks that Strike authorised exactly our API wallet,
+  builder code and fee before anything is saved.
+- **Trading** with the official v2 REST API: markets, order book, orders with a protective stop attached, positions,
+  fills, funding and account history, leverage, all signed with Ed25519 API-wallet keys.
+- **Copy trading**: discover, leaderboard, lead traders, subscriptions (create, update, stop), managed sub-accounts, and
+  the copy-trading dashboard series.
+- **Market data in the city**: live prices, the order book on the Exchange's big screen, funding on the fountain, the
+  mark price behind every news reaction.
+
+## Architecture at a glance
+
+```
+ Browser (React + Vite, canvas city)
+        │  HTTPS
+ Cloudflare Pages + Functions + D1  ── the site, the API, sessions, signed plans, the public snapshots
+        ▲  HMAC-signed push/pull (no open ports at home)
+        │
+ Agents' host (Linux container, Python 3.13, systemd)
+   paper agents · users' agent fleet (testnet / mainnet) · copy collector · copy pilot (testnet / mainnet)
+   news service · push · watchdog · strategy health · daily backups
+        │  signed requests (API-wallet keys, encrypted at rest)
+        ▼
+ Strike Finance API (mainnet / testnet)   + Binance candles (signal feed) + Hyperliquid (copied traders' positions)
 ```
 
-En el CT (como `smartflow`): `smartflow health` (estrategias frente al backtest; `--release <estrategia>` levanta la
-pausa de seguridad), `smartflow watchdog`, `smartflow alert-test` (ver `docs/08` "Vigilancia y alertas").
+Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-Web (`web/`, Node 20):
+## Security in one paragraph
 
-```powershell
-cd web; npm install; npm run build; npm run preview      # http://localhost:4173  ·  ciudad: /#/city
-$env:SMARTFLOW_API="http://HOST:8787"; npm run preview   # la ciudad con los agentes reales del host (LAN, tras abrir 8787)
-npm run deploy:cf                                         # publica en https://edgecraft-strikecity.pages.dev (ver docs/08)
-# verificación real en navegador (Playwright + axe-core): scripts/verify_ui.py (alta simulada), scripts/verify_city.py,
-# scripts/verify_city_live.py y scripts/verify_onboarding_live.py (contra la URL pública)
+Users sign every change with their Cardano wallet (CIP-30, verified server-side: the key must hash to the address). A
+copy plan is signed in plain words, once, and is versioned. API-wallet private keys are generated on our host, stored
+encrypted and never sent anywhere; the site only knows public keys. The host and the site talk over HMAC-signed requests
+with a two-minute window. Agents never request withdrawals (Strike locks them to the user's own wallet anyway), Strike enforces copy stop-losses, and every decision, request
+and signature is kept in tamper-evident, hash-chained logs anchored on the site. Review and findings:
+[docs/SECURITY.md](docs/SECURITY.md).
+
+## Documentation
+
+| Document | What it covers |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components, data flows, the agent engine, design decisions |
+| [docs/STRIKE_INTEGRATION.md](docs/STRIKE_INTEGRATION.md) | Every Strike endpoint used, and what for |
+| [docs/CITY.md](docs/CITY.md) | EdgeCraft-StrikeCity: buildings, what moves each character, accessibility |
+| [docs/STRATEGY.md](docs/STRATEGY.md) | Smart Flow, the research behind it, risk levels, the builder fee, the Strike City score |
+| [docs/SECURITY.md](docs/SECURITY.md) | Threat model, controls, the security review and its findings |
+| [docs/OPERATIONS.md](docs/OPERATIONS.md) | Environments, deployment, switches, monitoring, audit trail, runbook |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | The future: product roadmap and how it scales |
+
+## Run it locally
+
+Python (agents, research, host services), from the repository root:
+
+```bash
+uv venv .venv && uv pip install -e ".[dev]"
+.venv/Scripts/python -m pytest                 # the test suite
+.venv/Scripts/smartflow data                    # download candles
+.venv/Scripts/smartflow backtest --tf 240       # realistic 4h backtest, BTC/ETH/SOL
+.venv/Scripts/smartflow analyze --tf 240        # what the strategy sees right now (no orders)
+.venv/Scripts/smartflow strike-check --env mainnet
 ```
 
-Modos del agente: `analysis` (solo explica) · `simulation` (paper sobre el libro real de Strike) · `confirmation`
-(propone y espera tu `approve`) · `autonomous` (requiere `allow_autonomous = true` **y**
-`SMARTFLOW_LIVE_ACK="I ACCEPT REAL ORDERS"`; mainnet además `allow_mainnet = true`). Kill switch: crear el archivo
-`KILL_SWITCH` en la carpeta o `SMARTFLOW_KILL=1`.
+Web (Node 20), from `web/`:
 
-## Documentación
+```bash
+npm install
+npm run build && npm run preview                # http://localhost:4173, the city at /#/city
+npm run build:cf                                # the Cloudflare build (site + Functions)
+```
 
-`docs/00` prompt v2 · `01` fuentes · `02` especificación y auditoría del indicador · `03` builder codes y
-monetización · `04` capacidades de Strike · `05` informe cuantitativo · `06` arquitectura · `07` riesgos y preguntas
-para Strike · `08` runbook · `09` referencia Midnight City e implementación de Strike City · `CONECTAR_WALLET.md`. Tareas y lecciones: `tasks/`.
+Real-browser checks (Playwright + axe-core) live in `web/scripts/`: `verify_city.py`, `verify_city_ui.py` (every
+surface and button of the city, in English and Spanish), `verify_city_live.py`, `verify_onboarding_live.py` and
+`verify_copy_live.py` (these two create and delete a test agent: staging only).
 
-## Procedencia de componentes
+## Repository map
 
-Todo el código es propio. Semántica Pine contrastada con PyneCore (Apache-2.0, solo lectura); API según la doc
-oficial de Strike (instantánea en `docs/sources/`); los repos oficiales de Strike se leyeron pero no se copió código
-(`strike-builder-reference` no tiene licencia). Datos: API pública de Binance.
+```
+src/smartflow/     Python: core (signal engine), agent (runner, risk, execution, journal), strike (API client, auth,
+                   keys), live (fleet, health, watchdog), copytrade (collector, score, copy pilot), news, api, backtest
+web/src/           The site: landing, onboarding, My agent, the city (engine, agents, buildings, views)
+web/server/        Cloudflare Functions: sessions, CIP-30, builder connect, copy plans, host endpoints
+web/functions/     Thin route files for Pages Functions
+web/migrations/    D1 schema
+config/            Strategies registry, paper agents, city, news sources, macro calendar
+deploy/            systemd units and install scripts for the agents' host
+tests/             pytest suite
+reports/           Research outputs (backtests, event and exit studies)
+```
+
+## Credits
+
+- City and character art: **LimeZu**, Modern Exteriors and Modern Interiors (https://limezu.itch.io), licensed for
+  commercial use; only composed images are published, never the packs.
+- Strike Finance API and documentation (https://docs.strikefinance.org). Hyperliquid public API for copied
+  traders' positions. Binance public market data for signal candles.
+- The Smart Flow indicator is EdgeCraft's own and is not included in this repository.
+
+This repository is private and proprietary to EdgeCraft.

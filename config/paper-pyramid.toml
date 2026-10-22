@@ -18,7 +18,7 @@ max_stack = 3
 
 strategy = "pyramid"   # config/strategies.json: this is its official paper agent
 [params]
-# the official Smart Flow configuration (core.config.OFFICIAL, docs/10)
+# the official Smart Flow configuration (core.config.OFFICIAL, docs/STRATEGY.md)
 range_filter = true
 chand_atr = 4.0
 

@@ -13,7 +13,7 @@ builder_fee_bps = 20   # the Smart Flow fee (Edgar, 2026-10-19)
 paper_equity = 10000.0
 
 [params]
-range_filter = true   # experimental: wide-range filter (docs/05)
+range_filter = true   # experimental: wide-range filter (docs/STRATEGY.md)
 
 [risk]
 risk_per_trade = 0.005

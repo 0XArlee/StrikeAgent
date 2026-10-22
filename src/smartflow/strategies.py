@@ -3,7 +3,7 @@
 The agents' host reads it here (the fleet builds each user's agent from the entry of the strategy they picked, the
 health check and the safety hold follow each strategy's official paper agent, the figures generator writes
 ``config/figures/<id>.json``); the site imports the same file (web/src/strategies.ts, web/server/util.ts). Adding a
-strategy is adding an entry, its paper agent and its figures: docs/08 "Estrategias (registro)".
+strategy is adding an entry, its paper agent and its figures: docs/OPERATIONS.md "Strategies (registry)".
 
 ``engine`` names the signal engine the agent runs; today the agent runs ``smartflow`` only, so a strategy is a
 configuration of it (parameters, how positions stack, markets, risk cap). An entry with another engine is refused

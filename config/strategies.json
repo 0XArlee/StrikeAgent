@@ -1,5 +1,5 @@
 {
- "_doc": "The strategies users can pick. One entry per strategy: the site (catalog, sign-up, checks, city), the agents' host (fleet, health, paper agents) and the figures generator all read this file. Add a strategy: docs/08 'Estrategias (registro)'. Engine 'smartflow' is the only one the agent runs today.",
+ "_doc": "The strategies users can pick. One entry per strategy: the site (catalog, sign-up, checks, city), the agents' host (fleet, health, paper agents) and the figures generator all read this file. Add a strategy: docs/OPERATIONS.md 'Estrategias (registro)'. Engine 'smartflow' is the only one the agent runs today.",
  "version": 1,
  "default": "smartflow",
  "strategies": [

@@ -1,5 +1,5 @@
 # EdgeCraft-StrikeCity on Cloudflare Pages (project edgecraft-strikecity, https://edgecraft-strikecity.pages.dev): the static web (dist) + Pages Functions (functions/, code in server/) + D1.
-# Deploy: npm run build:cf && npx wrangler pages deploy (see docs/08). Secrets: PUSH_SECRET, SESSION_SECRET.
+# Deploy: npm run build:cf && npx wrangler pages deploy (see docs/OPERATIONS.md). Secrets: PUSH_SECRET, SESSION_SECRET.
 name = "edgecraft-strikecity"
 pages_build_output_dir = "./dist"
 compatibility_date = "2026-04-01"

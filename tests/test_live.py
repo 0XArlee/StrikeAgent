@@ -256,7 +256,7 @@ def test_fleet_reads_the_account_every_minute_and_right_after_the_agent_acts(tmp
 
 def test_risk_presets_and_the_pyramid_cap():
     """0.5 / 1 / 2 % per trade (standard by default); Smart Flow Pyramid never above the standard preset, whatever the
-    site sent (docs/08 "Niveles de riesgo")."""
+    site sent (docs/STRATEGY.md "Risk levels")."""
     from smartflow.live.fleet import DEFAULT_RISK, RISK, agent_config, risk_for
     assert RISK == {"conservative": 0.005, "standard": 0.01, "assertive": 0.02} and DEFAULT_RISK == "standard"
     assert risk_for({"risk": "assertive"}) == 0.02 and risk_for({}) == 0.01

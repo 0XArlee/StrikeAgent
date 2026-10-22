@@ -1,0 +1,73 @@
+# EdgeCraft-StrikeCity
+
+The city is the product's interface: a place where you can see, at a glance, what every agent is doing on Strike, who
+is being copied and how it is going, and what the news says, all from live data. Its one rule: **nothing moves for
+show.** A character walks because something real happened.
+
+Open it at https://edgecraft-strikecity.pages.dev/#/city.
+
+## Who walks the streets
+
+| Character | Source | Where it goes and why |
+|---|---|---|
+| Official Smart Flow agents | the paper agents on the host, trading on Strike's real order book | see the buildings below |
+| Users' agents | each user's agent on their own Strike account | the same rules; the public sees shares, the owner sees amounts |
+| Strike's copy traders ("leads", pink ring and ★ score) | Strike's copy trading (and Hyperliquid traders copied through Strike) | to the tower of the market of their biggest open position; to the Exchange for 75 s when they open, close, flip or resize on Strike; to the Copy Arena's door while they hold nothing |
+| The people copying a lead right now | Strike's copy leaderboard | walk behind their lead, in a line |
+| An agent copying a lead for its owner | the owner's signed copy plan, as the host reports it | stands with that lead |
+
+## What each building means
+
+| Building | An agent goes there when |
+|---|---|
+| Signal Lab | a candle closes and it analyses its markets |
+| BTC / ETH / SOL towers, Alt Row | it holds a position in that market |
+| Strike Exchange | it sends an order or a signal fires |
+| Risk Office | the risk engine checks or refuses a signal |
+| Liquidation Alley | a trade closed at its stop |
+| Funding Cafe | a trade closed by its exit rule |
+| News Tower | the news reading of a market it trades changes level (very bullish … very bearish); it reads it, never trades on it |
+| Copy Arena | the leads with nothing open wait at its door, with the agents copying them |
+| Agent Homes | it is paused, stopped, or waiting for a first deposit |
+| Plaza | it is waiting for its next setup (with short "shifts" at its trade's building) |
+
+Each agent also has a **personality** (its voice in its card) and a **trade** (chartist, reporter, tape reader, risk
+keeper): during its shifts its bubble shows the real data its trade reads there (last candle's range and volume, the
+news reading, the day's move, its day in R). The personality never changes how it trades.
+
+## Live data drawn on the map
+
+- **Market towers**: Strike's price and 24h change on each tower's sign.
+- **Strike Exchange**: a large screen with Strike's live BTC order book.
+- **The fountain**: its colour follows BTC funding on Strike (who pays whom).
+- **News Tower facade**: an LED marquee with the latest catalysts.
+- **Weather**: calm, breezy or stormy with BTC's 24h move.
+- **Top bar**: agents online, agents in a trade, the news reading and the next US macro release.
+
+## Going inside
+
+- **News Tower** (six floors: Newsroom, Fed and macro, Geopolitics, Regulation and courts, Money and flows, Security and
+  exchanges). Your agent runs to the door, goes in, takes the lift to whatever you choose and reads it with you. Every
+  screen inside is live: each market's reading and what pushes it up or down, the wire, the scoreboard of past readings,
+  a world table with pins by region, the calendar.
+- **Copy Arena**: the leaderboard on an LED wall, the three best on a podium, the copiers' wall (the copies that went
+  best) and Strike's copy-trading totals. From any trader: their profile, "Copy on Strike", and "Copy with my agent".
+
+Without an agent of your own you go in as a visitor.
+
+## The dock
+
+Map · Agents (every agent and every Strike trader in the city, with filters and search) · Ranks (agents and the best
+traders to copy) · Feed (what just happened) · Markets · Guide (what everything means, a legend, the roadmap) · My agent
+· Suggest (feedback with an optional screenshot).
+
+## Accessibility and quality
+
+- Every surface is checked against WCAG 2.2 AA with axe-core in a real browser, in English and Spanish, at desktop and
+  phone widths (`web/scripts/verify_city_ui.py` walks every panel and button: 244 checks per language).
+- The map has a text description, keyboard control (arrows, + and −, Escape) and a "follow" mode; dialogs trap focus
+  and restore it; status updates are announced.
+- Reduced motion is honoured: characters jump to where they are going and nothing pulses.
+- When you are inside a building or in "My agent", the city stops drawing in your browser (the agents keep trading).
+- Art: LimeZu's Modern Exteriors and Modern Interiors, composed by `web/scripts/build_city.py` and `build_tower.py`
+  into the images the site serves.

@@ -13,7 +13,7 @@ Sources (all append-only, hash-chained, smartflow.audit):
                                      starts and stops, and what the fleet did with it ("host")
   runs/live-<uid>/fills.jsonl        every fill of the Strike account (the agent's and anyone else's)
   runs/live-<uid>/account.jsonl      every change of the account's balance, positions and orders
-The report is in Spanish: it is read by the operator (docs/08).
+The report is in Spanish: it is read by the operator (docs/OPERATIONS.md).
 """
 
 from __future__ import annotations

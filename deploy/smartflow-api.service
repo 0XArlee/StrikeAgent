@@ -1,5 +1,5 @@
 # Smart Flow public API, read-only: Strike City feed (/api/city) built from the paper agents' journals.
-# No keys on this host and nothing here can place an order. Install: deploy/install_ct.sh
+# It reads no keys and cannot place orders (local development; the public site is fed by smartflow-push). Install: deploy/install_ct.sh
 [Unit]
 Description=Smart Flow API (read-only, Strike City feed on :8787)
 After=network-online.target
