@@ -933,7 +933,8 @@ function jobLabel(a: AgentView, doc: ReturnType<typeof useNews>, prices: Prices,
   switch (job) {
     case "chartist": {
       const c = a.real?.checks?.[m]?.args as Record<string, unknown> | undefined;
-      return c && c.range != null ? `${tk} ${f(c.range, 2)} ATR${c.vol != null ? ` · vol ×${f(c.vol, 2)}` : ""}` : null;
+      const parts = c ? [c.range != null ? `${f(c.range, 2)} ATR` : "", c.vol != null ? `vol ×${f(c.vol, 2)}` : ""].filter(Boolean) : [];
+      return parts.length ? `${tk} ${parts.join(" · ")}` : null;
     }
     case "reporter": {
       const rd = doc && typeof doc === "object" ? doc.markets[m] : undefined;

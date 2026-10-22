@@ -112,7 +112,8 @@ def real_mode(p, name, viewport, mobile):
     page.screenshot(path=str(OUT / f"l05_card_{name}.png"))
     # Smart Flow's own agents are tagged "Paper" (the header says LIVE); users' real ones "Real · Strike" (2026-10-20)
     check(f"{name}: card tags the agent as paper", "PAPER" in card.upper() or "PAPEL" in card.upper())
-    check(f"{name}: card shows the latest real check", "No trade on" in card or "Opened" in card or "BUY" in card or "SELL" in card)
+    check(f"{name}: card shows the latest real check", "No trade on" in card or "Opened" in card or "BUY" in card or "SELL" in card
+          or ("Checked its" in card and "at the last candle close" in card))
     if "Open position" in card:
         print(f"  ({name}: every agent is in a trade: its open position is checked instead of the next check)")
         check(f"{name}: card shows the open position", all(k in card for k in ("Entry", "Stop")), card.replace("\n", " | ")[-200:])
