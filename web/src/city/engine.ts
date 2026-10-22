@@ -1,9 +1,9 @@
 // Strike City renderer: camera, input, picking and the per-frame dynamic layers over the pre-rendered city.
 import type { AgentView, Prices, Status } from "./agents";
-import { isActive, step } from "./agents";
+import { atWork, isActive, step } from "./agents";
 import { FEET, HEAD_TOP, drawFrame, hash, sheetFor, type Anim } from "./sprites";
 import type { Book } from "./store";
-import { BUILDINGS, FOUNTAIN, H, SCREEN, TILE, W, footprint, renderGlow, renderLight, renderStatic } from "./world";
+import { ART2, BUILDINGS, FOUNTAIN, H, SCREEN, TILE, W, footprint, renderGlow, renderLight, renderStatic } from "./world";
 
 export type Sel = { kind: "agent" | "building"; id: string };
 type Hit = Sel | { kind: "screen"; id: string };
@@ -18,6 +18,8 @@ export interface EngineOpts {
   getPrices: () => Prices;
   getHistory: (market: string) => number[];
   getHeadline: () => string;
+  getNewsTape?: () => string;                          // the News Tower's LED band (the latest stories)
+  getJobLabel?: (a: AgentView) => string | null;       // an agent at work in its trade's building: what it reads there
   getBook?: () => Book | null;                         // Strike's order book for the exchange's screen
   getWeather: () => 0 | 1 | 2;   // calm · breezy · storm
   onSelect: (sel: Sel | null) => void;
@@ -274,6 +276,7 @@ export class CityEngine {
     const time = this.o.reducedMotion ? 0 : (now - this.t0) / 1000;
     this.drawFountain(g, time);
     this.drawScreen(g, time, dt);
+    this.drawNewsTower(g, time);
     if (this.o.onScreen) { const p = this.toScreen(SCREEN_CHART.x, SCREEN_CHART.y); this.o.onScreen(p.x, p.y, this.zoom); }
     this.drawCars(g, dt);
     if (this.selected?.kind === "building") this.drawBuildingFocus(g, this.selected.id, time);
@@ -392,6 +395,26 @@ export class CityEngine {
     const off = this.o.reducedMotion ? 0 : (t * 22) % tw;
     g.fillStyle = "#c7fde4";
     for (let k = -1; k < 3; k++) g.fillText(txt, x + 4 - off + k * tw, ny + 6);
+    g.restore();
+  }
+
+  /** The News Tower's LED band over its entrance (the new art only; its name is drawn at the top). */
+  private drawNewsTower(g: CanvasRenderingContext2D, t: number) {
+    const tape = ART2 ? this.o.getNewsTape?.() : "";
+    if (!tape) return;
+    const x = 4 * TILE + 5, y = 37 * TILE + 3, w = 16 * TILE - 10, h = 10;
+    g.fillStyle = "#0c0802"; g.fillRect(x, y, w, h);
+    g.strokeStyle = "rgba(251,191,36,0.55)"; g.lineWidth = 1; g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    g.save();
+    g.beginPath(); g.rect(x + 1, y + 1, w - 2, h - 2); g.clip();
+    g.font = `700 7px "IBM Plex Mono", monospace`;
+    g.textBaseline = "middle"; g.textAlign = "left";
+    const tw = g.measureText(tape).width + 48;
+    const off = this.o.reducedMotion ? 0 : (t * 20) % tw;
+    g.fillStyle = "#fbbf24";
+    for (let k = 0; k < 3; k++) g.fillText(tape, x + 4 - off + k * tw, y + h / 2 + 0.5);
+    g.fillStyle = "rgba(0,0,0,0.28)";   // the dots of the board
+    for (let gx = x + 1; gx < x + w - 1; gx += 2) g.fillRect(gx, y + 1, 0.6, h - 2);
     g.restore();
   }
 
@@ -532,6 +555,8 @@ export class CityEngine {
       const r = a.trades[0].r;
       label = `${r > 0 ? "+" : "−"}${Math.abs(r).toFixed(1)}R`;
       color = r > 0 ? "#4efab0" : "#f43f5e";
+    } else if (a.real && a.status === "waiting" && atWork(a) && this.o.getJobLabel?.(a)) {
+      label = this.o.getJobLabel(a)!;                     // at work: the real data its trade reads there
     } else if (a.real && a.status === "waiting") {
       label = countdown(a.real.nextCheck - Date.now());   // real schedule: next 4h candle close
     } else if (a.real && a.status === "analyzing") {

@@ -7,10 +7,10 @@ import { Icon } from "../components/ui";
 import { countdown, forMarket, safeUrl, type NewsDoc, type NewsItem, type Reading } from "./news";
 import { fmtPct, ticker, type CityText } from "./text";
 
-const MARKETS = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "BNB-USD", "ADA-USD", "NEAR-USD", "ZEC-USD"];
+export const MARKETS = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "BNB-USD", "ADA-USD", "NEAR-USD", "ZEC-USD"];
 const FIRST = 20;   // headlines shown before "show more"
-const sideOf = (v: number | null | undefined) => (v == null || Math.abs(v) < 15 ? "flat" : v > 0 ? "pos" : "neg");
-const signed = (v: number, lang: Lang) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(Math.round(v)).toLocaleString(lang === "es" ? "es-ES" : "en-US")}`;
+export const sideOf = (v: number | null | undefined) => (v == null || Math.abs(v) < 15 ? "flat" : v > 0 ? "pos" : "neg");
+export const signed = (v: number, lang: Lang) => { const r = Math.round(v); return `${r > 0 ? "+" : r < 0 ? "−" : ""}${Math.abs(r).toLocaleString(lang === "es" ? "es-ES" : "en-US")}`; };
 const modelName = (m: string | null) => (m && /haiku/i.test(m) ? "Claude Haiku" : m ?? "");
 
 type Doc = NewsDoc | null | "none" | "error";
@@ -117,50 +117,25 @@ function Body({ T, lang, doc, market, now, live, inTrade }: { T: CityText; lang:
   const N = T.news;
   const [all, setAll] = useState(false);
   useEffect(() => setAll(false), [market]);
-  const rd = doc.markets[market];
   const items = forMarket(doc.headlines, market);
-  const byId = new Map(doc.headlines.map((h) => [h.id, h]));
   const shown = all ? items : items.slice(0, FIRST);
-  const board = doc.scoreboard[market];
-  const follow = doc.following.find((f) => f.follow > 0);
   const okFeeds = doc.feeds.filter((f) => f.ok).length;
   return (
     <div className="news-body">
       <div className="news-side">
         <section className="news-read" aria-labelledby="news-read-title">
           <h3 id="news-read-title" className="sr-only">{N.reading}</h3>
-          {!doc.classifier.on ? <p className="news-pending">{N.pending}</p>
-            : rd?.net == null ? <p className="news-pending">{market !== "BTC-USD" && rd && rd.n ? N.fewOwn(ticker(market)) : N.noReading}</p>
-            : <Reading T={T} lang={lang} rd={rd} byId={byId} />}
-          {doc.classifier.on && rd?.net != null && follow && (
-            <p className="news-follow">{N.follows(N.cats[follow.cat] ?? follow.cat, follow.follow.toLocaleString(lang === "es" ? "es-ES" : "en-US", { maximumFractionDigits: 1 }))}</p>
-          )}
+          <ReadingBlock T={T} lang={lang} doc={doc} market={market} />
         </section>
 
         <section className="news-box" aria-labelledby="news-cal-title">
           <h3 id="news-cal-title">{N.events}</h3>
-          <ul className="news-cal">
-            {doc.events.just.map((e) => (
-              <li key={`j${e.t}`} className="just"><span>{N.evNames[e.kind] ?? e.name}</span><span className="num">{N.eventJust}</span></li>
-            ))}
-            {doc.events.next.filter((e) => e.t > now).slice(0, 4).map((e) => (
-              <li key={e.t}>
-                <span>{N.evNames[e.kind] ?? e.name}<time className="faint" dateTime={new Date(e.t).toISOString()}>
-                  {new Date(e.t).toLocaleString(lang === "es" ? "es-ES" : "en-US", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></span>
-                <span className="num">{N.inTime(countdown(e.t - now, N.units))}</span>
-              </li>
-            ))}
-          </ul>
+          <EventsList T={T} lang={lang} doc={doc} now={now} />
         </section>
 
         <section className="news-box" aria-labelledby="news-board-title">
           <h3 id="news-board-title">{N.board}</h3>
-          {board && board.called ? (
-            <>
-              <p className="news-board-num"><span className="num">{Math.round((board.hits / board.called) * 100)} %</span></p>
-              <p className="small muted">{N.boardLine(board.hits, board.called)} {N.boardBase(board.up, board.readings)}</p>
-            </>
-          ) : <p className="small muted">{N.boardEmpty}</p>}
+          <ScoreBox T={T} doc={doc} market={market} />
         </section>
 
         <p className="news-agents"><span className="city-live-dot" aria-hidden="true" />{N.agents(live, inTrade)}</p>
@@ -184,6 +159,55 @@ function Body({ T, lang, doc, market, now, live, inTrade }: { T: CityText; lang:
       </p>
     </div>
   );
+}
+
+/** A market's reading (or why there is none), with the theme the price is following. */
+export function ReadingBlock({ T, lang, doc, market }: { T: CityText; lang: Lang; doc: NewsDoc; market: string }) {
+  const N = T.news;
+  const rd = doc.markets[market];
+  const byId = new Map(doc.headlines.map((h) => [h.id, h]));
+  const follow = doc.following.find((f) => f.follow > 0);
+  return (
+    <>
+      {!doc.classifier.on ? <p className="news-pending">{N.pending}</p>
+        : rd?.net == null ? <p className="news-pending">{market !== "BTC-USD" && rd && rd.n ? N.fewOwn(ticker(market)) : N.noReading}</p>
+        : <Reading T={T} lang={lang} rd={rd} byId={byId} />}
+      {doc.classifier.on && rd?.net != null && follow && (
+        <p className="news-follow">{N.follows(N.cats[follow.cat] ?? follow.cat, follow.follow.toLocaleString(lang === "es" ? "es-ES" : "en-US", { maximumFractionDigits: 1 }))}</p>
+      )}
+    </>
+  );
+}
+
+/** The scheduled US releases with their countdown (one just out stays for 2 h). */
+export function EventsList({ T, lang, doc, now, max = 4 }: { T: CityText; lang: Lang; doc: NewsDoc; now: number; max?: number }) {
+  const N = T.news;
+  return (
+    <ul className="news-cal">
+      {doc.events.just.map((e) => (
+        <li key={`j${e.t}`} className="just"><span>{N.evNames[e.kind] ?? e.name}</span><span className="num">{N.eventJust}</span></li>
+      ))}
+      {doc.events.next.filter((e) => e.t > now).slice(0, max).map((e) => (
+        <li key={e.t}>
+          <span>{N.evNames[e.kind] ?? e.name}<time className="faint" dateTime={new Date(e.t).toISOString()}>
+            {new Date(e.t).toLocaleString(lang === "es" ? "es-ES" : "en-US", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></span>
+          <span className="num">{N.inTime(countdown(e.t - now, N.units))}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Did the readings predict the next 4 h on Strike? (empty until it has some) */
+export function ScoreBox({ T, doc, market }: { T: CityText; doc: NewsDoc; market: string }) {
+  const N = T.news;
+  const board = doc.scoreboard[market];
+  return board && board.called ? (
+    <>
+      <p className="news-board-num"><span className="num">{Math.round((board.hits / board.called) * 100)} %</span></p>
+      <p className="small muted">{N.boardLine(board.hits, board.called)} {N.boardBase(board.up, board.readings)}</p>
+    </>
+  ) : <p className="small muted">{N.boardEmpty}</p>;
 }
 
 function Reading({ T, lang, rd, byId }: { T: CityText; lang: Lang; rd: Reading; byId: Map<string, NewsItem> }) {
@@ -230,7 +254,7 @@ function Reading({ T, lang, rd, byId }: { T: CityText; lang: Lang; rd: Reading; 
   );
 }
 
-function Headline({ T, lang, h, now }: { T: CityText; lang: Lang; h: NewsItem; now: number }) {
+export function Headline({ T, lang, h, now }: { T: CityText; lang: Lang; h: NewsItem; now: number }) {
   const N = T.news;
   const text = lang === "es" && h.es ? h.es : h.title;
   const url = safeUrl(h.url);

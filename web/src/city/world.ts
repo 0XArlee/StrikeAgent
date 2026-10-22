@@ -27,7 +27,7 @@ export const ROWS = 64;
 export const W = COLS * TILE;
 export const H = ROWS * TILE;
 
-export type Kind = "exchange" | "tower" | "lab" | "risk" | "vault" | "clan" | "hq" | "home" | "cafe" | "shop" | "arena" | "alley";
+export type Kind = "exchange" | "tower" | "lab" | "risk" | "vault" | "clan" | "hq" | "home" | "cafe" | "shop" | "arena" | "alley" | "news";
 
 export interface Building {
   id: string;
@@ -50,8 +50,8 @@ export const BUILDINGS: Building[] = [
   { id: "eth", kind: "tower", label: "ETH TOWER", market: "ETH-USD", x: 53, y: 2, w: 14, d: 8, h: 72, wall: "#1c1f3b", roof: "#272c55", neon: "#8b9cff", door: { x: 60, y: 16 } },
   { id: "sol", kind: "tower", label: "SOL TOWER", market: "SOL-USD", x: 77, y: 2, w: 10, d: 8, h: 64, wall: "#16263a", roof: "#1d3550", neon: "#14f195", door: { x: 82, y: 16 } },
   { id: "alts", kind: "shop", label: "ALT ROW", sub: "XRP · BNB · ADA · NEAR · ZEC", x: 88, y: 6, w: 7, d: 4, h: 30, wall: "#262033", roof: "#342b47", neon: "#c084fc", door: { x: 91, y: 16 } },
-  { id: "risk", kind: "risk", label: "RISK OFFICE", sub: "every order checked", x: 4, y: 22, w: 12, d: 6, h: 36, wall: "#2a2f37", roof: "#363c46", neon: "#f8931a", door: { x: 10, y: 34 } },
-  { id: "alley", kind: "alley", label: "LIQUIDATION ALLEY", x: 17, y: 30, w: 5, d: 5, h: 26, wall: "#2a1215", roof: "#3a171c", neon: "#f43f5e", door: { x: 19, y: 40 } },
+  // the News Tower by the plaza (Edgar, 2026-10-21); the risk office and the alley moved to the bottom right
+  { id: "news", kind: "news", label: "NEWS TOWER", sub: "news and catalysts", x: 4, y: 21, w: 16, d: 4, h: 240, wall: "#1a2440", roof: "#243052", neon: "#fbbf24", door: { x: 12, y: 40 } },
   { id: "exchange", kind: "exchange", label: "STRIKE EXCHANGE", sub: "order book", x: 32, y: 21, w: 32, d: 6, h: 52, wall: "#0d1f19", roof: "#123026", neon: "#4efab0", door: { x: 48, y: 31 } },
   { id: "vault", kind: "vault", label: "VAULT BANK", sub: "strike vaults", x: 77, y: 22, w: 14, d: 6, h: 40, wall: "#1f2333", roof: "#2a3046", neon: "#facc15", door: { x: 84, y: 34 } },
   { id: "clan", kind: "clan", label: "CLAN HALL", x: 78, y: 34, w: 12, d: 4, h: 30, wall: "#251a33", roof: "#33244a", neon: "#a78bfa", door: { x: 84, y: 40 } },
@@ -59,6 +59,8 @@ export const BUILDINGS: Building[] = [
   { id: "hq", kind: "hq", label: "SMART FLOW HQ", sub: "builder", x: 28, y: 46, w: 12, d: 7, h: 46, wall: "#0b1d17", roof: "#0f2c22", neon: "#4efab0", door: { x: 34, y: 59 } },
   { id: "cafe", kind: "cafe", label: "FUNDING CAFE", x: 41, y: 49, w: 6, d: 4, h: 24, wall: "#2b211a", roof: "#3a2c22", neon: "#fb923c", door: { x: 44, y: 59 } },
   { id: "arena", kind: "arena", label: "RANKS ARENA", sub: "leaderboard", x: 53, y: 46, w: 16, d: 7, h: 40, wall: "#2a1820", roof: "#3a2230", neon: "#fb7185", door: { x: 61, y: 59 } },
+  { id: "risk", kind: "risk", label: "RISK OFFICE", sub: "every order checked", x: 76, y: 46, w: 12, d: 6, h: 36, wall: "#2a2f37", roof: "#363c46", neon: "#f8931a", door: { x: 81, y: 58 } },
+  { id: "alley", kind: "alley", label: "LIQUIDATION ALLEY", x: 89, y: 48, w: 5, d: 5, h: 26, wall: "#2a1215", roof: "#3a171c", neon: "#f43f5e", door: { x: 91, y: 58 } },
 ];
 // the new art's buildings are as tall as their floors: the same place and door, another depth and height
 if (ART2) for (const g of city2.buildings) {

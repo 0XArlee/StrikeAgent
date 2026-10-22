@@ -4,12 +4,15 @@
 import { useEffect, useState } from "react";
 
 export type Label = "very_bullish" | "bullish" | "neutral" | "bearish" | "very_bearish";
-export type Category = "macro" | "regulation" | "etf" | "institutional" | "exchange" | "security" | "legal" | "tech" | "flows" | "price" | "other";
+export type Category = "macro" | "geopolitics" | "regulation" | "etf" | "institutional" | "exchange" | "security" | "legal" | "tech" | "flows" | "price" | "other";
+export type Region = "us" | "canada" | "latam" | "uk" | "europe" | "russia" | "ukraine" | "middle_east" | "africa" | "india" | "china" | "japan"
+  | "korea" | "southeast_asia" | "oceania" | "global";
 export interface Driver { cat: Category; push: number; n: number; top: string | null }
 export interface Reading {
   net: number | null; net72: number | null; netHigh: number | null; label: Label | null; n: number; own: number;
   whipsaw: boolean; upWeight: number; downWeight: number; drivers: { up: Driver[]; down: Driver[] };
   flip: { en: string[]; es: string[] } | null;
+  cats?: Record<string, { push: number; n: number }>;   // every category's share of the reading (the tower's floors)
 }
 export interface NewsItem {
   id: string; t: number; title: string; source: string; url: string; markets: string[];
@@ -17,11 +20,12 @@ export interface NewsItem {
   z15?: number | null; z60?: number | null;   // the move against the market's normal move over that time
   // scored by the model (absent until then)
   es?: string; broad?: boolean; cat?: Category; score?: number; impact?: "high" | "medium" | "low"; conf?: number;
+  region?: Region;   // where it happens (the tower's map)
   catalyst?: boolean;   // false: a price recap, a prediction or unclear (listed, never in the reading)
   story?: string; sources?: number; also?: string[];   // a catalyst: its event, how many outlets told it, which others
   against?: boolean | null; w?: number; skip?: boolean;
 }
-export interface CalEvent { t: number; kind: "fomc" | "cpi" | "nfp"; name: string }
+export interface CalEvent { t: number; kind: "fomc" | "cpi" | "nfp" | "pce" | "gdp" | "minutes"; name: string }
 export interface Board { readings: number; called: number; hits: number; up: number }
 export interface NewsDoc {
   v: 1; generated: number; pushedAt: number; stale: boolean;

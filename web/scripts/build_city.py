@@ -44,8 +44,9 @@ BUILDINGS = [
     dict(id="eth", x=53, y=0, w=14, d=4, floors=2, colour=1, roof="Roof_3", middle=5, ground=5, door=60),
     dict(id="sol", x=77, y=0, w=10, d=3, floors=2, colour=0, roof="Roof_1", middle=4, ground=1, door=82),
     dict(id="alts", x=88, y=1, w=7, d=4, floors=1, colour=0, roof="Roof_2", middle=1, ground=2, door=91),
-    dict(id="risk", x=4, y=21, w=12, d=3, floors=1, colour=2, roof="Roof_5", middle=5, ground=12, door=10),
-    dict(id="alley", x=17, y=30, w=5, d=4, floors=0, colour=0, roof="Roof_6", middle=None, ground=4, door=19),
+    # the News Tower (Edgar, 2026-10-21: where the risk office and the alley were, by the plaza; those two moved to the
+    # lot at the bottom right): the tallest building, glass and steel, its door on the avenue
+    dict(id="news", x=4, y=21, w=16, d=4, floors=4, style="office", door=12),
     dict(id="exchange", x=32, y=21, w=32, d=4, floors=1, colour=2, roof="Roof_11", middle=1, ground=11, door=48),
     dict(id="vault", x=77, y=21, w=14, d=3, floors=1, colour=2, roof="Roof_3", middle=3, ground=10, door=84),
     dict(id="clan", x=78, y=34, w=12, d=3, floors=0, colour=1, roof="Roof_4", middle=None, ground=8, door=84),
@@ -53,6 +54,8 @@ BUILDINGS = [
     dict(id="hq", x=28, y=45, w=12, d=4, floors=1, colour=2, roof="Roof_1", middle=4, ground=9, door=34),
     dict(id="cafe", x=41, y=49, w=6, d=3, floors=0, colour=0, roof="Roof_2", middle=None, ground=2, door=44),
     dict(id="arena", x=53, y=45, w=16, d=4, floors=1, colour=0, roof="Roof_8", middle=1, ground=3, door=61),
+    dict(id="risk", x=76, y=45, w=12, d=3, floors=1, colour=2, roof="Roof_5", middle=5, ground=12, door=81),
+    dict(id="alley", x=89, y=48, w=5, d=4, floors=0, colour=0, roof="Roof_6", middle=None, ground=4, door=91),
 ]
 GROUND_H, FLOOR_H = 48, 64
 # where the door is in each of LimeZu's ground floors (Ground_Floor_Condo_1..12: the first column of its double door)
@@ -253,12 +256,46 @@ def edges(im: Image.Image, dark=(20, 18, 28, 140)) -> None:
     g.rectangle([im.width - 2, 0, im.width - 1, im.height - 1], fill=dark)
 
 
+def office(name: str) -> Image.Image:
+    return piece("16_Office_Singles_16x16", name)
+
+
+def office_tower(b: dict) -> tuple[Image.Image, Image.Image, Image.Image]:
+    """A glass office tower (LimeZu's office theme, colour 4): roof with satellite dishes and solar panels, floors of
+    window grids (each 96 px piece is two floors), a glazed lobby. Width: 32 + 48 n + 32 px."""
+    w = b["w"] * T
+    n = (w - 64) // 48
+    assert 64 + 48 * n == w, "an office tower is 32 + 48 n + 32 px wide"
+
+    def row(left: str, mid: str, right: str) -> Image.Image:
+        L, M, R = office(left), office(mid), office(right)
+        out = Image.new("RGBA", (w, L.height))
+        out.alpha_composite(L, (0, 0))
+        for i in range(n):
+            out.alpha_composite(M, (32 + 48 * i, 0))
+        out.alpha_composite(R, (w - 32, 0))
+        return out
+    roof = stretch(row("Roof_Left", "Roof_Middle_Modular", "Roof_Right"), w, b["d"] * T, cap_x=32, cap_y=16)
+    for px, prop_ in ((18, "Shutter_Dish_Roof_Prop"), (66, "Shutter_Dish_Roof_Prop"), (w - 82, "Solar_Panel_Roof_Prop"), (w - 46, "Air_Duct_1_Roof_Prop")):
+        im = office(prop_)
+        roof.alpha_composite(im.crop((0, max(0, im.height - roof.height + 4), im.width, im.height)), (px, max(2, roof.height - im.height - 2)))
+    body_rows = b["floors"] // 2 or 1
+    body = Image.new("RGBA", (w, 96 * body_rows))
+    for k in range(body_rows):
+        body.alpha_composite(row("Building_4_Left", "Building_4_Middle_Modular", "Building_4_Right"), (0, 96 * k))
+    ground = row("Building_4_Left_2", "Building_4_Middle_Modular_2", "Building_4_Right_2")
+    return roof, body, ground
+
+
 def draw_building(img: Image.Image, shadow: Image.Image, b: dict) -> dict:
     x, y, w = b["x"] * T, b["y"] * T, b["w"] * T
-    roof = stretch(floor_piece(b["roof"]), w, b["d"] * T)
-    mids = middle_floors(b)
-    ground = ground_floor(b)
-    facade_h = (mids.height if mids else 0) + GROUND_H
+    if b.get("style") == "office":
+        roof, mids, ground = office_tower(b)
+    else:
+        roof = stretch(floor_piece(b["roof"]), w, b["d"] * T)
+        mids = middle_floors(b)
+        ground = ground_floor(b)
+    facade_h = (mids.height if mids else 0) + ground.height
     # shadow to the bottom right (the light comes from the top left)
     ImageDraw.Draw(shadow).rectangle([x + 6, y + 8, x + w + 6, y + b["d"] * T + facade_h + 4], fill=(0, 0, 0, 110))
     img.alpha_composite(roof, (x, y))
@@ -267,7 +304,7 @@ def draw_building(img: Image.Image, shadow: Image.Image, b: dict) -> dict:
         edges(mids)
         img.alpha_composite(mids, (x, fy))
     edges(ground)
-    img.alpha_composite(ground, (x, fy + facade_h - GROUND_H))
+    img.alpha_composite(ground, (x, fy + facade_h - ground.height))
     door_y = b["y"] + b["d"] + facade_h // T
     return {"id": b["id"], "x": b["x"], "y": b["y"], "w": b["w"], "d": b["d"], "h": facade_h, "door": {"x": b["door"], "y": door_y},
             "facade": [x, fy, w, facade_h]}
@@ -279,14 +316,16 @@ def is_glass(p) -> bool:
     return a > 200 and b >= 150 and b - r >= 25 and g >= 120
 
 
-def glow_layer(img: Image.Image, facades: list[list[int]], R: random.Random) -> tuple[Image.Image, int]:
+def glow_layer(img: Image.Image, facades: list[list[int]], R: random.Random, framed_only: list[bool] | None = None) -> tuple[Image.Image, int]:
     """Windows lit at night: the facades' glass pixels, in warm or cool light, about two thirds of the windows on.
-    A window is the glass in one 16 px column of one floor (so each lights up on its own)."""
+    A window is the glass in one 16 px column of one floor (so each lights up on its own). An office tower's glass bands
+    between its floors are not windows: there only glass with a window frame around it lights up (the random draws are
+    the same either way, so the props placed after this stay where they were)."""
     out = Image.new("RGBA", img.size)
     px, po = img.load(), out.load()
     warm = [(255, 214, 140), (255, 230, 170), (190, 230, 255), (255, 200, 120)]
     lit = 0
-    for fx, fy, fw, fh in facades:
+    for i, (fx, fy, fw, fh) in enumerate(facades):
         for cx in range(fx, fx + fw, T):
             for cy in range(fy, fy + fh, T):
                 cells = [(xx, yy) for yy in range(cy, min(cy + T, fy + fh)) for xx in range(cx, min(cx + T, fx + fw)) if is_glass(px[xx, yy])]
@@ -295,6 +334,11 @@ def glow_layer(img: Image.Image, facades: list[list[int]], R: random.Random) -> 
                 if R.random() > 0.66:
                     continue
                 col = warm[R.randrange(len(warm))]
+                if framed_only and framed_only[i]:
+                    cells = [(xx, yy) for xx, yy in cells if any(sum(px[xx + dx, yy][:3]) < 240 for dx in (-3, -2, -1, 1, 2, 3)
+                                                                if fx <= xx + dx < fx + fw)]
+                    if len(cells) < 6:
+                        continue
                 for xx, yy in cells:
                     r, g, b, _ = px[xx, yy]
                     k = 0.55 + 0.45 * (r + g + b) / 765
@@ -434,7 +478,7 @@ def main() -> None:
         facades.append(info["facade"])
     img.alpha_composite(shadow)
     img.alpha_composite(layer)
-    glow, lit = glow_layer(img, facades, R)
+    glow, lit = glow_layer(img, facades, R, [b.get("style") == "office" for b in sorted(BUILDINGS, key=lambda b: b["y"])])
     decor = decorate(placed, R)
     decor.draw(img)
     OUT.mkdir(parents=True, exist_ok=True)
