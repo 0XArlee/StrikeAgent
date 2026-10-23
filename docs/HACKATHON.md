@@ -194,8 +194,9 @@ Mainnet and testnet, both live. Every call is listed and explained in [STRIKE_IN
 
 ![Every Strike integration: 46 endpoints in six areas](images/diagram-integration.svg)
 
-**Utility and impact.** Only about one copy in five on Strike ends in profit, and a leaderboard number does not tell
-you who is worth copying. The Copy Arena shows what copying each trader actually did, and copy with your agent turns a
+**Utility and impact.** A copy-trading leaderboard shows what a trader made, not what happened to the people who
+copied them, and that is what someone about to copy needs to know. The Copy Arena measures it on every copy Strike has
+published, showing what copying each trader actually did, and copy with your agent turns a
 choice into a signed, limited, automatic plan. For Strike, every marketplace strategy trades through the builder code, every
 copy it starts brings money and copiers into Strike's own copy trading, and every user who joins through us has their
 Strike account working with an agent from the first minute.

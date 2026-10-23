@@ -21,8 +21,8 @@
 ## The idea
 
 **Trading on Strike happens behind numbers.** A trading bot is a process nobody sees: you check a balance and hope. A
-copy-trading leaderboard shows what a trader made, not what happened to the people who copied them, and across every
-copy Strike has published, only about one in five ended in profit. Starting an agent still means API keys, servers and
+copy-trading leaderboard shows what a trader made, not what happened to the people who copied them, which is what
+someone about to copy needs to know. Starting an agent still means API keys, servers and
 config files. On every side, the bottleneck is the same: people cannot trust what they cannot see.
 
 **EdgeCraft-StrikeCity makes Strike visible.** It is a living pixel-art city where every character is real state on
