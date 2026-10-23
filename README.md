@@ -32,9 +32,9 @@ Behind the city sits a complete product. You can create an agent that trades you
 wallet signature, choose whom to copy with a score that was tested on real copies, and let your agent run that copy
 for you under rules you sign.
 
-| Live | 1 | 46 | 389 | 174 | 0.20 % |
+| Live | 1 | 46 | 389 | 180 | 0.20 % |
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| on Strike mainnet, with a staging copy on testnet | signature to start an agent on your own Strike account | Strike endpoints in use | real copies behind the score, re-tested hourly | automated tests, plus real-browser checks | builder fee per execution, approved by each user |
+| on Strike mainnet, with a staging copy on testnet | signature to start an agent on your own Strike account | Strike endpoints in use | real copies behind the score, re-tested hourly | automated tests, plus real-browser checks | builder fee per execution of the marketplace strategies only, approved by each user |
 
 ## What you can do
 
@@ -87,15 +87,19 @@ The score is re-tested every hour against every copy Strike has published, and t
 ### Let your agent copy for you
 Sign a copy plan: one trader, or "my agent chooses" with your own rules (minimum score, platforms, how often to review,
 how many changes a week), plus the amount, stop-loss, leverage, markets to avoid and an end date. Your agent runs it on
-**Strike's own copy trading**, in a managed sub-account that Strike creates and funds for that copy, and Strike itself
-enforces the stop-loss.
+**Strike's own copy trading**, in a sub-account of yours: one you already have that copies nobody (or the one you
+choose), and only when there is none, a new one that Strike creates and funds from your main account. Strike itself
+enforces the stop-loss. The copy and the strategy are independent: pause one and the other goes on. Copies pay no fee to
+us.
 
 <p align="center"><img src="docs/images/copy-plan-pilot.jpg" width="85%" alt="The copy plan in pilot mode"></p>
 
 ### Read the news that moves your markets
 The **News Tower** has six floors of headlines from official and tier-one sources, scored by a model, counted once per
 story and checked against Strike's mark price after they came out. When a market's reading changes level, the agents
-trading it walk over to read it. They never trade on news.
+trading it walk over to read it. The strategies never trade on news; the news protects copies instead: a copy pauses
+while the tower's security alarm is on (a major hack, an exchange going down) and, if its owner chose, around the big US
+releases (Fed, CPI, jobs, PCE, GDP).
 
 <p align="center"><img src="docs/images/tower-newsroom.jpg" width="85%" alt="Inside the News Tower: the newsroom"></p>
 
@@ -108,8 +112,8 @@ and testnet. Each call, and why we make it, is in [docs/STRIKE_INTEGRATION.md](d
 
 - **Builder connect and builder code** (2 endpoints and the fee header). Onboarding runs through `request-signature`
   and `verify-signature`, and the site checks that Strike linked exactly our key, our builder code
-  (`SmartFlowAgent-EdgeCraft`) and our 0.20 % fee before saving anything. Every order then carries the fee, so every
-  execution of every user's agent is credited to the builder.
+  (`SmartFlowAgent-EdgeCraft`) and our 0.20 % fee before saving anything. Every order of the marketplace strategy then
+  carries the fee, so each of its executions is credited to the builder. Copies pay no fee to us.
 - **Trading API v2** (16). Server time, markets, fee tiers, book ticker, depth, mark price, account, positions, open
   orders, order look-ups for safe retries, entries with their stop attached, stop moves and exits, cancels, leverage,
   fills and transfers, all signed with Ed25519 API-wallet keys.
@@ -138,7 +142,8 @@ version of the city and the strategy marketplace. Between 21 and 23 October, in 
 | **Copy with your agent** | Signed copy plans (one trader, or the agent choosing by your rules) carried out on Strike's own copy trading, in sub-accounts Strike creates and funds, with Strike enforcing the stop-loss; proven on testnet, then opened on mainnet |
 | **News Tower** | Tiered sources, model scoring, one vote per story, reactions measured on Strike's mark price, a reading per market, and a six-floor building your agent walks through |
 | **Strike Finance, inside** | The exchange's building renamed and opened: Strike's own numbers live (daily volume as bars, open interest, longs and shorts, users, trades, TVL, revenue, funding against other exchanges, vaults) from Strike's statistics API (11 new endpoints), and STRIKE, Strike Finance's token, on its screen |
-| **A living city** | The map redrawn with licensed LimeZu art, a character creator, personalities and trades for every agent, TradingView's live chart on every market tower, every car a real Strike trade, all 33 of Strike's markets, every copyable trader, real accounts kept apart from paper agents, and Connect wallet right in the dock |
+| **A living city** | The map redrawn with licensed LimeZu art, a character creator, personalities and trades for every agent, TradingView's live chart on every market tower, every car a real Strike trade, all 33 of Strike's markets, every copyable trader, a Results hub (strategies, copy pilot, Strike's copy trading, ranking), production showing real accounts only, and Connect wallet right in the dock |
+| **Your money, clearly** | An account chart with a tab per account (result, all accounts, main account, each copy sub-account), so money moved into a copy never counts as a loss in the result; sub-accounts reused instead of piling up; strategy and copy independent; questions answered by topic |
 | **Security review** | Authentication, builder connect, copy plans end to end, host endpoints, headers, dependencies and secrets, reviewed before mainnet: no critical or high findings |
 | **Verification** | Staging on Strike testnet first for every change, and real-browser checks with accessibility audits on every surface, in two languages, at desktop and phone sizes |
 | **Documentation** | These docs, diagrams generated from code, and the project book (PDF) |
@@ -148,7 +153,7 @@ Each area, in detail and with its evidence: [docs/HACKATHON.md](docs/HACKATHON.m
 ## Try it in five minutes
 
 1. **No wallet needed.** Open [the city](https://edgecraft-strikecity.pages.dev/#/city), click a character with a
-   pink ring to see a trader people copy on Strike, then open **Ranks** and enter the **Copy Arena**.
+   pink ring to see a trader people copy on Strike, then open **Results**, its **Ranking** tab, and enter the **Copy Arena**.
 2. Click the **Strike Finance** building and go inside for Strike's own numbers; then the **News Tower**, or open
    **News** in the top bar.
 3. Browse the [strategy catalogue](https://edgecraft-strikecity.pages.dev/#strategies) and open a strategy's page.
@@ -164,7 +169,7 @@ Each area, in detail and with its evidence: [docs/HACKATHON.md](docs/HACKATHON.m
 - **Keys stay on the host.** The site only knows public keys; the host never listens to the internet.
 - **Everything is evidence.** Every signed action, Strike request, fill and balance change is written to hash-chained
   logs whose heads are anchored on the site.
-- **Quality.** 174 Python tests, plus real-browser checks with Playwright and axe-core on every surface of the city, in
+- **Quality.** 180 Python tests, plus real-browser checks with Playwright and axe-core on every surface of the city, in
   English and Spanish, on desktop and phone sizes.
 
 More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/SECURITY.md](docs/SECURITY.md) and

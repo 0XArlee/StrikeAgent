@@ -66,6 +66,9 @@ Smart Flow earns **0.20 % per execution** through Strike's builder code. The fee
 other way round: at 20 bp the 4-hour edge stays statistically significant after every cost; much higher fees erase it
 (a 1 % fee would make the user lose). Users approve the fee explicitly when they sign Strike's builder-connect message.
 
+The fee applies **only to the trades of the marketplace strategies** (Smart Flow and Smart Flow Pyramid). A copy run
+with "copy with your agent" pays no fee to us: Strike's own fees and copy-trading terms are the only costs.
+
 ## The Strike City score
 
 The Copy Arena ranks Strike's copy traders with a 0-100 score built from parts anyone can read on the trader's profile:

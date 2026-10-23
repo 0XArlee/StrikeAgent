@@ -22,7 +22,7 @@ requests.
 - **The city's store** (`web/src/city/store.ts`): reads the site's snapshots (`/api/city`, `/api/copy`, `/api/news`)
   and Strike's public market data straight from the browser (tickers, every market, funding, the order book and the
   latest trades), so what the city shows of Strike's market is Strike's own data with nothing of ours in between. On
-  production the top bar and Ranks count real accounts only; staging counts the paper agents too.
+  production the city shows and counts real accounts only; staging shows and counts the paper agents too.
 - **Strike Finance's hall** (`web/src/city/StrikeView.tsx`, `strikestats.ts`): Strike's public statistics API, read
   from the browser only while someone is inside (then every minute): totals, daily series, live positions, funding
   against other exchanges and vaults.

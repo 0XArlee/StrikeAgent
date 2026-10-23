@@ -10,7 +10,7 @@ Open it at https://edgecraft-strikecity.pages.dev/#/city.
 
 | Character | Source | Where it goes and why |
 |---|---|---|
-| Official Smart Flow agents | the paper agents on the host, trading on Strike's real order book | see the buildings below |
+| Official Smart Flow agents | the paper agents on the host, trading on Strike's real order book (on staging only: production shows real accounts only) | see the buildings below |
 | Users' agents | each user's agent on their own Strike account | the same rules; the public sees shares, the owner sees amounts |
 | Strike's copy traders ("leads", pink ring and ★ score) | Strike's copy trading (and Hyperliquid traders copied through Strike) | to the tower of the market of their biggest open position; to the Exchange for 75 s when they open, close, flip or resize on Strike; to the Copy Arena's door while they hold nothing |
 | The people copying a lead right now | Strike's copy leaderboard | walk behind their lead, in a line |
@@ -28,7 +28,7 @@ Open it at https://edgecraft-strikecity.pages.dev/#/city.
 | Risk Office | the risk engine checks or refuses a signal |
 | Liquidation Alley | a trade closed at its stop |
 | Funding Cafe | a trade closed by its exit rule |
-| News Tower | the news reading of a market it trades changes level (very bullish … very bearish); it reads it, never trades on it |
+| News Tower | the news reading of a market it trades changes level (very bullish … very bearish); it reads it, and its strategy never trades on it (the tower's security alarm and calendar pause copies instead) |
 | Copy Arena | the leads with nothing open wait at its door, with the agents copying them |
 | Agent Homes | it is paused, stopped, or waiting for a first deposit |
 | Plaza | it is waiting for its next setup (with short "shifts" at its trade's building) |
@@ -55,9 +55,8 @@ news reading, the day's move, its day in R). The personality never changes how i
   ago). With reduced motion the cars park along their road instead of driving.
 - **Weather**: calm, breezy or stormy with BTC's 24h move.
 - **Top bar**: agents online, agents in a trade, the trades and result over 24 hours, the news reading and the next US
-  macro release. On production the trades and result count real accounts only (the paper agents that test the
-  strategies count apart, in Ranks); on staging they count every agent, paper and testnet, because that is what
-  staging is for.
+  macro release. On production they count real accounts only (the paper agents that test the strategies live on
+  staging); on staging they count every agent, paper and testnet, because that is what staging is for.
 
 ![Where everything in the city comes from: the host's snapshots and Strike's public market data](images/diagram-city-data.svg)
 
@@ -86,8 +85,9 @@ Without an agent of your own you go in as a visitor.
 
 ## The dock
 
-Map · Agents (every agent, and every trader people can copy on Strike: the ones walking the city first) · Ranks (real
-accounts and paper agents ranked apart, and the best traders to copy) · Feed (what just happened) · Markets (every market
+Map · Agents (every agent, and every trader people can copy on Strike: the ones walking the city first) · Results (tabs:
+a summary, the marketplace strategies with their live results next to each backtest, the copy pilot, Strike's copy
+trading, and the ranking with the best traders to copy) · Feed (what just happened) · Markets (every market
 Strike lists: the agents' markets first, then stocks, indices, commodities and more crypto, with price, 24-hour change,
 funding, volume and maximum leverage) · Guide (what everything means, a legend, the roadmap) · My agent · Suggest
 (feedback with an optional screenshot). Until a wallet is connected, My agent's place shows **Connect wallet**; it
@@ -96,7 +96,7 @@ turns back into My agent once one is in, and into Connect wallet again if it lea
 ## Accessibility and quality
 
 - Every surface is checked against WCAG 2.2 AA with axe-core in a real browser, in English and Spanish, at desktop and
-  phone widths (`web/scripts/verify_city_ui.py` walks every panel and button: 246 checks per language).
+  phone widths (`web/scripts/verify_city_ui.py` walks every panel and button: 276 checks per language).
 - The map has a text description, keyboard control (arrows, + and −, Escape) and a "follow" mode; dialogs trap focus
   and restore it; status updates are announced.
 - Reduced motion is honoured: characters jump to where they are going and nothing pulses.

@@ -21,7 +21,7 @@ staging first and only reach production once a real run has been verified there.
 
 ## The test suite
 
-174 Python tests (`pytest`) cover the parts where a mistake would cost money or trust:
+180 Python tests (`pytest`) cover the parts where a mistake would cost money or trust:
 
 | Area | What is checked |
 |---|---|
@@ -29,7 +29,7 @@ staging first and only reach production once a real run has been verified there.
 | Risk and lifecycle | Position size from the stop with a slippage margin, daily and weekly loss limits on marked-to-market equity, leverage that fits Strike's margin, the pyramid policy end to end, an empty account and later deposits |
 | Strike adapter | Ed25519 request signing, the builder fee header on order-creating requests, tolerant parsing of Strike's answers (no network) |
 | Users' agents | The encrypted key pool (keys never reused, signatures verifiable with the public key), the fleet, strategy health and the safety hold |
-| Copy trading | History kept beyond Strike's 30 days, position changes, who copies whom, the score, and the copy pilot carrying out signed plans against a fake Strike |
+| Copy trading | History kept beyond Strike's 30 days, position changes, who copies whom, the score, and the copy pilot carrying out signed plans against a fake Strike: sub-accounts reused or chosen (one copy at a time each), a new one only when none fits, the security alarm (hacks and exchanges going down) and the macro pause, each sub-account's equity over time |
 | News | Feeds, de-duplication by story, reactions measured on Strike, the per-market reading and the scoreboard |
 | Audit trail | Hash-chained logs, tamper detection, the report that answers a user's claim |
 | Strategy registry | Every strategy in one place, and a new entry turning into working agents with no other change |
@@ -63,7 +63,7 @@ connections of its own open.
 
 | Script | Checks | Environment |
 |---|---|---|
-| `verify_city_ui.py` | Every panel, button and dialog of the city, text cut off or overflowing, the dock fitting from 320 to 412 px, axe on each surface: 246 checks per language | staging and production |
+| `verify_city_ui.py` | Every panel, button, tab and dialog of the city (every tab of Results included), text cut off or overflowing, the dock fitting from 320 to 412 px, Connect wallet in My agent's place without a session, axe on each surface: 276 checks per language | staging and production |
 | `verify_city.py` | The map paints and animates, panels, keyboard control, deep links, reduced motion, no horizontal overflow: 56 checks | both |
 | `verify_city_live.py` | What the city shows matches the API and Strike: agents and traders counted apart, every trader people can copy listed, real accounts and paper agents ranked apart: 46 checks | both |
 | `verify_city_cars.py` | The cars are Strike's real trades: the city reads `/price/v2/trades`, a car drives in, stops under the mouse, and pressing it shows its trade; the top bar counts what each site should: 12 checks | both |
@@ -71,9 +71,9 @@ connections of its own open.
 | `verify_onboarding_live.py` | Creates an agent with a test wallet on Strike testnet, edits it, hides it, signs in again, switches wallets and deletes it, at 1440 and 390 px: over 100 checks | staging only |
 | `verify_copy_live.py` | A signed copy plan carried out on Strike testnet, then stopped | staging only |
 
-The last full run before this submission (23 October 2026, on staging and again on production) passed everywhere: 246
-of 246 checks in English and in Spanish, 56 of 56, 46 of 46, 12 of 12 for the cars and 29 of 29 for Strike Finance and
-the screens. The last onboarding run on staging (22 October) passed every check.
+The last full run before this submission (23 October 2026, on staging) passed everywhere: 276 of 276 checks in
+English and in Spanish, 56 of 56, 46 of 46, 12 of 12 for the cars, 29 of 29 for Strike Finance and the screens, 103 of
+103 for the onboarding and 15 of 15 for a copy plan carried out by the copy pilot on Strike testnet.
 
 ## Accessibility
 

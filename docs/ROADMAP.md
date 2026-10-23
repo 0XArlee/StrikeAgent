@@ -110,8 +110,8 @@ reads the account every 1-3 minutes. The site runs on Cloudflare's edge and cach
 
 ## 5. Business model
 
-- **Builder fee**: 0.20 % per execution on every trade a user's agent makes, credited by Strike to the builder. It
-  grows with volume and was chosen so the strategy's edge survives it.
+- **Builder fee**: 0.20 % per execution on every trade of a marketplace strategy, credited by Strike to the builder.
+  It grows with volume and was chosen so the strategy's edge survives it. Copies pay no fee to us.
 - **Copy trading**: copies started by agents run on Strike's own copy trading, bringing it new money and new copiers.
 - **Creators**: a revenue share of the builder fee for strategy creators, paid automatically.
 - **For Strike**: a white-label city and score as Strike's official social and discovery layer; the score and widgets

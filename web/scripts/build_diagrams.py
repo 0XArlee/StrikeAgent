@@ -156,7 +156,7 @@ def card(s: Svg, x, y, w, h, n, title, who, rows=(), note=(), color=MINT, fill=P
 
 
 def integration():
-    s = Svg(900, 1350, "Every Strike integration in EdgeCraft-StrikeCity: 46 endpoints in six areas")
+    s = Svg(900, 1366, "Every Strike integration in EdgeCraft-StrikeCity: 46 endpoints in six areas")
     s.rect(230, 20, 440, 74, fill=STRIKE, stroke=MINT, rx=12)
     s.text(450, 50, "Strike Finance", size=19, fill="#fff", weight=700, anchor="middle")
     s.text(450, 74, "46 endpoints in use · six integrations · mainnet and testnet", size=11.5, fill=MINT, anchor="middle")
@@ -174,9 +174,10 @@ def integration():
         s.box(36 + i * 134, 352, 120, 50, t, [l], size=10.5, center=True, fill="#101a15", stroke=MINT_DIM)
         if i < 2:
             s.arrow(f"M{156 + i * 134},377 H{168 + i * 134}")
-    s.text(36, 436, "Revenue: 0.20 % per execution, credited by Strike to", size=11, fill=MUTED)
-    s.text(36, 452, "the builder. Funds never leave the user's account, and", size=11, fill=MUTED)
-    s.text(36, 468, "the user approves the fee in Strike's own message.", size=11, fill=MUTED)
+    s.text(36, 436, "Revenue: 0.20 % per strategy execution, credited by", size=11, fill=MUTED)
+    s.text(36, 452, "Strike to the builder (copies pay none). Funds never", size=11, fill=MUTED)
+    s.text(36, 468, "leave the user's account, and the user approves the", size=11, fill=MUTED)
+    s.text(36, 484, "fee in Strike's own message.", size=11, fill=MUTED)
 
     card(s, 460, 118, 420, 398, 2, "Trading API v2", "called by every agent on the host · Ed25519-signed", [
         ("GET /v2/time", "signing clock"),
@@ -195,10 +196,10 @@ def integration():
         ("POST /v2/leverage", "fits the margin"),
         ("GET /v2/history/fill", "fills, results"),
         ("GET /v2/history/transaction", "deposits kept out"),
-    ], ["Every order-creating request carries the builder fee,",
+    ], ["Every order a strategy places carries the builder fee,",
         "so each execution is credited to our builder code."])
 
-    card(s, 20, 532, 420, 300, 3, "Copy trading", "called by the collector (read only) and the copy pilot", [
+    card(s, 20, 532, 420, 316, 3, "Copy trading", "called by the collector (read only) and the copy pilot", [
         ("GET /v2/copy/discover", "traders to copy"),
         ("GET /v2/copy/leaderboard", "every copy, its end"),
         ("GET /v2/copy/subscriptions", "who copies whom"),
@@ -207,13 +208,14 @@ def integration():
         ("PATCH /v2/copy/subscribe/{id}", "change limits"),
         ("DELETE /v2/copy/subscribe/{id}", "stop it"),
         ("GET /v2/copy/subscriptions?scope=all", "status"),
+        ("GET /v2/sub-accounts", "your sub-accounts"),
     ], ["Collector: no keys, history kept beyond Strike's 30 days.",
-        "Pilot: Strike creates and funds a sub-account for each",
-        "copy, and enforces its stop-loss on Strike's side.",
+        "Pilot: a free sub-account of yours, or a new one only when",
+        "none fits; Strike enforces the stop-loss. No fee to us.",
         "Traders' names, badges and positions: /v2/account and",
         "/v2/positions; Hyperliquid's public API for its traders."], color=GOLD)
 
-    card(s, 460, 532, 420, 300, 4, "Market data, live in the city", "read straight from the browser (news: on the host)", [
+    card(s, 460, 532, 420, 316, 4, "Market data, live in the city", "read straight from the browser (news: on the host)", [
         ("GET /price/v2/ticker/24hr", "towers, top bar"),
         ("GET /v2/markets", "all 33 markets"),
         ("GET /price/v2/premiumIndex", "the fountain"),
@@ -225,7 +227,7 @@ def integration():
         "Finance's building STRIKE, its own token (Cardano),",
         "through DEX Screener: TradingView has no chart of it."], color=SKY)
 
-    card(s, 20, 848, 420, 316, 5, "Strike's own statistics", "read inside the Strike Finance building · /stat/v1", [
+    card(s, 20, 864, 420, 316, 5, "Strike's own statistics", "read inside the Strike Finance building · /stat/v1", [
         ("GET …/dashboard/summary", "the totals"),
         ("GET …/dashboard/volumes", "volume a day"),
         ("GET …/dashboard/open-interest", "OI a day"),
@@ -239,7 +241,7 @@ def integration():
         ("GET /v2/vaults", "Strike's vaults"),
     ], ["Volume, users, TVL, open interest, revenue and funding,", "live, as nobody shows them on Strike today."], color=MINT)
 
-    card(s, 460, 848, 420, 316, 6, "Into Strike's app, and our checks", "links for everyone · checks before every release", [
+    card(s, 460, 864, 420, 316, 6, "Into Strike's app, and our checks", "links for everyone · checks before every release", [
         ("Copy on Strike", "a trader's portfolio"),
         ("Builder codes", "from the landing"),
         ("smartflow strike-check", "public formats"),
@@ -249,14 +251,14 @@ def integration():
         ("mainnet test trade", "loop with the fee"),
     ], color=ROSE)
 
-    card(s, 20, 1180, 860, 150, 0, "What Strike gets back", "from every user and every agent", [], [], color=MINT, fill=STRIKE, stroke=MINT_DIM)
-    for i, l in enumerate(["Volume and fees through the builder code, on every execution",
+    card(s, 20, 1196, 860, 150, 0, "What Strike gets back", "from every user and every agent", [], [], color=MINT, fill=STRIKE, stroke=MINT_DIM)
+    for i, l in enumerate(["Volume and fees through the builder code (strategies' trades)",
                            "Money and copiers for Strike's copy trading",
                            "New users from Cardano wallets, trading from their first minute",
                            "A measured way to choose whom to copy",
                            "Its own numbers, shown live and in public",
                            "Open data: /api/copy and /api/city"]):
-        x, y = (36 if i < 3 else 466), 1253 + (i % 3) * 22
+        x, y = (36 if i < 3 else 466), 1269 + (i % 3) * 22
         s.rect(x, y - 7, 5, 5, fill=MINT, stroke=MINT, rx=1)
         s.text(x + 12, y, l, size=11.5, fill=TEXT)
     s.save("integration")
@@ -316,19 +318,20 @@ def onboarding():
 
 
 def copy_flow():
-    s = Svg(900, 676, "Copy with your agent: a signed plan carried out on Strike's own copy trading")
+    s = Svg(900, 700, "Copy with your agent: a signed plan carried out on Strike's own copy trading")
     xs = lifelines(s, [("You", "the agent's owner", TEXT), ("The site", "browser + Functions", TEXT),
-                       ("Copy pilot", "on the agents' host", GOLD), ("Strike", "copy trading", MINT)], bottom=656)
+                       ("Copy pilot", "on the agents' host", GOLD), ("Strike", "copy trading", MINT)], bottom=680)
     step(s, xs, 112, 1, 0, 1, "sign the copy plan, in plain words", ["one trader, or \"my agent chooses\" by", "your rules; amount, stop-loss, leverage,",
-                                                                     "markets to avoid, an end date"], color="gold")
+                                                                     "where it runs, an end date, the pauses"], color="gold")
     note(s, xs[1] + 14, 128, 196, ["checks the signature,", "stores the plan,", "writes an audit row"], color=MUTED)
     step(s, xs, 236, 2, 2, 1, "reads the signed plans", ["HMAC-signed, outbound"], color="faint", dash=True)
-    note(s, xs[2] - 92, 262, 184, ["Strike City score, platforms,", "review period, changes a week"], color=GOLD, title="Chooses by your rules")
-    step(s, xs, 352, 3, 2, 3, "POST /v2/copy/subscribe", ["auto_create_sub_account, stop_loss_amount,", "excluded_symbols, isolated margin, request_id"], color="gold")
-    note(s, xs[3] - 94, 404, 188, ["creates a sub-account,", "funds it from your account,", "copies the trader,", "enforces the stop-loss"], title="Strike")
-    step(s, xs, 520, 4, 2, 3, "GET /v2/copy/subscriptions?scope=all", ["where each copy really is"], color="faint", dash=True)
-    step(s, xs, 576, 5, 2, 1, "the copy's status", ["in My agent, and in the city: your", "agent stands with the trader"], color="gold")
-    step(s, xs, 644, 6, 3, 2, "stopped at its stop-loss, or refused", ["the plan halts until you sign again"], color="rose", dash=True)
+    note(s, xs[2] - 92, 262, 184, ["your rules (score, platforms),", "a free sub-account of yours,", "the News Tower's alarm and", "calendar (it waits them out)"],
+         color=GOLD, title="Chooses")
+    step(s, xs, 376, 3, 2, 3, "POST /v2/copy/subscribe", ["sub_account_id: one of yours, free", "or, if none fits, auto_create_sub_account"], color="gold")
+    note(s, xs[3] - 94, 428, 188, ["copies the trader in that", "sub-account (a new one only", "when asked), enforces", "the stop-loss"], title="Strike")
+    step(s, xs, 544, 4, 2, 3, "GET /v2/copy/subscriptions · /v2/sub-accounts", ["each copy and each sub-account's equity"], color="faint", dash=True)
+    step(s, xs, 600, 5, 2, 1, "the copy's status, your sub-accounts", ["in My agent (a chart per account), and", "in the city: your agent stands with the trader"], color="gold")
+    step(s, xs, 668, 6, 3, 2, "stopped at its stop-loss, or refused", ["the plan halts until you sign again"], color="rose", dash=True)
     s.save("copy")
 
 
@@ -406,7 +409,7 @@ def pipelines():
             s.box(x, y + 48, 124, 74, t, ls, color="#fff", size=10.5)
             if i < len(stages) - 1:
                 s.arrow(f"M{x + 124},{y + 85} H{x + 138}", color=ck, sw=1.3)
-    s.text(24, 336, "Agents never trade on news. The score's test reruns every hour in public, so its numbers move as copies add up.", size=10.5, fill=FAINT)
+    s.text(24, 336, "The strategies never trade on news; the tower's alarm and calendar pause copies. The score's test reruns hourly in public.", size=10.5, fill=FAINT)
     s.save("pipelines")
 
 

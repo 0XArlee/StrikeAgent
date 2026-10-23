@@ -13,10 +13,10 @@ code against testnet (`https://api-v2-testnet.strikefinance.org`).
 |---|:---:|---|---|
 | [Builder connect and builder code](#1-onboarding-through-builder-connect) | 2 + the fee header | the site's Functions | An agent on your own Strike account with one signature; 0.20 % per execution to the builder |
 | [Trading API v2](#2-trading-the-agents) | 16 | every agent, on the host | Entries with their stop attached, exits, leverage, results that leave deposits out |
-| [Copy trading](#3-copy-trading) | 13 | the collector and the copy pilot, on the host | The Copy Arena, the Strike City score, and managed copies run by your agent |
+| [Copy trading](#3-copy-trading) | 14 | the collector and the copy pilot, on the host | The Copy Arena, the Strike City score, and copies your agent runs in your sub-accounts (reused, not piled up) |
 | [Market data](#4-strikes-market-in-the-city) | 3 more (6 in all) | the browser; the news service | Strike's market drawn live: prices, order book, funding, all its markets, every trade as a car |
 | [Strike's own statistics](#5-strikes-own-numbers-inside-the-strike-finance-building) | 11 | the browser, inside the Strike Finance building | The platform's totals, daily volume, open interest, users, revenue, treasury, live positions, funding against other exchanges, vaults |
-| [Checks](#7-checking-our-side-of-the-contract) | 1 more | our release checks | Proof, before every release, that Strike answers as the client expects |
+| [Checks](#7-checking-our-side-of-the-contract) | (counted above) | our release checks | Proof, before every release, that Strike answers as the client expects |
 | **Total** | **46** | | Mainnet and testnet, same code |
 
 ![Every Strike integration: 46 endpoints in six areas](images/diagram-integration.svg)
@@ -56,8 +56,9 @@ keys, and the client syncs with Strike's clock before trading.
 | Leverage that fits Strike's margin | `POST /v2/leverage` |
 | Results that leave deposits out | `GET /v2/history/fill`, `GET /v2/history/transaction` (deposits, withdrawals, transfers) |
 
-Every order-creating request carries `X-Builder-Fee-Bps: 20`, so each execution is attributed to our builder code. If
-an agent ever sees a fill attributed to someone else, it raises an error alert to the operator.
+Every order a marketplace strategy places carries `X-Builder-Fee-Bps: 20`, so each execution is attributed to our
+builder code (copies run on Strike's copy trading and carry no builder fee). If an agent ever sees a fill attributed to
+someone else, it raises an error alert to the operator.
 
 **Test trade.** From "My agent" an owner can ask for a test: the agent opens Strike's minimum order with its stop, holds
 it for two minutes and closes it, so a new user sees the whole loop work on their own account. Test trades are marked
@@ -88,7 +89,9 @@ published ([STRATEGY.md](STRATEGY.md#the-strike-city-score)).
 
 | What for | Endpoints |
 |---|---|
-| Start a managed copy: Strike creates a sub-account for it and funds it from the owner's account, or from the last copy's sub-account | `POST /v2/copy/subscribe` (`auto_create_sub_account`, `source_account_id`, fixed ratio or fixed margin, `stop_loss_amount`, `excluded_symbols`, isolated `margin_settings`, an idempotent `request_id`) |
+| The owner's sub-accounts: name, equity, available money (and, with the copies, which one copies whom) | `GET /v2/sub-accounts` |
+| Start a copy in a sub-account the owner already has: one that copies nobody and has the money, or the one they chose | `POST /v2/copy/subscribe` with `sub_account_id` |
+| Only when none fits, start a managed copy: Strike creates a sub-account for it and funds it from the owner's main account | `POST /v2/copy/subscribe` (`auto_create_sub_account`, `source_account_id`, fixed ratio or fixed margin, `stop_loss_amount`, `excluded_symbols`, isolated `margin_settings`, an idempotent `request_id`) |
 | Change a running copy's limits | `PATCH /v2/copy/subscribe/{subscription_id}` |
 | Stop a copy | `DELETE /v2/copy/subscribe/{subscription_id}` |
 | Where each copy really is, in Strike's own words | `GET /v2/copy/subscriptions?scope=all` |
@@ -96,6 +99,16 @@ published ([STRATEGY.md](STRATEGY.md#the-strike-city-score)).
 
 Strike applies the stop-loss on its side. A copy that Strike stopped at its stop-loss, or refused, halts the plan until
 the owner signs again. Nothing here moves money out of Strike.
+
+A sub-account runs one copy at a time, and Strike allows 20 per account, so the pilot reuses them instead of creating one
+per copy. Money moves between an owner's main account and sub-accounts only in Strike's app (Strike keeps those
+transfers to it: they are not open to API wallets), so "My agent" shows each sub-account's balance and links there to
+top one up. The pilot also reads each sub-account's equity every two hours, so the owner's chart can show every account
+and never a transfer as a loss.
+
+The News Tower protects copies: a copy pauses while its security alarm is on (a hack, or an exchange's halt or
+insolvency, scored -30 or worse in the last day) and, if the owner chose, from 30 minutes before to an hour after the
+big US releases on its calendar (Fed decisions, CPI, jobs, PCE, GDP). The strategies never trade on news.
 
 ![Copy with your agent: a signed plan carried out on Strike's own copy trading](images/diagram-copy.svg)
 
@@ -169,7 +182,8 @@ Before going live we put our open questions to Strike's team (19 October 2026), 
 
 ## 9. What it gives back to Strike
 
-- **Volume and fees** through the builder code, on every execution of every user's agent.
+- **Volume and fees** through the builder code, on every execution of the marketplace strategies (copies carry no
+  builder fee).
 - **Money and copiers for Strike's copy trading**, from the copies agents start for their owners.
 - **New users** who arrive from a Cardano wallet with their Strike account trading from the first minute.
 - **A better way to choose whom to copy**, measured on Strike's own copies, and a place where copy trading is visible

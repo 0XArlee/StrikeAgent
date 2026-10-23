@@ -39,9 +39,10 @@ real copies. This page explains what protects them, and what a security review o
 
 - Risk per trade from 0.5 % to 2 %, daily and weekly loss limits, a stop placed with every entry, and a strategy-wide
   safety hold when live results leave the backtest's range.
-- Copies run in a **managed sub-account** that Strike creates and funds for that copy: the copy can never touch more than
-  what was put into it, and **Strike** enforces the stop-loss. A copy Strike refused or stopped halts the plan until the
-  owner signs again.
+- Copies run in a **sub-account** of the owner's, one copy at a time each: a free one is reused (or the one the owner
+  chose), and only when none fits does Strike create and fund a new one. The copy can never touch more than what is in
+  its sub-account, and **Strike** enforces the stop-loss. A copy Strike refused or stopped halts the plan until the owner
+  signs again.
 - A deleted agent has its Strike connection turned off and any copy it runs stopped.
 
 ## Evidence: tamper-evident records

@@ -37,7 +37,7 @@ which is what someone about to copy needs to know. The Copy Arena puts that in f
   the Copy Arena's door while they hold nothing. The people copying them right now walk behind them in a line.
 - **The arena itself.** A building with an interior: the leaderboard on an LED wall, the three best on a podium, the
   copiers' wall with the copies that went best, and Strike's copy-trading totals. The landing page has a section with
-  the hall live inside it, and Ranks shows the three best traders to copy.
+  the hall live inside it, and the Ranking tab of Results shows the three best traders to copy.
 - **Clear numbers on every card.** Who copies a trader now, how many copies they have had in total, and how many of
   those ended in profit, kept apart so nobody confuses one with the other.
 
@@ -76,7 +76,9 @@ which is what someone about to copy needs to know. The Copy Arena puts that in f
   and a scoreboard of how past readings turned out.
 - **A building you walk into.** Six floors with a lift (the newsroom, Fed and macro, geopolitics, regulation and
   courts, money and flows, security and exchanges), an LED marquee on the facade, and your agent walking in with you.
-  When the reading of a market changes level, the agents trading it walk over to read it. They never trade on news.
+  When the reading of a market changes level, the agents trading it walk over to read it. The strategies never trade
+  on news; the news protects copies: a copy pauses during the security alarm (a major hack, an exchange going down) and,
+  if its owner chose, around the big US releases on the tower's calendar.
 
 ### 5. Strike Finance, from the inside
 
@@ -92,7 +94,21 @@ which is what someone about to copy needs to know. The Copy Arena puts that in f
 - **STRIKE on its screen.** Outside, the building's screen shows STRIKE, Strike Finance's own token on Cardano, through
   DEX Screener's chart (TradingView has no chart of it), next to Strike's live order book.
 
-### 6. The city, rebuilt and alive
+### 6. Your money, clearly
+
+- **Sub-accounts reused, or chosen.** A sub-account runs one copy at a time, so a new copy reuses one of the owner's
+  that copies nobody and has the money (or the one they choose when signing), and only when none does Strike creates a
+  new one. My agent lists every sub-account with its balance and whom it copies, and links to Strike's app to top one
+  up (Strike keeps transfers between accounts to its app).
+- **An account chart that never lies.** A tab per account: the result (deposits, withdrawals and money moved into a
+  copy left out), every account together, the main account as it is, and each copy's sub-account. Money moved into a
+  copy shows as a drop only on the main account's tab, explained there. Gradient, grid, dates and a point readout with
+  the pointer, a finger or the arrow keys.
+- **Strategy and copy independent.** Pausing the strategy keeps a copy going and stopping a copy keeps the strategy
+  trading; My agent says so next to both.
+- **Fees stated plainly.** The 0.20 % builder fee applies to the marketplace strategies' trades only; copies pay none to us.
+
+### 7. The city, rebuilt and alive
 
 - **New art.** The whole map redrawn with LimeZu's licensed Modern Exteriors, with every door checked to be reachable on
   foot, and a character creator built on LimeZu's generator.
@@ -106,13 +122,17 @@ which is what someone about to copy needs to know. The Copy Arena puts that in f
   them.
 - **Everything Strike lists.** Markets shows all 33 of Strike's markets with their names and maximum leverage, and
   Agents lists every trader people can copy on Strike.
-- **Real and paper kept apart.** On mainnet the top bar and Ranks count real accounts only, and the paper agents that
-  test the strategies are ranked on their own. Staging counts both, because that is what it is for.
+- **Real accounts only in production.** Production shows and counts real accounts only; the paper agents that test
+  the strategies live on staging, where paper and testnet trading belong and count.
+- **A Results hub.** One button with tabs: a summary, the marketplace strategies (live results next to each backtest),
+  the copy pilot (which agent copies whom), Strike's copy trading, and the ranking.
+- **Questions by topic.** The landing's questions grouped in five topics, each one a short list of answers that open in
+  place, covering everything new.
 - **Polish where people look.** Readable building signs, a top bar that never overflows, characters that never stand
   cut off at the edge of the map, Connect wallet right in the dock (My agent once a wallet is in), a complete Guide, and
   a Suggest button that takes feedback with a screenshot.
 
-### 7. A security review before mainnet
+### 8. A security review before mainnet
 
 The copy feature moves real money, so before opening it we reviewed authentication and signatures, builder connect,
 copy plans end to end, the host's endpoints, uploads, security headers, dependencies and the repository's history.
@@ -120,7 +140,7 @@ Result: no critical or high findings, 0 known vulnerabilities in production depe
 history, and the server's signature checks cross-checked against independent references. The review and its hardening
 backlog are published in [SECURITY.md](SECURITY.md#security-review-22-october-2026).
 
-### 8. Verification, every step of the way
+### 9. Verification, every step of the way
 
 - Every change went to staging on Strike testnet first, was checked there in a real browser, then went to production
   and was checked again.
@@ -128,7 +148,7 @@ backlog are published in [SECURITY.md](SECURITY.md#security-review-22-october-20
   checks cover the cars, the Strike Finance hall and the screens, the separation of real and paper results, and every bug reported during testing, at desktop and phone
   sizes, with axe-core accessibility audits on every surface ([QUALITY.md](QUALITY.md)).
 
-### 9. Clean code and documentation
+### 10. Clean code and documentation
 
 - One checked bech32 decoder shared by the page and the server, typed agent voice moments, and no unused code.
 - Documentation in English: this folder, the README with screenshots, every Strike call explained, diagrams generated
@@ -151,12 +171,12 @@ Mainnet and testnet, both live. Every call is listed and explained in [STRIKE_IN
 
 **Utility and impact.** Only about one copy in five on Strike ends in profit, and a leaderboard number does not tell
 you who is worth copying. The Copy Arena shows what copying each trader actually did, and copy with your agent turns a
-choice into a signed, limited, automatic plan. For Strike, every user's agent trades through the builder code, every
+choice into a signed, limited, automatic plan. For Strike, every marketplace strategy trades through the builder code, every
 copy it starts brings money and copiers into Strike's own copy trading, and every user who joins through us has their
 Strike account working with an agent from the first minute.
 
 **Technical execution.** Live on mainnet, with a staging copy on testnet. One engine for backtest and live, keys that
-never leave the host, wallet signatures verified server-side, hash-chained audit logs anchored off the host, 174
+never leave the host, wallet signatures verified server-side, hash-chained audit logs anchored off the host, 180
 tests, and real-browser checks with accessibility audits on every surface in two languages
 ([QUALITY.md](QUALITY.md)).
 
@@ -171,7 +191,7 @@ around everything that trades on Strike ([ROADMAP.md](ROADMAP.md)).
    Strike, with the people copying them behind.
 2. Rest the mouse on a car and press it: a real trade on Strike, a few seconds or minutes old.
 3. Click the **Strike Finance** building and go inside: Strike's own volume, open interest, users and funding, live.
-   Then open **Ranks**, enter the **Copy Arena** and visit the podium and the leaderboard.
+   Then open **Results**, its **Ranking** tab, enter the **Copy Arena** and visit the podium and the leaderboard.
 4. Click the **News Tower** and go inside; try the lift.
 5. Open **Markets** for all of Strike's markets, and the
    [strategy catalogue](https://edgecraft-strikecity.pages.dev/#strategies) on the landing page.
