@@ -154,6 +154,11 @@ Every long on a perpetuals exchange has a short on the other side, so the open i
 what tells the mood is how many positions are long. The summary's own open-interest field reads zero today, so the hall
 computes it from the live positions and the daily series instead.
 
+**The same reads power the alerts** ([ALERTS.md](ALERTS.md)), with no new endpoint: the tickers for big moves,
+`premiumIndex` for extreme funding, the live positions for the liquidation radar, whales and crowded markets,
+`/v2/markets` for listings and halts, and `/v2/positions` and `/v2/account` (by account id or by wallet address) for
+each person's distance to liquidation, margin and copies. All public: the bot holds no key.
+
 ## 6. Links into Strike's app
 
 Every trader card and profile has **Copy on Strike**, which opens that trader's public portfolio in Strike's app, where

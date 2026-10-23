@@ -16,7 +16,7 @@ waiting for them.
 | **Vaults** (allocate to vetted trading firms) | **Agent vaults**: a strategy agent as a vault anyone can join, with a verifiable record (hash-chained journals anchored outside the host) and a live character in the city. The **Vault Bank** building becomes the place to see them. | Strategy registry, paper agents as public track records, strategy health and safety hold, audit trail |
 | **Trading tools platform** (publish and rent tools) | A **strategy marketplace**: creators publish strategies that run first as paper agents, are gated by health against their backtest, and earn a share of the builder fee. **Smart Flow HQ** becomes the creators' building. | The registry already has a `creator` and `revenue_share_bps` per strategy; the host refuses to run what it cannot run |
 | **Spot and RWAs** | New districts: an equities quarter, RWA towers, News Tower floors for earnings and rates. Agents and leads walk there as they do today. | Copied traders already hold equities and commodities through Hyperliquid (shown in their cards) |
-| **Mobile app and fiat ramps** | Onboarding without a crypto wallet through Strike's ramps; the city as an embeddable view in Strike's app; push notifications ("your agent opened BTC", "your copy hit its stop"). | Fully responsive city and onboarding (tested at 320-1920 px), alert pipeline (`notify.py`) |
+| **Mobile app and fiat ramps** | Onboarding without a crypto wallet through Strike's ramps; the city as an embeddable view in Strike's app; push notifications ("your agent opened BTC", "your copy hit its stop"). | Fully responsive city and onboarding (tested at 320-1920 px), and the alerts bot already sending those messages on Telegram ([ALERTS.md](ALERTS.md)) |
 | **Cross-chain lending** | Agents that use lending collateral as margin, shown in the Vault Bank; risk rules that understand borrowed margin. | Risk engine with margin-aware leverage |
 | **Copy trading growth** | Copy with your agent from anywhere Strike users are (Discord, X), a public score API, and a portfolio pilot that spreads a budget over several traders. | Copy pilot (manual and automatic), the Strike City score re-tested hourly, public `GET /api/copy` |
 
@@ -25,7 +25,8 @@ waiting for them.
 ### Next weeks
 - **Copy pilot portfolios**: one plan, several traders, a budget split by score and correlation, rebalanced on the
   review period, with per-trader stop-losses.
-- **Notifications per user** (Telegram, Discord, email): entries, exits, copies started or stopped, safety holds.
+- **Alerts on more channels**: the Telegram bot already sends each user's liquidation risk, copies and agent; the same
+  messages on Discord, email and push, and thresholds people set themselves (a price, a distance to liquidation).
 - **Embeddable widgets**: "Top 3 to copy", a trader's card, a live mini-city, for Strike's site, Discord and creators.
 - **Score API**: the Strike City score and its evidence as documented, versioned public endpoints.
 - **More markets** as Strike lists them: the strategy registry and the city pick them up from configuration.
@@ -55,8 +56,8 @@ Each of these reuses something already running, which is why they are realistic:
   the onboarding is built around one signature, so opening it to EVM and Solana wallets multiplies who can join.
 - **Plain-language explanations.** Every decision already carries its reasons (range, volume, trend, risk check). A
   "why did my agent do that?" answer, and a weekly digest of what it did, are a short step away.
-- **A Discord bot and alerts per user.** The alert pipeline exists; pointing it at each user's channel turns the city
-  into notifications people act on.
+- **Alerts everywhere Strike users are.** The Telegram bot already watches each user's accounts, copies and agent and
+  Strike's moments for everyone; the same messages fit a Discord bot, a widget or Strike's own app.
 - **A public API and widgets.** `/api/copy` and `/api/city` are already public; versioning them and adding embeddable
   widgets lets other builders, creators and Strike itself show the score and the city anywhere.
 - **Research as a service.** The event study, the exit study and the hourly score test are reusable: any strategy in

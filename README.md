@@ -20,17 +20,44 @@
 
 ## The idea
 
-Trading on Strike happens behind numbers. A trading bot is a process nobody sees, and a copy-trading leaderboard is a
-list that tells you very little about what copying someone actually did for the people who tried it.
+**Trading on Strike happens behind numbers.** A trading bot is a process nobody sees: you check a balance and hope. A
+copy-trading leaderboard shows what a trader made, not what happened to the people who copied them, and across every
+copy Strike has published, only about one in five ended in profit. Starting an agent still means API keys, servers and
+config files. On every side, the bottleneck is the same: people cannot trust what they cannot see.
 
-We wanted to make all of that visible. EdgeCraft-StrikeCity is a pixel-art city where every character is driven by
-real data from Strike. Trading agents walk to the Signal Lab when a candle closes, to the Strike Finance building when they
-send an order, and to a market's tower while they hold a position there. The traders people copy on Strike walk the
-streets with their current copiers in a line behind them. Nothing moves for decoration.
+**EdgeCraft-StrikeCity makes Strike visible.** It is a living pixel-art city where every character is real state on
+Strike. An agent walks to the Signal Lab when its candle closes, to Strike Finance when it sends an order, to a market's
+tower while it holds a position there. The traders people copy walk the streets with their copiers in a line behind
+them. Every car is a real trade on Strike mainnet, every tower carries its market's live chart, and Strike Finance opens
+its doors on Strike's own numbers. Nothing moves for decoration, so one look at the city tells you what is really
+happening on Strike.
 
-Behind the city sits a complete product. You can create an agent that trades your own Strike account with a single
-wallet signature, choose whom to copy with a score that was tested on real copies, and let your agent run that copy
-for you under rules you sign.
+**Behind the city sits a complete product, live on mainnet today:**
+
+- **An agent in one signature.** Pick a strategy from a marketplace where each one shows its rules and its full
+  backtest after every cost, sign Strike's builder connect once, and an agent trades your own Strike account. Your money
+  stays there: withdrawals only go to your own wallet, and the agent never makes one.
+- **Whom to copy, proven rather than promised.** The Copy Arena measures every copy Strike has published, and the
+  Strike City score is re-tested every hour in public: across 389 copies of 70 traders, a copy that made money
+  outscored one that lost 59 % of the time with our score, against 50 %, a coin toss, with Strike's own.
+- **Copy with your agent.** Sign a plan in plain words (one trader, or your agent choosing by your rules) with your
+  amount, stop-loss and leverage; it runs on Strike's own copy trading, in your sub-accounts, with Strike enforcing the
+  stop.
+- **Protection that speaks up.** A News Tower that measures every headline against Strike's price and pauses copies
+  when an exchange or a protocol is hit, and a Telegram bot that warns you before a position is liquidated, when your
+  copy misses a trade, or when the trader you copy gets into trouble.
+
+**Why it matters.** For traders, it turns "trust me" into "see for yourself", and it takes the step from interested to
+trading down to one signature. For Strike, every strategy trade adds volume through the builder code, every copy an
+agent runs brings capital and copiers into Strike's copy trading, a Cardano wallet becomes a trading account in a
+minute, and Strike's own numbers are on show, live, in a building anyone can walk into.
+
+**Where it goes.** Everything here was built to grow into Strike's social layer and its front door for automated
+trading: agent vaults anyone can join, each backed by the hash-chained record every agent already keeps; a creators'
+marketplace where outside strategies earn a share of the fee; agents that become copy leads in Strike's own app; new
+districts as Strike adds spot, real-world assets and lending; a fleet designed to shard to 10,000 agents; and the score as an
+open API other builders can embed. Each piece lines up with Strike's 2026 roadmap: vaults, a marketplace for trading
+tools, new asset classes and mobile. → [docs/ROADMAP.md](docs/ROADMAP.md)
 
 | Live | 1 | 46 | 389 | 195 | 0.20 % |
 |:---:|:---:|:---:|:---:|:---:|:---:|
@@ -167,7 +194,9 @@ Each area, in detail and with its evidence: [docs/HACKATHON.md](docs/HACKATHON.m
 2. Click the **Strike Finance** building and go inside for Strike's own numbers; then the **News Tower**, or open
    **News** in the top bar.
 3. Browse the [strategy catalogue](https://edgecraft-strikecity.pages.dev/#strategies) and open a strategy's page.
-4. **With a Cardano wallet** (Lace, Eternl, Yoroi, Typhon, VESPR, NuFi, Begin, GeroWallet or any CIP-30 wallet),
+4. Open **Alerts**, then [@EdgeCraftStrikeCityBot](https://t.me/EdgeCraftStrikeCityBot) on Telegram: `/strike` for
+   Strike right now, or `/watch` and any Strike account to have its positions and copies looked after.
+5. **With a Cardano wallet** (Lace, Eternl, Yoroi, Typhon, VESPR, NuFi, Begin, GeroWallet or any CIP-30 wallet),
    press **Connect wallet** to create an agent on your own Strike account. On staging the same flow runs on Strike
    testnet with a Preprod wallet.
 

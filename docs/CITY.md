@@ -54,7 +54,7 @@ news reading, the day's move, its day in R). The personality never changes how i
   under a finger, with a light outline; pressing it shows the trade (market, side, size, price, value and how long
   ago). With reduced motion the cars park along their road instead of driving.
 - **Weather**: calm, breezy or stormy with BTC's 24h move.
-- **Top bar**: the live badge, BTC, ETH and SOL with their 24-hour change, the news (with the next US macro release),
+- **Top bar**: BTC, ETH and SOL with their 24-hour change, the news (with the next US macro release),
   the weather and the language, nothing more: the map keeps the room.
 - **The city's figures** (Results, summary tab): agents online, agents in a trade, the trades and result over the last 24
   hours, and the totals. On production they count real accounts only (the paper agents that test the strategies live
