@@ -1,0 +1,11 @@
+node_modules
+dist
+.DS_Store
+.env
+
+# Ignore the output video from Git but not videos you import into src/.
+out
+
+# recordings and renders (large; the demo is delivered as a file)
+public/clips/
+out/
