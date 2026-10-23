@@ -102,6 +102,7 @@ def real_mode(p, name, viewport, mobile):
     # a real agent's card: its latest real check, schedule and paper account. An agent in a trade shows its position
     # instead, so the first one that is not in a trade (when all are, its position is checked)
     # (one of Smart Flow's own paper agents where there are some; production shows users' real accounts only)
+    in_trade = lambda card: bool(re.search(r"Open position(?!s)", card))   # a real account's card also says "Open positions 0"
     papers = [a for a in real if a.get("kind") != "live"]
     def open_card(i):
         if not page.locator(".city-panel").count():   # phones: picking an agent closes the panel
@@ -117,7 +118,7 @@ def real_mode(p, name, viewport, mobile):
         if papers and "PAPER" not in card.upper():
             continue
         first_paper = i if first_paper is None else first_paper
-        if "Open position" not in card:
+        if not in_trade(card):
             break
     else:
         card = open_card(first_paper or 0)
@@ -129,7 +130,7 @@ def real_mode(p, name, viewport, mobile):
         check(f"{name}: card tags a user's agent as real, on Strike", "REAL · STRIKE" in card.upper())
     check(f"{name}: card shows the latest real check", "No trade on" in card or "Opened" in card or "BUY" in card or "SELL" in card
           or ("Checked its" in card and "at the last candle close" in card))
-    if "Open position" in card:
+    if in_trade(card):
         print(f"  ({name}: every agent is in a trade: its open position is checked instead of the next check)")
         check(f"{name}: card shows the open position", all(k in card for k in ("Entry", "Stop")), card.replace("\n", " | ")[-200:])
         check(f"{name}: card shows its open result", bool(re.search(r"Open result\s+[+−-]?\d", card)), card.replace("\n", " | ")[-120:])

@@ -125,9 +125,14 @@ def run(p, name, viewport, mobile):
     page.wait_for_timeout(300)
     page.screenshot(path=str(OUT / f"c05_details_activity_{name}.png"))
     axe(page, f"{name} details dialog")
+    # the tab after the open one: Trades after a paper agent's Activity, Activity after a real account's Portfolio
+    tabs = page.evaluate("() => [...document.querySelectorAll('dialog.city-details [role=tab]')].map(t => t.id)")
+    sel = page.evaluate("() => document.querySelector('dialog.city-details [role=tab][aria-selected=true]')?.id")
     page.keyboard.press("ArrowRight")
     page.wait_for_timeout(200)
-    check(f"{name}: arrow keys move between tabs", page.evaluate("() => document.activeElement?.id") == "tab-trades")
+    want = tabs[(tabs.index(sel) + 1) % len(tabs)] if sel in tabs else "tab-trades"
+    now = page.evaluate("() => document.activeElement?.id")
+    check(f"{name}: arrow keys move between tabs", now == want, f"{sel} -> {now} (want {want})")
     page.screenshot(path=str(OUT / f"c05_details_trades_{name}.png"))
     page.get_by_role("tab", name="Stats").click()
     page.wait_for_timeout(200)
