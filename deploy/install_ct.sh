@@ -48,7 +48,7 @@ systemctl daemon-reload
 systemctl enable --now smartflow-data.timer
 systemctl enable --now smartflow-backup.timer
 # alerts to the operator's phone: /etc/smartflow/alert.env (SMARTFLOW_ALERT_WEBHOOK=...), written from the operator's
-# PC (docs/OPERATIONS.md "Alerts and monitoring"); without it everything runs the same and nothing is sent
+# PC; without it everything runs the same and nothing is sent
 [ -f /etc/smartflow/alert.env ] && { chown root:smartflow /etc/smartflow/alert.env; chmod 640 /etc/smartflow/alert.env; }
 systemctl enable --now smartflow-watchdog.timer
 systemctl enable --now smartflow-health.timer
@@ -61,7 +61,7 @@ for i in $PAPER; do
 done
 systemctl enable smartflow-api >/dev/null 2>&1
 systemctl restart smartflow-api
-if [ -f /etc/smartflow/push.env ]; then   # created once from the operator's PC (docs/OPERATIONS.md), never in the bundle
+if [ -f /etc/smartflow/push.env ]; then   # created once from the operator's PC, never in the bundle
   systemctl enable smartflow-push >/dev/null 2>&1
   systemctl restart smartflow-push
 fi
@@ -76,7 +76,7 @@ if [ ! -f /etc/smartflow/keys.key ]; then
   (umask 027; python3 -c "import os; print(os.urandom(32).hex())" > /etc/smartflow/keys.key)
   chown root:smartflow /etc/smartflow/keys.key; chmod 640 /etc/smartflow/keys.key
 fi
-# the News Tower's data (never touches the agents); its model key, if any, in /etc/smartflow/news.env (docs/OPERATIONS.md)
+# the News Tower's data (never touches the agents); its model key, if any, in /etc/smartflow/news.env
 install -d -o smartflow -g smartflow -m 750 /var/lib/smartflow/news
 [ -f /etc/smartflow/news.env ] && { chown root:smartflow /etc/smartflow/news.env; chmod 640 /etc/smartflow/news.env; }
 systemctl enable smartflow-news >/dev/null 2>&1
@@ -89,7 +89,7 @@ if [ -f /etc/smartflow/fleet.env ]; then   # site URL + secret + SMARTFLOW_LIVE_
   systemctl enable smartflow-fleet >/dev/null 2>&1
   systemctl restart smartflow-fleet
 fi
-# real money: only with its own settings file, written on purpose when Edgar switches mainnet on (docs/OPERATIONS.md)
+# real money: only with its own settings file, written on purpose when the operator switches mainnet on
 if [ -f /etc/smartflow/fleet-mainnet.env ]; then
   systemctl enable smartflow-fleet-mainnet >/dev/null 2>&1
   systemctl restart smartflow-fleet-mainnet

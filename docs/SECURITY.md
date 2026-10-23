@@ -64,8 +64,8 @@ real copies. This page explains what protects them, and what a security review o
   1 MB, and are served with `nosniff` through signed links.
 - Headers: HSTS, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, a strict referrer policy, and a
   permissions policy with no camera, microphone, geolocation or payment.
-- No secrets in the repository (its full history scanned for common key and token formats); the operator's local secrets are encrypted with
-  Windows DPAPI.
+- No secrets in the repository (its full history scanned for common key and token formats); the operator's local secrets are
+  encrypted at rest.
 
 ## Security review (22 October 2026)
 

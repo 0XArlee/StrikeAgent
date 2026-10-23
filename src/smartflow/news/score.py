@@ -1,4 +1,4 @@
-"""The reading of each market from its news, as in the oil trader's panel the plan copies (docs/OPERATIONS.md), done the way a
+"""The reading of each market from its news, as in the oil trader's panel the plan copies, done the way a
 desk would do it:
 
 - Only catalysts count: price recaps, predictions, items the model calls irrelevant, the ones it is unsure about

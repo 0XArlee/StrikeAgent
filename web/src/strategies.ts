@@ -41,7 +41,7 @@ export const riskAllowed = (strategy: StrategyId, risk: RiskPreset) =>
 /** The highest preset a strategy allows: picking it with a higher one brings the risk down to this. */
 export const maxRisk = (strategy: StrategyId): RiskPreset => strategyDef(strategy).max_risk;
 /** The recommended balance in the Strike account, the same at every preset (Edgar 2026-10-21: 250 $). With it the
- *  agent takes ~99 % of the signals above Strike's ~10 $ minimum order even at 0.5 % (backtest 2022-2026; docs/OPERATIONS.md). */
+ *  agent takes ~99 % of the signals above Strike's ~10 $ minimum order even at 0.5 % (backtest 2022-2026; docs/STRATEGY.md). */
 export const MIN_BALANCE: Record<RiskPreset, number> = { conservative: 250, standard: 250, assertive: 250 };
 /** "Test my agent" needs about this much available: Strike's smallest order (~11 $) + 5 % (web/server/handlers.ts). */
 export const TEST_MIN_AVAILABLE = 12;

@@ -82,7 +82,7 @@ Spanish, 56 of 56 and 44 of 44 on both sites, and every onboarding check on stag
 ## In production
 
 - A **watchdog** every five minutes (stopped services, a site without fresh data, an agent that stopped checking
-  candles, a full disk), plus an **external watchdog** in GitHub Actions, ready to check the public site from outside
-  the house.
+  candles, a full disk), plus an **external watchdog** in GitHub Actions, ready to check the public site from
+  outside.
 - **Strategy health** every hour, with an automatic safety hold if live results leave the backtest's range.
 - **Daily backups** of the audit trail with a check of every hash chain.

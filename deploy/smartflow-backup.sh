@@ -1,5 +1,5 @@
 #!/bin/bash
-# Daily copy of the audit trail (docs/OPERATIONS.md "Audit trail"): every agent's journal, the accounts' fills and
+# Daily copy of the audit trail (docs/SECURITY.md): every agent's journal, the accounts' fills and
 # readings, the site's copied rows. Kept 90 days in /var/backups/smartflow. Then every chain is checked: a broken one
 # fails the unit (systemctl --failed, journalctl -u smartflow-backup). No keys live under runs/.
 set -euo pipefail

@@ -174,7 +174,6 @@ in [docs/ROADMAP.md](docs/ROADMAP.md).
 | [STRATEGY.md](docs/STRATEGY.md) | Smart Flow, the research, risk levels, the builder fee, the Strike City score |
 | [SECURITY.md](docs/SECURITY.md) | How users are protected, and the security review |
 | [QUALITY.md](docs/QUALITY.md) | Staging on Strike testnet, the tests, real-browser checks, accessibility |
-| [OPERATIONS.md](docs/OPERATIONS.md) | Deployment, switches, monitoring, audit trail |
 | [ROADMAP.md](docs/ROADMAP.md) | The future: product, scaling, business model |
 
 ## Run it locally

@@ -7,7 +7,7 @@ the folder (a backup, a synced drive, another account on the PC) cannot be read.
     smartflow secrets status    # which files are encrypted
 
 Readers go through ``read_text(path)``: it reads ``path`` if it still exists in plain text, else ``path.dpapi``.
-The agents' host does not use this: its secrets are root-owned files there (docs/OPERATIONS.md).
+The agents' host does not use this: its secrets are root-owned files there.
 
 DPAPI ties the files to this Windows user. If that account is lost, so are these copies: the Cloudflare secrets can
 be put again (``wrangler pages secret put``) and Strike API wallets created again in the Strike app.

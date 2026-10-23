@@ -1,8 +1,8 @@
 # Architecture
 
 Three parts, each doing one job: a static site with a small serverless API on Cloudflare, a host that runs everything
-that needs keys or a long-lived process, and Strike. Nothing at home listens to the internet: the host only makes
-outbound, signed requests.
+that needs keys or a long-lived process, and Strike. The host never listens to the internet: it only makes outbound, signed
+requests.
 
 ![How EdgeCraft-StrikeCity is built: the browser, Cloudflare, the agents' host and Strike](images/diagram-architecture.svg)
 

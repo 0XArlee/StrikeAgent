@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build the bundle for the LXC: code, configs, unit files and tests. Never data, runs, secrets, the web or the
 # proprietary indicator source (SmartFlowSignals.txt stays on the development machine).
-# Usage (Git Bash, from the repo): deploy/bundle.sh [out.tgz]   then see docs/OPERATIONS.md "Updating the host".
+# Usage (Git Bash, from the repo): deploy/bundle.sh [out.tgz]   then copy it to the host and run deploy/install_ct.sh there.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 out="${1:-smartflow.tgz}"
