@@ -92,10 +92,12 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   const leads = useRef<AgentView[]>([]);   // the leads walking the city with their copiers: out of the agents' totals (Agents lists them apart)
   const leadR = useMemo(() => mulberry(0x1ead), []);
   const leadLink = useRef(readLeadLink());
-  // the screens' charts: shown once drawn (until then the city's own drawing shows); a tower's loads only once it has
-  // been on screen, so the city never loads three charts nobody is looking at
+  // the screens' charts: shown once drawn (until then the city's own drawing shows); a tower's loads as soon as it is on
+  // screen, and the others one after another once the city and its screen have loaded, so they are already drawn when
+  // someone looks up at them (they never compete with the city's own load)
   const [chartOn, setChartOn] = useState<Record<string, boolean>>({});
   const [towerSeen, setTowerSeen] = useState<Record<string, boolean>>({});
+  const [towersNext, setTowersNext] = useState(false);
   const seen = useRef<Record<string, boolean>>({});
   const overlay = useRef<Record<string, HTMLDivElement | null>>({});
   const [welcome, setWelcome] = useState(() => { try { return localStorage.getItem("sf-city-welcome") !== "1"; } catch { return true; } });
@@ -163,6 +165,28 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
     if (deep && store.agent(deep)) { e.select({ kind: "agent", id: deep }, false); setSel({ kind: "agent", id: deep }); }
     return () => { e.stop(); engine.current = null; };
   }, [ready, store]);
+
+  // the towers nobody has looked at yet: once Strike Finance's screen has its chart (or 4 s after the city is drawn),
+  // one at a time; the next starts when the ones loading have their candles, or after 8 s (one that never loads,
+  // blocked or offline, does not hold up the rest)
+  useEffect(() => {
+    if (!ready || towersNext) return;
+    if (chartOn.strike) { setTowersNext(true); return; }
+    const id = window.setTimeout(() => setTowersNext(true), 4000);
+    return () => window.clearTimeout(id);
+  }, [ready, chartOn.strike, towersNext]);
+  useEffect(() => {
+    if (!towersNext) return;
+    const next = TOWER_CHARTS.find((t) => !seen.current[t.id]);
+    if (!next) return;
+    const loading = TOWER_CHARTS.some((t) => seen.current[t.id] && !chartOn[t.id]);
+    const id = window.setTimeout(() => {
+      if (seen.current[next.id]) return;
+      seen.current[next.id] = true;
+      setTowerSeen({ ...seen.current });
+    }, loading ? 8000 : 300);
+    return () => window.clearTimeout(id);
+  }, [towersNext, chartOn, towerSeen]);
 
   // the leads: one walker per lead Strike City follows, kept across readings (a new move on Strike sends it to the
   // exchange); they only move when their account does something
