@@ -101,7 +101,8 @@ def real_mode(p, name, viewport, mobile):
 
     # a real agent's card: its latest real check, schedule and paper account. An agent in a trade shows its position
     # instead, so the first one that is not in a trade (when all are, its position is checked)
-    # (one of Smart Flow's own paper agents: the checks below are about those)
+    # (one of Smart Flow's own paper agents where there are some; production shows users' real accounts only)
+    papers = [a for a in real if a.get("kind") != "live"]
     def open_card(i):
         if not page.locator(".city-panel").count():   # phones: picking an agent closes the panel
             page.locator(".city-dock-btn", has_text="Agents").click()
@@ -113,7 +114,7 @@ def real_mode(p, name, viewport, mobile):
     card, first_paper = "", None
     for i in range(len(real)):
         card = open_card(i)
-        if "PAPER" not in card.upper():
+        if papers and "PAPER" not in card.upper():
             continue
         first_paper = i if first_paper is None else first_paper
         if "Open position" not in card:
@@ -122,7 +123,10 @@ def real_mode(p, name, viewport, mobile):
         card = open_card(first_paper or 0)
     page.screenshot(path=str(OUT / f"l05_card_{name}.png"))
     # Smart Flow's own agents are tagged "Paper" (the header says LIVE); users' real ones "Real · Strike" (2026-10-20)
-    check(f"{name}: card tags the agent as paper", "PAPER" in card.upper() or "PAPEL" in card.upper())
+    if papers:
+        check(f"{name}: card tags the agent as paper", "PAPER" in card.upper() or "PAPEL" in card.upper())
+    else:
+        check(f"{name}: card tags a user's agent as real, on Strike", "REAL · STRIKE" in card.upper())
     check(f"{name}: card shows the latest real check", "No trade on" in card or "Opened" in card or "BUY" in card or "SELL" in card
           or ("Checked its" in card and "at the last candle close" in card))
     if "Open position" in card:
@@ -132,14 +136,23 @@ def real_mode(p, name, viewport, mobile):
     else:
         nxt = re.search(r"Next check\s+(in [^\n]+)", card)
         check(f"{name}: card shows the next candle check", bool(nxt), nxt.group(1) if nxt else card.replace("\n", " | ")[-200:])
-        check(f"{name}: card shows the paper account", "Paper account" in card and "$" in card)
+        if papers:
+            check(f"{name}: card shows the paper account", "Paper account" in card and "$" in card)
+        else:   # amounts are the owner's: the public card shows the result as a share of the account
+            check(f"{name}: card shows the account's result", bool(re.search(r"Account result\s+[+−-]?\d", card)))
     page.get_by_role("button", name="Details").click()
     page.wait_for_selector("dialog.city-details[open]")
     page.wait_for_timeout(300)
+    if not papers:   # a user's agent opens on its portfolio
+        page.get_by_role("tab", name="Activity").click()
+        page.wait_for_timeout(300)
     det = page.locator("dialog.city-details").inner_text()
     page.screenshot(path=str(OUT / f"l06_details_{name}.png"))
     check(f"{name}: activity renders the journal reasons", "candle range" in det or "volume" in det, det[:160].replace("\n", " | "))
-    check(f"{name}: details carry the paper note (not the demo one)", "Paper agent" in det and "simulated agents" not in det)
+    if papers:
+        check(f"{name}: details carry the paper note (not the demo one)", "Paper agent" in det and "simulated agents" not in det)
+    else:
+        check(f"{name}: details carry the live note (not the demo one)", "Live agent" in det and "simulated agents" not in det)
     axe(page, f"{name} live details")
     page.get_by_role("tab", name="Stats").click()
     page.wait_for_timeout(200)
