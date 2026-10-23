@@ -65,7 +65,8 @@ connections of its own open.
 |---|---|---|
 | `verify_city_ui.py` | Every panel, button and dialog of the city, text cut off or overflowing, the dock fitting from 320 to 412 px, axe on each surface: 244 checks per language | staging and production |
 | `verify_city.py` | The map paints and animates, panels, keyboard control, deep links, reduced motion, no horizontal overflow: 56 checks | both |
-| `verify_city_live.py` | What the city shows matches the API and Strike, agents and traders counted apart: 44 checks | both |
+| `verify_city_live.py` | What the city shows matches the API and Strike: agents and traders counted apart, every trader people can copy listed, real accounts and paper agents ranked apart: 46 checks | both |
+| `verify_city_cars.py` | The cars are Strike's real trades: the city reads `/price/v2/trades`, a car drives in, stops under the mouse, and pressing it shows its trade; the top bar counts what each site should: 12 checks | both |
 | `verify_onboarding_live.py` | Creates an agent with a test wallet on Strike testnet, edits it, hides it, signs in again, switches wallets and deletes it, at 1440 and 390 px: over 100 checks | staging only |
 | `verify_copy_live.py` | A signed copy plan carried out on Strike testnet, then stopped | staging only |
 

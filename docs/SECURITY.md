@@ -54,6 +54,8 @@ real copies. This page explains what protects them, and what a security review o
 - Daily backups, with a check of every chain. `smartflow audit report <user>` rebuilds a user's full history from these
   records.
 
+![Tamper-evident records: signed actions on the site, hash-chained logs on the host, anchored together](images/diagram-evidence.svg)
+
 ## Web hardening
 
 - Strict input validation on every endpoint (sizes, types, enumerations), parameterised SQL only, and generic error

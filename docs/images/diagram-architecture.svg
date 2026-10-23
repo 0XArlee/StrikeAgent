@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 676" width="900" height="676" role="img" aria-label="How EdgeCraft-StrikeCity is built: the browser, Cloudflare, the agents&#x27; host and Strike">
+<title>How EdgeCraft-StrikeCity is built: the browser, Cloudflare, the agents&#x27; host and Strike</title>
+<defs><marker id="h-mint" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#4efab0"/></marker><marker id="s-mint" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#4efab0"/></marker><marker id="h-faint" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#7e8883"/></marker><marker id="s-faint" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#7e8883"/></marker><marker id="h-gold" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#f8931a"/></marker><marker id="s-gold" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#f8931a"/></marker><marker id="h-rose" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#f472b6"/></marker><marker id="s-rose" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#f472b6"/></marker><marker id="h-sky" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#60a5fa"/></marker><marker id="s-sky" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#60a5fa"/></marker></defs>
+<rect width="900" height="676" rx="16" fill="#0b0d0c"/>
+<rect x="20" y="20" width="600" height="128" rx="12" fill="#121614" stroke="#2a3530" stroke-width="1"/>
+<text x="38" y="46" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#e8ecea">Browser</text>
+<text x="38" y="64" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#7e8883">React + Vite · English and Spanish · desktop and phone</text>
+<text x="602" y="46" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4efab0" text-anchor="end">CIP-30 wallet signs</text>
+<g data-group="1">
+<rect x="38" y="78" width="135" height="54" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="50" y="99" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">Landing</text>
+<text x="50" y="116" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">strategy catalogue</text>
+</g>
+<g data-group="1">
+<rect x="181" y="78" width="135" height="54" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="193" y="99" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">Onboarding</text>
+<text x="193" y="116" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">one signature</text>
+</g>
+<g data-group="1">
+<rect x="324" y="78" width="135" height="54" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="336" y="99" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">My agent</text>
+<text x="336" y="116" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">plans, settings</text>
+</g>
+<g data-group="1">
+<rect x="467" y="78" width="135" height="54" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="479" y="99" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">The city</text>
+<text x="479" y="116" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">own canvas engine</text>
+</g>
+<rect x="20" y="196" width="600" height="150" rx="12" fill="#121614" stroke="#2a3530" stroke-width="1"/>
+<text x="38" y="222" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#e8ecea">Cloudflare</text>
+<text x="38" y="240" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#7e8883">Pages · Functions · D1 (SQLite)</text>
+<g data-group="1">
+<rect x="38" y="244" width="135" height="88" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="50" y="265" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">Public API</text>
+<text x="50" y="282" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">city · copy · news</text>
+<text x="50" y="297" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">edge-cached 15-30 s</text>
+<text x="50" y="312" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">open JSON</text>
+</g>
+<g data-group="1">
+<rect x="181" y="244" width="135" height="88" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="193" y="265" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">Owner API</text>
+<text x="193" y="282" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">CIP-30 sign-in</text>
+<text x="193" y="297" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">signed actions</text>
+<text x="193" y="312" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">builder connect</text>
+</g>
+<g data-group="1">
+<rect x="324" y="244" width="135" height="88" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="336" y="265" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">Host API · HMAC</text>
+<text x="336" y="282" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">snapshots in</text>
+<text x="336" y="297" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">plans and keys out</text>
+<text x="336" y="312" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">chain anchors</text>
+</g>
+<g data-group="1">
+<rect x="467" y="244" width="135" height="88" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="479" y="265" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">D1 database</text>
+<text x="479" y="282" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">users, public keys</text>
+<text x="479" y="297" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">copy plans</text>
+<text x="479" y="312" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">audit (append-only)</text>
+</g>
+<rect x="20" y="394" width="600" height="226" rx="12" fill="#0f2a1f" stroke="#2a8f66" stroke-width="1"/>
+<text x="38" y="420" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#e8ecea">Agents&#x27; host</text>
+<text x="38" y="438" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#7e8883">Linux container · Python 3.13 · hardened systemd units · outbound only</text>
+<g data-group="1">
+<rect x="38" y="444" width="182" height="80" rx="8" fill="#101a15" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="50" y="465" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#4efab0">Trading agents</text>
+<text x="50" y="482" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">official paper agents</text>
+<text x="50" y="497" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">users&#x27; agents (fleet)</text>
+<text x="50" y="512" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">testnet + mainnet</text>
+</g>
+<g data-group="1">
+<rect x="228" y="444" width="182" height="80" rx="8" fill="#101a15" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="240" y="465" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#f8931a">Copy trading</text>
+<text x="240" y="482" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">Copy Arena collector</text>
+<text x="240" y="497" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">copy pilot: signed plans</text>
+<text x="240" y="512" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">testnet + mainnet</text>
+</g>
+<g data-group="1">
+<rect x="418" y="444" width="182" height="80" rx="8" fill="#101a15" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="430" y="465" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#60a5fa">News Tower</text>
+<text x="430" y="482" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">feeds, model, reactions</text>
+<text x="430" y="497" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">a reading per market</text>
+<text x="430" y="512" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">every 5 minutes</text>
+</g>
+<g data-group="1">
+<rect x="38" y="532" width="182" height="80" rx="8" fill="#101a15" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="50" y="553" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">Push</text>
+<text x="50" y="570" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">signed snapshots</text>
+<text x="50" y="585" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">city, news, Copy Arena</text>
+<text x="50" y="600" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">production + staging</text>
+</g>
+<g data-group="1">
+<rect x="228" y="532" width="182" height="80" rx="8" fill="#101a15" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="240" y="553" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">Watch</text>
+<text x="240" y="570" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">watchdog, every 5 min</text>
+<text x="240" y="585" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">strategy health, hourly</text>
+<text x="240" y="600" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">candle sync, daily</text>
+</g>
+<g data-group="1">
+<rect x="418" y="532" width="182" height="80" rx="8" fill="#101a15" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="430" y="553" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#f472b6">Keys and evidence</text>
+<text x="430" y="570" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">encrypted key pool</text>
+<text x="430" y="585" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">hash-chained journals</text>
+<text x="430" y="600" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">verified daily backups</text>
+</g>
+<rect x="660" y="394" width="220" height="118" rx="12" fill="#0f2a1f" stroke="#4efab0" stroke-width="1"/>
+<text x="676" y="420" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="16" font-weight="700" fill="#fff">Strike Finance</text>
+<text x="676" y="438" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4efab0">mainnet + testnet</text>
+<text x="676" y="460" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">trading API v2</text>
+<text x="676" y="476" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">copy trading</text>
+<text x="676" y="492" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">builder connect · market data</text>
+<g data-group="1">
+<rect x="660" y="528" width="220" height="26" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="672" y="545.0" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="600" fill="#e8ecea">Binance candles · signals</text>
+</g>
+<g data-group="1">
+<rect x="660" y="560" width="220" height="26" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="672" y="577.0" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="600" fill="#e8ecea">Hyperliquid public data</text>
+</g>
+<g data-group="1">
+<rect x="660" y="592" width="220" height="26" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="672" y="609.0" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="600" fill="#e8ecea">News feeds · Claude Haiku</text>
+</g>
+<path d="M320,150 V194" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)" marker-start="url(#s-mint)"/>
+<text x="330" y="176" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883">HTTPS, same origin</text>
+<path d="M320,392 V350" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
+<text x="330" y="375" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883">outbound only · HMAC-SHA256 · 2-minute window</text>
+<path d="M620,450 H658" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
+<text x="624" y="468" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#7e8883">signed</text>
+<path d="M620,290 H700 V392" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
+<text x="628" y="282" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883">builder connect</text>
+<path d="M620,84 H860 V392" fill="none" stroke="#7e8883" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#h-faint)"/>
+<text x="628" y="76" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#7e8883">public market data, read in the browser</text>
+<text x="628" y="100" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#7e8883">tickers, markets, funding, book, trades</text>
+<path d="M620,541 H658" fill="none" stroke="#7e8883" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#h-faint)"/>
+<path d="M620,573 H658" fill="none" stroke="#7e8883" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#h-faint)"/>
+<path d="M620,605 H658" fill="none" stroke="#7e8883" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#h-faint)"/>
+<path d="M24,650 H58" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
+<text x="66" y="654" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883">signed requests</text>
+<path d="M166,650 H200" fill="none" stroke="#7e8883" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#h-faint)"/>
+<text x="208" y="654" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883">public reads</text>
+</svg>

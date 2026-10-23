@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" width="900" height="360" role="img" aria-label="Tamper-evident records: signed actions on the site, hash-chained logs on the host, anchored together">
+<title>Tamper-evident records: signed actions on the site, hash-chained logs on the host, anchored together</title>
+<defs><marker id="h-mint" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#4efab0"/></marker><marker id="s-mint" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#4efab0"/></marker><marker id="h-faint" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#7e8883"/></marker><marker id="s-faint" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#7e8883"/></marker><marker id="h-gold" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#f8931a"/></marker><marker id="s-gold" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#f8931a"/></marker><marker id="h-rose" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#f472b6"/></marker><marker id="s-rose" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#f472b6"/></marker><marker id="h-sky" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#60a5fa"/></marker><marker id="s-sky" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#60a5fa"/></marker></defs>
+<rect width="900" height="360" rx="16" fill="#0b0d0c"/>
+<rect x="20" y="20" width="860" height="120" rx="12" fill="#121614" stroke="#2a3530" stroke-width="1"/>
+<text x="38" y="46" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">On the site</text>
+<g data-group="1">
+<rect x="38" y="58" width="250" height="70" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="50" y="79" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">You sign an action</text>
+<text x="50" y="96" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">a fresh message for every</text>
+<text x="50" y="111" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">change, in plain words</text>
+</g>
+<path d="M288,93 H322" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
+<g data-group="1">
+<rect x="324" y="58" width="250" height="70" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="336" y="79" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">The site verifies it</text>
+<text x="336" y="96" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">COSE signature, key hashes</text>
+<text x="336" y="111" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">to your address, payload</text>
+</g>
+<path d="M574,93 H608" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
+<g data-group="1">
+<rect x="610" y="58" width="250" height="70" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="622" y="79" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">D1 audit row</text>
+<text x="622" y="96" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">exact message + signature;</text>
+<text x="622" y="111" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">triggers refuse edits</text>
+</g>
+<rect x="20" y="170" width="860" height="170" rx="12" fill="#0f2a1f" stroke="#2a8f66" stroke-width="1"/>
+<text x="38" y="196" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#4efab0">On the agents&#x27; host</text>
+<g data-group="1">
+<rect x="38" y="210" width="154" height="100" rx="8" fill="#101a15" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="50" y="231" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">Everything recorded</text>
+<text x="50" y="248" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">candle checks, orders,</text>
+<text x="50" y="263" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">Strike requests as sent</text>
+<text x="50" y="278" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">and answered, fills</text>
+</g>
+<path d="M192,260 H206" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
+<g data-group="1">
+<rect x="208" y="210" width="154" height="100" rx="8" fill="#101a15" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="220" y="231" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">Hash-chained</text>
+<text x="220" y="248" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">each line carries the</text>
+<text x="220" y="263" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">SHA-256 of all before</text>
+</g>
+<path d="M362,260 H376" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
+<g data-group="1">
+<rect x="378" y="210" width="154" height="100" rx="8" fill="#101a15" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="390" y="231" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">Anchored</text>
+<text x="390" y="248" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">chain heads sent to the</text>
+<text x="390" y="263" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">site every minute</text>
+</g>
+<path d="M532,260 H546" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
+<g data-group="1">
+<rect x="548" y="210" width="154" height="100" rx="8" fill="#101a15" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="560" y="231" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">Backed up daily</text>
+<text x="560" y="248" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">90 days, with a check</text>
+<text x="560" y="263" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">of every chain</text>
+</g>
+<path d="M702,260 H716" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
+<g data-group="1">
+<rect x="718" y="210" width="154" height="100" rx="8" fill="#101a15" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="730" y="231" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea">Audit report</text>
+<text x="730" y="248" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">a user&#x27;s full history,</text>
+<text x="730" y="263" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">rebuilt on demand</text>
+</g>
+<path d="M463,210 V154 H735 V130" fill="none" stroke="#f472b6" stroke-width="1.4" marker-end="url(#h-rose)"/>
+<text x="40" y="160" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#f472b6">chain heads kept in D1: a rewrite on the host would no longer match</text>
+<text x="38" y="330" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#7e8883">smartflow audit verify · smartflow audit report &lt;user&gt;</text>
+</svg>

@@ -32,7 +32,7 @@ Behind the city sits a complete product. You can create an agent that trades you
 wallet signature, choose whom to copy with a score that was tested on real copies, and let your agent run that copy
 for you under rules you sign.
 
-| Live | 1 | 34 | 389 | 174 | 0.20 % |
+| Live | 1 | 35 | 389 | 174 | 0.20 % |
 |:---:|:---:|:---:|:---:|:---:|:---:|
 | on Strike mainnet, with a staging copy on testnet | signature to start an agent on your own Strike account | Strike endpoints in use | real copies behind the score, re-tested hourly | automated tests, plus real-browser checks | builder fee per execution, approved by each user |
 
@@ -40,8 +40,9 @@ for you under rules you sign.
 
 ### Watch the agents and the traders, live
 Every agent and every copied trader is a character. Click one to see what it holds, what it decided at the last candle
-and why. Market towers show Strike's prices, the Exchange shows Strike's live order book, and the fountain changes
-colour with BTC funding. → [docs/CITY.md](docs/CITY.md)
+and why. Market towers show Strike's prices, the Exchange shows Strike's live order book, the fountain changes colour
+with BTC funding, and every car on the streets is a real trade on Strike mainnet: rest the mouse on one and press it to
+see the trade. → [docs/CITY.md](docs/CITY.md)
 
 ### Pick a strategy from the marketplace
 The landing page is a catalogue of strategies, each with its rules, its full backtest after every cost, and a page of
@@ -89,38 +90,45 @@ trading it walk over to read it. They never trade on news.
 
 ## Built on Strike
 
-Strike is the venue for everything here, not just a data source. The full list of calls is in
-[docs/STRIKE_INTEGRATION.md](docs/STRIKE_INTEGRATION.md); in short:
+Strike is the venue for everything here, not just a data source: **35 Strike endpoints in five areas**, on mainnet
+and testnet. Each call, and why we make it, is in [docs/STRIKE_INTEGRATION.md](docs/STRIKE_INTEGRATION.md).
 
-- **Builder connect and builder code.** Onboarding runs through `request-signature` and `verify-signature`, and the site
-  checks that Strike linked exactly our key, our builder code (`SmartFlowAgent-EdgeCraft`) and our 0.20 % fee before
-  saving anything.
-- **Trading.** Markets, fee tiers, book ticker, depth, mark price, account, positions, open orders, orders with their
-  stop attached as a bracket, cancels, leverage, fills and transfers, all signed with Ed25519 API-wallet keys, on
-  mainnet and testnet.
-- **Copy trading.** Discover, the leaderboard of every copy relationship, subscriptions, managed copies with
-  auto-created sub-accounts (create, update, stop), and Strike's copy-trading dashboard (its summary and six daily
-  series).
-- **Market data in the city.** 24-hour tickers on the towers, the order book on the Exchange's screen, funding on the
-  fountain, and Strike's 1-minute mark candles behind every news reaction.
-- **Strike's app.** Every trader card links straight to that trader's public portfolio on Strike, where anyone can
-  copy them by hand.
+![Every Strike integration: 35 endpoints in five areas](docs/images/diagram-integration.svg)
+
+- **Builder connect and builder code** (2 endpoints and the fee header). Onboarding runs through `request-signature`
+  and `verify-signature`, and the site checks that Strike linked exactly our key, our builder code
+  (`SmartFlowAgent-EdgeCraft`) and our 0.20 % fee before saving anything. Every order then carries the fee, so every
+  execution of every user's agent is credited to the builder.
+- **Trading API v2** (16). Server time, markets, fee tiers, book ticker, depth, mark price, account, positions, open
+  orders, order look-ups for safe retries, entries with their stop attached, stop moves and exits, cancels, leverage,
+  fills and transfers, all signed with Ed25519 API-wallet keys.
+- **Copy trading** (13). Discover, the leaderboard of every copy relationship and how it ended, who copies whom,
+  Strike's copy-trading dashboard (its summary and six daily series), and managed copies with sub-accounts that Strike
+  creates and funds (start, change, stop), with the stop-loss enforced by Strike.
+- **Market data, live in the city** (6). 24-hour tickers on the towers, every market Strike lists in Markets, funding
+  on the fountain, the order book on the Exchange's screen, Strike's live trades as the cars, and Strike's 1-minute
+  mark candles behind every news reaction.
+- **Strike's app and our checks.** Every trader card links to that trader's public portfolio on Strike, where anyone
+  can copy them by hand, and release checks prove before each release that Strike answers as the client expects.
 
 ## What we built during the hackathon
 
 The project existed before the hackathon: the Smart Flow engine and its agents, builder-connect onboarding, the first
-version of the city and the strategy marketplace. Between 21 and 23 October we added:
+version of the city and the strategy marketplace. Between 21 and 23 October, in more than 40 commits and more than
+12,000 new lines of code, we added:
 
 | | |
 |---|---|
-| **Copy Arena** | The copy-trading collector, history kept beyond Strike's 30 days, the arena building and its interior, traders walking the city with their copiers |
-| **Strike City score** | A study on every published copy, the score built from it, and an hourly live re-test shown in the app |
-| **Copy with your agent** | Signed copy plans (manual or pilot) carried out on Strike's copy trading in managed sub-accounts, verified on testnet and now open on mainnet |
-| **News Tower** | Tiered sources, model scoring, one vote per story, reactions on Strike's mark price, and a six-floor interior your agent walks through |
-| **A new city** | The whole map redrawn with licensed LimeZu art, a character creator, personalities and trades for every agent |
-| **Trust and polish** | A security review, accessibility checks on every surface, and this documentation |
+| **Copy Arena** | A collector for the whole of Strike's copy trading (13 new endpoints) with history kept beyond Strike's 30 days, every trader linked by account with Strike's names and badges, traders walking the city with the people copying them, and the arena building with its leaderboard, podium and copiers' wall |
+| **Strike City score** | A study of every copy Strike has published, a score built from what actually predicted a good copy, and an hourly public re-test shown inside the arena |
+| **Copy with your agent** | Signed copy plans (one trader, or the agent choosing by your rules) carried out on Strike's own copy trading, in sub-accounts Strike creates and funds, with Strike enforcing the stop-loss; proven on testnet, then opened on mainnet |
+| **News Tower** | Tiered sources, model scoring, one vote per story, reactions measured on Strike's mark price, a reading per market, and a six-floor building your agent walks through |
+| **A living city** | The map redrawn with licensed LimeZu art, a character creator, personalities and trades for every agent, every car a real Strike trade, all 33 of Strike's markets, every copyable trader, and real accounts kept apart from paper agents |
+| **Security review** | Authentication, builder connect, copy plans end to end, host endpoints, headers, dependencies and secrets, reviewed before mainnet: no critical or high findings |
+| **Verification** | Staging on Strike testnet first for every change, and real-browser checks with accessibility audits on every surface, in two languages, at desktop and phone sizes |
+| **Documentation** | These docs, diagrams generated from code, and the project book (PDF) |
 
-The commit history shows each step. → [docs/HACKATHON.md](docs/HACKATHON.md)
+Each area, in detail and with its evidence: [docs/HACKATHON.md](docs/HACKATHON.md)
 
 ## Try it in five minutes
 
@@ -134,16 +142,7 @@ The commit history shows each step. → [docs/HACKATHON.md](docs/HACKATHON.md)
 
 ## Under the hood
 
-```
-Browser (React + Vite, canvas city engine, CIP-30 wallet)
-   │
-Cloudflare Pages + Functions + D1     sessions, signature checks, builder connect, signed plans, public snapshots
-   ▲   outbound only, HMAC-signed
-Agents' host (Linux container, Python, systemd)
-   paper agents · users' agents · copy collector · copy pilot · news · push · watchdog · health · backups
-   │   Ed25519-signed requests, keys encrypted on the host
-Strike Finance API (mainnet / testnet)  ·  Binance candles  ·  Hyperliquid public data
-```
+![How EdgeCraft-StrikeCity is built: the browser, Cloudflare, the agents' host and Strike](docs/images/diagram-architecture.svg)
 
 - **One engine for backtest and live**, fed candle by candle, so the live signal is the backtested signal.
 - **Keys stay on the host.** The site only knows public keys; the host never listens to the internet.

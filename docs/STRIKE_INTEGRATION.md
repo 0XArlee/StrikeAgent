@@ -7,6 +7,19 @@ call we make to Strike and what it is for, so nothing is left to guesswork.
 We use both networks: production talks to mainnet (`https://api.strikefinance.org`), and the staging site runs the same
 code against testnet (`https://api-v2-testnet.strikefinance.org`).
 
+## At a glance
+
+| Area | Endpoints | Called by | What it gives users and Strike |
+|---|:---:|---|---|
+| [Builder connect and builder code](#1-onboarding-through-builder-connect) | 2 + the fee header | the site's Functions | An agent on your own Strike account with one signature; 0.20 % per execution to the builder |
+| [Trading API v2](#2-trading-the-agents) | 16 | every agent, on the host | Entries with their stop attached, exits, leverage, results that leave deposits out |
+| [Copy trading](#3-copy-trading) | 13 | the collector and the copy pilot, on the host | The Copy Arena, the Strike City score, and managed copies run by your agent |
+| [Market data](#4-strikes-market-in-the-city) | 3 more (6 in all) | the browser; the news service | Strike's market drawn live: prices, order book, funding, all its markets, every trade as a car |
+| [Checks](#6-checking-our-side-of-the-contract) | 1 more | our release checks | Proof, before every release, that Strike answers as the client expects |
+| **Total** | **35** | | Mainnet and testnet, same code |
+
+![Every Strike integration: 35 endpoints in five areas](images/diagram-integration.svg)
+
 ## 1. Onboarding through builder connect
 
 A user's agent trades the user's own Strike account through an API wallet that Strike authorises for our builder code.
@@ -21,6 +34,8 @@ The private key of that API wallet is generated on our host and never leaves it.
    (`SmartFlowAgent-EdgeCraft`) and our fee (20 bps). If anything differs, the key is burnt and the attempt recorded.
 
 The same signature also proves the user owns the wallet, so creating an agent takes one signature in total.
+
+![Creating an agent with one signature, through Strike's builder connect](images/diagram-onboarding.svg)
 
 ## 2. Trading: the agents
 
@@ -81,17 +96,24 @@ published ([STRATEGY.md](STRATEGY.md#the-strike-city-score)).
 Strike applies the stop-loss on its side. A copy that Strike stopped at its stop-loss, or refused, halts the plan until
 the owner signs again. Nothing here moves money out of Strike.
 
+![Copy with your agent: a signed plan carried out on Strike's own copy trading](images/diagram-copy.svg)
+
 ## 4. Strike's market in the city
 
 | What you see | Endpoint |
 |---|---|
-| Prices and 24-hour change on the towers and the top bar | `GET /price/v2/ticker/24hr` |
+| Prices, 24-hour change and volume on the towers, the top bar and Markets | `GET /price/v2/ticker/24hr` |
+| Every market Strike lists (33 today: crypto, stocks, indices, commodities), with its name and maximum leverage | `GET /v2/markets` |
 | The fountain's colour (BTC funding) and mark prices | `GET /price/v2/premiumIndex` |
 | The BTC order book on the Strike Exchange's big screen | `GET /price/v2/depth` |
+| The cars: every car in the city is a real trade on Strike mainnet (green when the taker bought, red when they sold, a truck from 5,000 $; press one to see it) | `GET /price/v2/trades`, BTC and the busiest markets in turn, every 15 s |
 | How the price reacted after each headline | Strike's 1-minute mark-price candles, `GET /price/v2/klines` (on the host) |
 
-If Strike's public price endpoints cannot be reached, the city says so on screen and shows Binance prices instead,
-for display only. The agents never trade on that fallback.
+The browser reads these public endpoints directly, so the city shows Strike's market as it is, with no copy of ours in
+between. If Strike's public price endpoints cannot be reached, the city says so on screen and shows Binance prices
+instead, for display only. The agents never trade on that fallback.
+
+![Where everything in the city comes from](images/diagram-city-data.svg)
 
 ## 5. Links into Strike's app
 

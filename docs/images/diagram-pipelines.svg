@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 352" width="900" height="352" role="img" aria-label="Two measured pipelines: the News Tower&#x27;s reading and the Strike City score">
+<title>Two measured pipelines: the News Tower&#x27;s reading and the Strike City score</title>
+<defs><marker id="h-mint" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#4efab0"/></marker><marker id="s-mint" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#4efab0"/></marker><marker id="h-faint" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#7e8883"/></marker><marker id="s-faint" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#7e8883"/></marker><marker id="h-gold" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#f8931a"/></marker><marker id="s-gold" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#f8931a"/></marker><marker id="h-rose" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#f472b6"/></marker><marker id="s-rose" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#f472b6"/></marker><marker id="h-sky" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#60a5fa"/></marker><marker id="s-sky" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#60a5fa"/></marker></defs>
+<rect width="900" height="352" rx="16" fill="#0b0d0c"/>
+<rect x="20" y="20" width="860" height="140" rx="12" fill="#121614" stroke="#2a3530" stroke-width="1"/>
+<text x="38" y="50" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#60a5fa">The News Tower: news, measured on Strike</text>
+<g data-group="1">
+<rect x="38" y="68" width="124" height="74" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="50" y="89" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">Tiered sources</text>
+<text x="50" y="106" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">official, tier-one,</text>
+<text x="50" y="121" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">filtered searches</text>
+</g>
+<path d="M162,105 H176" fill="none" stroke="#60a5fa" stroke-width="1.3" marker-end="url(#h-sky)"/>
+<g data-group="1">
+<rect x="178" y="68" width="124" height="74" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="190" y="89" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">Model scoring</text>
+<text x="190" y="106" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">fixed scale,</text>
+<text x="190" y="121" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">catalysts only</text>
+</g>
+<path d="M302,105 H316" fill="none" stroke="#60a5fa" stroke-width="1.3" marker-end="url(#h-sky)"/>
+<g data-group="1">
+<rect x="318" y="68" width="124" height="74" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="330" y="89" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">One vote a story</text>
+<text x="330" y="106" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">however many</text>
+<text x="330" y="121" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">outlets carry it</text>
+</g>
+<path d="M442,105 H456" fill="none" stroke="#60a5fa" stroke-width="1.3" marker-end="url(#h-sky)"/>
+<g data-group="1">
+<rect x="458" y="68" width="124" height="74" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="470" y="89" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">Strike reaction</text>
+<text x="470" y="106" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">1-minute mark candles</text>
+<text x="470" y="121" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">vs the normal move</text>
+</g>
+<path d="M582,105 H596" fill="none" stroke="#60a5fa" stroke-width="1.3" marker-end="url(#h-sky)"/>
+<g data-group="1">
+<rect x="598" y="68" width="124" height="74" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="610" y="89" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">Market reading</text>
+<text x="610" y="106" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">very bearish to very</text>
+<text x="610" y="121" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">bullish, scoreboard</text>
+</g>
+<path d="M722,105 H736" fill="none" stroke="#60a5fa" stroke-width="1.3" marker-end="url(#h-sky)"/>
+<g data-group="1">
+<rect x="738" y="68" width="124" height="74" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="750" y="89" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">In the city</text>
+<text x="750" y="106" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">six floors; agents</text>
+<text x="750" y="121" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">walk in to read</text>
+</g>
+<rect x="20" y="172" width="860" height="140" rx="12" fill="#121614" stroke="#2a3530" stroke-width="1"/>
+<text x="38" y="202" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#f8931a">The Strike City score: tested on every copy</text>
+<g data-group="1">
+<rect x="38" y="220" width="124" height="74" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="50" y="241" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">Every copy</text>
+<text x="50" y="258" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">Strike&#x27;s leaderboard,</text>
+<text x="50" y="273" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">kept past 30 days</text>
+</g>
+<path d="M162,257 H176" fill="none" stroke="#f8931a" stroke-width="1.3" marker-end="url(#h-gold)"/>
+<g data-group="1">
+<rect x="178" y="220" width="124" height="74" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="190" y="241" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">Scored blind</text>
+<text x="190" y="258" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">only with what was</text>
+<text x="190" y="273" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">known before it</text>
+</g>
+<path d="M302,257 H316" fill="none" stroke="#f8931a" stroke-width="1.3" marker-end="url(#h-gold)"/>
+<g data-group="1">
+<rect x="318" y="220" width="124" height="74" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="330" y="241" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">Profit or loss</text>
+<text x="330" y="258" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">ranking 0.59, Strike&#x27;s</text>
+<text x="330" y="273" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">own score 0.50</text>
+</g>
+<path d="M442,257 H456" fill="none" stroke="#f8931a" stroke-width="1.3" marker-end="url(#h-gold)"/>
+<g data-group="1">
+<rect x="458" y="220" width="124" height="74" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="470" y="241" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">Weights</text>
+<text x="470" y="258" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">copies 30 · Strike 30</text>
+<text x="470" y="273" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">record 20 · size 20</text>
+</g>
+<path d="M582,257 H596" fill="none" stroke="#f8931a" stroke-width="1.3" marker-end="url(#h-gold)"/>
+<g data-group="1">
+<rect x="598" y="220" width="124" height="74" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="610" y="241" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">Hourly re-test</text>
+<text x="610" y="258" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">live, shown in</text>
+<text x="610" y="273" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">the Copy Arena</text>
+</g>
+<path d="M722,257 H736" fill="none" stroke="#f8931a" stroke-width="1.3" marker-end="url(#h-gold)"/>
+<g data-group="1">
+<rect x="738" y="220" width="124" height="74" rx="8" fill="#171c19" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="750" y="241" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">Put to use</text>
+<text x="750" y="258" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">arena ranking and</text>
+<text x="750" y="273" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">the pilot&#x27;s choice</text>
+</g>
+<text x="24" y="336" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883">Agents never trade on news. The score&#x27;s test reruns every hour in public, so its numbers move as copies add up.</text>
+</svg>

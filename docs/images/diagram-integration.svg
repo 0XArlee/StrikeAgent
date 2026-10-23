@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1096" width="900" height="1096" role="img" aria-label="Every Strike integration in EdgeCraft-StrikeCity: 35 endpoints in five areas">
+<title>Every Strike integration in EdgeCraft-StrikeCity: 35 endpoints in five areas</title>
+<defs><marker id="h-mint" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#4efab0"/></marker><marker id="s-mint" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#4efab0"/></marker><marker id="h-faint" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#7e8883"/></marker><marker id="s-faint" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#7e8883"/></marker><marker id="h-gold" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#f8931a"/></marker><marker id="s-gold" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#f8931a"/></marker><marker id="h-rose" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#f472b6"/></marker><marker id="s-rose" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#f472b6"/></marker><marker id="h-sky" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#60a5fa"/></marker><marker id="s-sky" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#60a5fa"/></marker></defs>
+<rect width="900" height="1096" rx="16" fill="#0b0d0c"/>
+<rect x="230" y="20" width="440" height="74" rx="12" fill="#0f2a1f" stroke="#4efab0" stroke-width="1"/>
+<text x="450" y="50" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="19" font-weight="700" fill="#fff" text-anchor="middle">Strike Finance</text>
+<text x="450" y="74" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4efab0" text-anchor="middle">35 endpoints in use · five integrations · mainnet and testnet</text>
+<g data-group="1">
+<rect x="20" y="118" width="420" height="398" rx="12" fill="#121614" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<circle cx="44" cy="142" r="9" fill="#0b0d0c" stroke="#4efab0" stroke-width="1.3"/>
+<text x="44" y="145.6" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10" font-weight="600" fill="#4efab0" text-anchor="middle">1</text>
+<text x="62" y="147" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#fff">Builder connect and builder code</text>
+<text x="36" y="168" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4efab0">called by the site&#x27;s Functions, at onboarding</text>
+<text x="36" y="194" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">POST /auth/builder/request-signature</text>
+<text x="424" y="194" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">message</text>
+<text x="36" y="211" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">POST /auth/builder/verify-signature</text>
+<text x="424" y="211" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">authorise</text>
+<text x="36" y="228" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">X-Builder-Fee-Bps: 20</text>
+<text x="424" y="228" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">on every order</text>
+<text x="36" y="253" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">One wallet signature creates an agent on the user&#x27;s own</text>
+<text x="36" y="269" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">Strike account. Before saving anything, the site checks</text>
+<text x="36" y="285" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">that Strike linked exactly our key, our builder code</text>
+<text x="36" y="301" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">SmartFlowAgent-EdgeCraft and 20 bps. If anything differs,</text>
+<text x="36" y="317" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">the key is burnt and the attempt is recorded.</text>
+</g>
+<g data-group="1">
+<rect x="36" y="352" width="120" height="50" rx="8" fill="#101a15" stroke="#2a8f66" stroke-width="1" data-box="1"/>
+<text x="96.0" y="373" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea" text-anchor="middle">Your wallet</text>
+<text x="96.0" y="390" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7" text-anchor="middle">signs once</text>
+</g>
+<path d="M156,377 H168" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
+<g data-group="1">
+<rect x="170" y="352" width="120" height="50" rx="8" fill="#101a15" stroke="#2a8f66" stroke-width="1" data-box="1"/>
+<text x="230.0" y="373" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea" text-anchor="middle">Strike</text>
+<text x="230.0" y="390" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7" text-anchor="middle">links an API wallet</text>
+</g>
+<path d="M290,377 H302" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
+<g data-group="1">
+<rect x="304" y="352" width="120" height="50" rx="8" fill="#101a15" stroke="#2a8f66" stroke-width="1" data-box="1"/>
+<text x="364.0" y="373" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea" text-anchor="middle">Your agent</text>
+<text x="364.0" y="390" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7" text-anchor="middle">trades your account</text>
+</g>
+<text x="36" y="436" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">Revenue: 0.20 % per execution, credited by Strike to</text>
+<text x="36" y="452" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">the builder. Funds never leave the user&#x27;s account, and</text>
+<text x="36" y="468" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">the user approves the fee in Strike&#x27;s own message.</text>
+<g data-group="1">
+<rect x="460" y="118" width="420" height="398" rx="12" fill="#121614" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<circle cx="484" cy="142" r="9" fill="#0b0d0c" stroke="#4efab0" stroke-width="1.3"/>
+<text x="484" y="145.6" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10" font-weight="600" fill="#4efab0" text-anchor="middle">2</text>
+<text x="502" y="147" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#fff">Trading API v2</text>
+<text x="476" y="168" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4efab0">called by every agent on the host · Ed25519-signed</text>
+<text x="476" y="194" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/time</text>
+<text x="864" y="194" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">signing clock</text>
+<text x="476" y="211" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/markets</text>
+<text x="864" y="211" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">limits, sizes</text>
+<text x="476" y="228" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/fee-tiers</text>
+<text x="864" y="228" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">fees</text>
+<text x="476" y="245" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /price/v2/ticker/bookTicker</text>
+<text x="864" y="245" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">executable price</text>
+<text x="476" y="262" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /price/v2/depth</text>
+<text x="864" y="262" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">book impact</text>
+<text x="476" y="279" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /price/v2/premiumIndex</text>
+<text x="864" y="279" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">mark price, stops</text>
+<text x="476" y="296" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/account</text>
+<text x="864" y="296" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">balance, margin</text>
+<text x="476" y="313" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/positions</text>
+<text x="864" y="313" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">positions</text>
+<text x="476" y="330" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/openOrders</text>
+<text x="864" y="330" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">open orders</text>
+<text x="476" y="347" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/order</text>
+<text x="864" y="347" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">look up before a retry</text>
+<text x="476" y="364" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">POST /v2/order/strategy</text>
+<text x="864" y="364" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">entry with its stop</text>
+<text x="476" y="381" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">POST /v2/order</text>
+<text x="864" y="381" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">stop move, exit</text>
+<text x="476" y="398" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">DELETE /v2/order/cancel</text>
+<text x="864" y="398" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">old stop</text>
+<text x="476" y="415" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">POST /v2/leverage</text>
+<text x="864" y="415" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">fits the margin</text>
+<text x="476" y="432" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/history/fill</text>
+<text x="864" y="432" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">fills, results</text>
+<text x="476" y="449" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/history/transaction</text>
+<text x="864" y="449" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">deposits kept out</text>
+<text x="476" y="474" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">Every order-creating request carries the builder fee,</text>
+<text x="476" y="490" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">so each execution is credited to our builder code.</text>
+</g>
+<g data-group="1">
+<rect x="20" y="532" width="420" height="300" rx="12" fill="#121614" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<circle cx="44" cy="556" r="9" fill="#0b0d0c" stroke="#f8931a" stroke-width="1.3"/>
+<text x="44" y="559.6" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10" font-weight="600" fill="#f8931a" text-anchor="middle">3</text>
+<text x="62" y="561" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#fff">Copy trading</text>
+<text x="36" y="582" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#f8931a">called by the collector (read only) and the copy pilot</text>
+<text x="36" y="608" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/copy/discover</text>
+<text x="424" y="608" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">traders to copy</text>
+<text x="36" y="625" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/copy/leaderboard</text>
+<text x="424" y="625" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">every copy, its end</text>
+<text x="36" y="642" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/copy/subscriptions</text>
+<text x="424" y="642" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">who copies whom</text>
+<text x="36" y="659" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /stat/v1/dashboard/copy-trading-*</text>
+<text x="424" y="659" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">7 series</text>
+<text x="36" y="676" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">POST /v2/copy/subscribe</text>
+<text x="424" y="676" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">start a copy</text>
+<text x="36" y="693" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">PATCH /v2/copy/subscribe/{id}</text>
+<text x="424" y="693" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">change limits</text>
+<text x="36" y="710" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">DELETE /v2/copy/subscribe/{id}</text>
+<text x="424" y="710" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">stop it</text>
+<text x="36" y="727" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/copy/subscriptions?scope=all</text>
+<text x="424" y="727" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">status</text>
+<text x="36" y="752" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">Collector: no keys, history kept beyond Strike&#x27;s 30 days.</text>
+<text x="36" y="768" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">Pilot: Strike creates and funds a sub-account for each</text>
+<text x="36" y="784" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">copy, and enforces its stop-loss on Strike&#x27;s side.</text>
+<text x="36" y="800" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">Traders&#x27; names, badges and positions: /v2/account and</text>
+<text x="36" y="816" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">/v2/positions; Hyperliquid&#x27;s public API for its traders.</text>
+</g>
+<g data-group="1">
+<rect x="460" y="532" width="420" height="300" rx="12" fill="#121614" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<circle cx="484" cy="556" r="9" fill="#0b0d0c" stroke="#60a5fa" stroke-width="1.3"/>
+<text x="484" y="559.6" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10" font-weight="600" fill="#60a5fa" text-anchor="middle">4</text>
+<text x="502" y="561" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#fff">Market data, live in the city</text>
+<text x="476" y="582" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#60a5fa">read straight from the browser (news: on the host)</text>
+<text x="476" y="608" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /price/v2/ticker/24hr</text>
+<text x="864" y="608" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">towers, top bar</text>
+<text x="476" y="625" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/markets</text>
+<text x="864" y="625" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">all 33 markets</text>
+<text x="476" y="642" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /price/v2/premiumIndex</text>
+<text x="864" y="642" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">the fountain</text>
+<text x="476" y="659" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /price/v2/depth</text>
+<text x="864" y="659" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">Exchange screen</text>
+<text x="476" y="676" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /price/v2/trades</text>
+<text x="864" y="676" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">the cars</text>
+<text x="476" y="693" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /price/v2/klines</text>
+<text x="864" y="693" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">news reactions</text>
+<text x="476" y="718" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">Every car in the city is a real trade on Strike, green</text>
+<text x="476" y="734" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">when the taker bought, red when they sold. If Strike</text>
+<text x="476" y="750" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">cannot be reached, the city says so and shows Binance</text>
+<text x="476" y="766" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#a3aca7">prices for display only; agents never trade on them.</text>
+</g>
+<g data-group="1">
+<rect x="20" y="848" width="420" height="228" rx="12" fill="#121614" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<circle cx="44" cy="872" r="9" fill="#0b0d0c" stroke="#f472b6" stroke-width="1.3"/>
+<text x="44" y="875.6" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10" font-weight="600" fill="#f472b6" text-anchor="middle">5</text>
+<text x="62" y="877" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#fff">Into Strike&#x27;s app, and our checks</text>
+<text x="36" y="898" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#f472b6">links for everyone · checks before every release</text>
+<text x="36" y="924" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">Copy on Strike</text>
+<text x="424" y="924" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">a trader&#x27;s portfolio</text>
+<text x="36" y="941" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">Builder codes</text>
+<text x="424" y="941" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">from the landing</text>
+<text x="36" y="958" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">smartflow strike-check</text>
+<text x="424" y="958" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">public formats</text>
+<text x="36" y="975" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">smartflow auth-check</text>
+<text x="424" y="975" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">signed reads</text>
+<text x="36" y="992" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">GET /v2/sub-accounts</text>
+<text x="424" y="992" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">in auth-check</text>
+<text x="36" y="1009" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">testnet order probe</text>
+<text x="424" y="1009" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">brackets, cancel-all</text>
+<text x="36" y="1026" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10.5" font-weight="400" fill="#cfe9dd">mainnet test trade</text>
+<text x="424" y="1026" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" text-anchor="end">loop with the fee</text>
+</g>
+<g data-group="1">
+<rect x="460" y="848" width="420" height="228" rx="12" fill="#0f2a1f" stroke="#2a8f66" stroke-width="1" data-box="1"/>
+<text x="476" y="877" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#fff">What Strike gets back</text>
+<text x="476" y="898" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4efab0">from every user and every agent</text>
+</g>
+<rect x="476" y="921" width="5" height="5" rx="1" fill="#4efab0" stroke="#4efab0" stroke-width="1"/>
+<text x="488" y="928" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#e8ecea">Volume and fees through the builder code,</text>
+<text x="488" y="947" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#e8ecea">on every execution of every agent</text>
+<rect x="476" y="959" width="5" height="5" rx="1" fill="#4efab0" stroke="#4efab0" stroke-width="1"/>
+<text x="488" y="966" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#e8ecea">Money and copiers for Strike&#x27;s copy trading</text>
+<rect x="476" y="978" width="5" height="5" rx="1" fill="#4efab0" stroke="#4efab0" stroke-width="1"/>
+<text x="488" y="985" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#e8ecea">New users from Cardano wallets, trading</text>
+<text x="488" y="1004" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#e8ecea">from their first minute</text>
+<rect x="476" y="1016" width="5" height="5" rx="1" fill="#4efab0" stroke="#4efab0" stroke-width="1"/>
+<text x="488" y="1023" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#e8ecea">A measured way to choose whom to copy</text>
+<rect x="476" y="1035" width="5" height="5" rx="1" fill="#4efab0" stroke="#4efab0" stroke-width="1"/>
+<text x="488" y="1042" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#e8ecea">Open data: /api/copy and /api/city</text>
+</svg>

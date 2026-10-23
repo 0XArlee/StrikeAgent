@@ -43,8 +43,17 @@ news reading, the day's move, its day in R). The personality never changes how i
 - **Strike Exchange**: a large screen with Strike's live BTC order book.
 - **The fountain**: its colour follows BTC funding on Strike (who pays whom).
 - **News Tower facade**: an LED marquee with the latest catalysts.
+- **Cars**: every car on the streets is a real trade on Strike mainnet (`/price/v2/trades`, BTC and the busiest markets
+  in turn). Green when the taker bought, red when they sold, a truck from 5,000 $. A car stops under the mouse, or
+  under a finger, with a light outline; pressing it shows the trade (market, side, size, price, value and how long
+  ago). With reduced motion the cars park along their road instead of driving.
 - **Weather**: calm, breezy or stormy with BTC's 24h move.
-- **Top bar**: agents online, agents in a trade, the news reading and the next US macro release.
+- **Top bar**: agents online, agents in a trade, the trades and result over 24 hours, the news reading and the next US
+  macro release. On production the trades and result count real accounts only (the paper agents that test the
+  strategies count apart, in Ranks); on staging they count every agent, paper and testnet, because that is what
+  staging is for.
+
+![Where everything in the city comes from: the host's snapshots and Strike's public market data](images/diagram-city-data.svg)
 
 ## Going inside
 
@@ -64,9 +73,11 @@ Without an agent of your own you go in as a visitor.
 
 ## The dock
 
-Map · Agents (every agent and every Strike trader in the city, with filters and search) · Ranks (agents and the best
-traders to copy) · Feed (what just happened) · Markets · Guide (what everything means, a legend, the roadmap) · My agent
-· Suggest (feedback with an optional screenshot).
+Map · Agents (every agent, and every trader people can copy on Strike: the ones walking the city first) · Ranks (real
+accounts and paper agents ranked apart, and the best traders to copy) · Feed (what just happened) · Markets (every market
+Strike lists: the agents' markets first, then stocks, indices, commodities and more crypto, with price, 24-hour change,
+funding, volume and maximum leverage) · Guide (what everything means, a legend, the roadmap) · My agent · Suggest
+(feedback with an optional screenshot).
 
 ## Accessibility and quality
 

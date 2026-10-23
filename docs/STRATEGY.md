@@ -85,6 +85,8 @@ with what was known before it was made. In that study, what earlier copiers made
 own score alone did not. A smooth PnL curve did not help either: market makers' smooth curves were the hardest to copy,
 which is why the fall is shown but not weighted.
 
+![Two measured pipelines: the News Tower's reading and the Strike City score](images/diagram-pipelines.svg)
+
 The collector repeats the test every hour on every copy it has seen, and the arena shows the result live. At the
 time of writing, on 389 copies of 70 traders:
 - **Ranking**: the chance that a copy in profit scored higher than one at a loss is 0.59 with the Strike City score and

@@ -4,33 +4,7 @@ Three parts, each doing one job: a static site with a small serverless API on Cl
 that needs keys or a long-lived process, and Strike. Nothing at home listens to the internet: the host only makes
 outbound, signed requests.
 
-```
-┌──────────────────────────── Browser ────────────────────────────┐
-│ React + Vite · the city on a <canvas> (own engine) · CIP-30 wallet│
-└───────────────┬──────────────────────────────────────────────────┘
-                │ HTTPS (same origin)
-┌───────────────▼──────────── Cloudflare ─────────────────────────┐
-│ Pages: the site (landing, onboarding, My agent, the city)        │
-│ Functions (web/server): sessions, CIP-30 verification, builder   │
-│   connect, signed actions and copy plans, public snapshots       │
-│ D1 (SQLite): users, links, keys (public only), copy plans and    │
-│   status, audit (append-only), anchors, snapshots, feedback      │
-└───────────────▲──────────────────────────────────────────────────┘
-                │ outbound HTTPS from the host, HMAC-SHA256 over "{ms}.{payload}", 2-minute window
-┌───────────────┴──────── Agents' host (Linux container) ─────────────┐
-│ smartflow-paper@<id>      official paper agents (one per config) │
-│ smartflow-fleet(-mainnet) users' agents, one per connected user  │
-│ smartflow-copy            Copy Arena collector (read only)       │
-│ smartflow-copypilot(-mainnet) owners' signed copy plans          │
-│ smartflow-news            News Tower (feeds, model, reactions)   │
-│ smartflow-push(-qa)       city, news and copy snapshots → site   │
-│ watchdog · health · data sync · daily audit backup (timers)      │
-│ Encrypted API-wallet key pool · runs/ (hash-chained journals)    │
-└───────────────┬──────────────────────────────────────────────────┘
-                │ signed Strike API calls (Ed25519)      public data
-                ▼                                        ▼
-        Strike Finance API                Binance candles · Hyperliquid info
-```
+![How EdgeCraft-StrikeCity is built: the browser, Cloudflare, the agents' host and Strike](images/diagram-architecture.svg)
 
 ## The site (`web/`)
 
@@ -42,9 +16,13 @@ outbound, signed requests.
   strategy is listed only with its backtest figures (`config/figures/<id>.json`, generated with the agents' own account
   model), and an entry can name its creator and a revenue share, ready for third-party strategies.
 - **The city engine** (`web/src/city/engine.ts`, `agents.ts`, `world.ts`): a tile map with roads, crossings and doors,
-  A* paths, sprite animation, day and night, weather, building signs and screens drawn from live data, a camera that
-  follows a character and keeps it clear of open panels. Each character's position is a function of real state (see
-  [CITY.md](CITY.md)).
+  A* paths, sprite animation, day and night, weather, building signs and screens drawn from live data, cars that are
+  Strike's real trades, and a camera that follows a character and keeps it clear of open panels. Each character's
+  position is a function of real state (see [CITY.md](CITY.md)).
+- **The city's store** (`web/src/city/store.ts`): reads the site's snapshots (`/api/city`, `/api/copy`, `/api/news`)
+  and Strike's public market data straight from the browser (tickers, every market, funding, the order book and the
+  latest trades), so what the city shows of Strike's market is Strike's own data with nothing of ours in between. On
+  production the top bar and Ranks count real accounts only; staging counts the paper agents too.
 - **Functions** (`web/server`, routed by `web/functions/api`): every endpoint is small and explicit. Public: `info`,
   `city`, `copy`, `news`. Owners (bearer session from a wallet signature): `me`, `action/challenge` + `action` (every
   change is a fresh signature over a one-time message), `live/*` (connect, stop), `feedback`. Host only (HMAC):

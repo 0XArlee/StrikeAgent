@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 676" width="900" height="676" role="img" aria-label="Copy with your agent: a signed plan carried out on Strike&#x27;s own copy trading">
+<title>Copy with your agent: a signed plan carried out on Strike&#x27;s own copy trading</title>
+<defs><marker id="h-mint" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#4efab0"/></marker><marker id="s-mint" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#4efab0"/></marker><marker id="h-faint" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#7e8883"/></marker><marker id="s-faint" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#7e8883"/></marker><marker id="h-gold" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#f8931a"/></marker><marker id="s-gold" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#f8931a"/></marker><marker id="h-rose" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#f472b6"/></marker><marker id="s-rose" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#f472b6"/></marker><marker id="h-sky" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4.5 L0,9 z" fill="#60a5fa"/></marker><marker id="s-sky" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M9,0 L0,4.5 L9,9 z" fill="#60a5fa"/></marker></defs>
+<rect width="900" height="676" rx="16" fill="#0b0d0c"/>
+<g data-group="1">
+<rect x="18" y="20" width="184" height="48" rx="8" fill="#121614" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="110.0" y="41" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea" text-anchor="middle">You</text>
+<text x="110.0" y="58" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7" text-anchor="middle">the agent&#x27;s owner</text>
+</g>
+<path d="M110,68 V656" stroke="#2a3530" stroke-width="1.2" stroke-dasharray="3 4"/>
+<g data-group="1">
+<rect x="244" y="20" width="184" height="48" rx="8" fill="#121614" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="336.0" y="41" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecea" text-anchor="middle">The site</text>
+<text x="336.0" y="58" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7" text-anchor="middle">browser + Functions</text>
+</g>
+<path d="M336,68 V656" stroke="#2a3530" stroke-width="1.2" stroke-dasharray="3 4"/>
+<g data-group="1">
+<rect x="470" y="20" width="184" height="48" rx="8" fill="#121614" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="562.0" y="41" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#f8931a" text-anchor="middle">Copy pilot</text>
+<text x="562.0" y="58" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7" text-anchor="middle">on the agents&#x27; host</text>
+</g>
+<path d="M562,68 V656" stroke="#2a3530" stroke-width="1.2" stroke-dasharray="3 4"/>
+<g data-group="1">
+<rect x="696" y="20" width="184" height="48" rx="8" fill="#121614" stroke="#2a3530" stroke-width="1" data-box="1"/>
+<text x="788.0" y="41" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#4efab0" text-anchor="middle">Strike</text>
+<text x="788.0" y="58" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7" text-anchor="middle">copy trading</text>
+</g>
+<path d="M788,68 V656" stroke="#2a3530" stroke-width="1.2" stroke-dasharray="3 4"/>
+<path d="M116,112 H332" fill="none" stroke="#f8931a" stroke-width="1.4" marker-end="url(#h-gold)"/>
+<circle cx="126" cy="98" r="9" fill="#0b0d0c" stroke="#f8931a" stroke-width="1.3"/>
+<text x="126" y="101.6" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10" font-weight="600" fill="#f8931a" text-anchor="middle">1</text>
+<text x="140" y="105" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="500" fill="#fff" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">sign the copy plan, in plain words</text>
+<text x="140" y="127" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">one trader, or &quot;my agent chooses&quot; by</text>
+<text x="140" y="141" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">your rules; amount, stop-loss, leverage,</text>
+<text x="140" y="155" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">markets to avoid, an end date</text>
+<g data-group="1">
+<rect x="350" y="128" width="196" height="59" rx="8" fill="#101a15" stroke="#a3aca7" stroke-width="1" data-box="1"/>
+<text x="362" y="147" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">checks the signature,</text>
+<text x="362" y="162" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">stores the plan,</text>
+<text x="362" y="177" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">writes an audit row</text>
+</g>
+<path d="M556,236 H340" fill="none" stroke="#7e8883" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#h-faint)"/>
+<circle cx="352" cy="222" r="9" fill="#0b0d0c" stroke="#7e8883" stroke-width="1.3"/>
+<text x="352" y="225.6" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10" font-weight="600" fill="#7e8883" text-anchor="middle">2</text>
+<text x="366" y="229" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="500" fill="#fff" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">reads the signed plans</text>
+<text x="366" y="251" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">HMAC-signed, outbound</text>
+<g data-group="1">
+<rect x="470" y="262" width="184" height="61" rx="8" fill="#101a15" stroke="#f8931a" stroke-width="1" data-box="1"/>
+<text x="482" y="281" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#f8931a">Chooses by your rules</text>
+<text x="482" y="298" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">Strike City score, platforms,</text>
+<text x="482" y="313" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">review period, changes a week</text>
+</g>
+<path d="M568,352 H784" fill="none" stroke="#f8931a" stroke-width="1.4" marker-end="url(#h-gold)"/>
+<circle cx="578" cy="338" r="9" fill="#0b0d0c" stroke="#f8931a" stroke-width="1.3"/>
+<text x="578" y="341.6" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10" font-weight="600" fill="#f8931a" text-anchor="middle">3</text>
+<text x="592" y="345" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="500" fill="#fff" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">POST /v2/copy/subscribe</text>
+<text x="592" y="367" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">auto_create_sub_account, stop_loss_amount,</text>
+<text x="592" y="381" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">excluded_symbols, isolated margin, request_id</text>
+<g data-group="1">
+<rect x="694" y="404" width="188" height="91" rx="8" fill="#101a15" stroke="#4efab0" stroke-width="1" data-box="1"/>
+<text x="706" y="423" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#4efab0">Strike</text>
+<text x="706" y="440" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">creates a sub-account,</text>
+<text x="706" y="455" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">funds it from your account,</text>
+<text x="706" y="470" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">copies the trader,</text>
+<text x="706" y="485" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#a3aca7">enforces the stop-loss</text>
+</g>
+<path d="M568,520 H784" fill="none" stroke="#7e8883" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#h-faint)"/>
+<circle cx="578" cy="506" r="9" fill="#0b0d0c" stroke="#7e8883" stroke-width="1.3"/>
+<text x="578" y="509.6" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10" font-weight="600" fill="#7e8883" text-anchor="middle">4</text>
+<text x="592" y="513" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="500" fill="#fff" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">GET /v2/copy/subscriptions?scope=all</text>
+<text x="592" y="535" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">where each copy really is</text>
+<path d="M556,576 H340" fill="none" stroke="#f8931a" stroke-width="1.4" marker-end="url(#h-gold)"/>
+<circle cx="352" cy="562" r="9" fill="#0b0d0c" stroke="#f8931a" stroke-width="1.3"/>
+<text x="352" y="565.6" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10" font-weight="600" fill="#f8931a" text-anchor="middle">5</text>
+<text x="366" y="569" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="500" fill="#fff" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">the copy&#x27;s status</text>
+<text x="366" y="591" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">in My agent, and in the city: your</text>
+<text x="366" y="605" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">agent stands with the trader</text>
+<path d="M782,644 H566" fill="none" stroke="#f472b6" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#h-rose)"/>
+<circle cx="578" cy="630" r="9" fill="#0b0d0c" stroke="#f472b6" stroke-width="1.3"/>
+<text x="578" y="633.6" font-family="'Plex Mono','IBM Plex Mono',Consolas,Menlo,monospace" font-size="10" font-weight="600" fill="#f472b6" text-anchor="middle">6</text>
+<text x="592" y="637" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="500" fill="#fff" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">stopped at its stop-loss, or refused</text>
+<text x="592" y="659" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883" stroke="#0b0d0c" stroke-width="4" paint-order="stroke" stroke-linejoin="round">the plan halts until you sign again</text>
+</svg>
