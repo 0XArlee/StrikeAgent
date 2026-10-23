@@ -1,54 +1,15 @@
-# Remotion video
+# The demo video
 
-<p align="center">
-  <a href="https://github.com/remotion-dev/logo">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-dark.apng">
-      <img alt="Animated Remotion Logo" src="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-light.gif">
-    </picture>
-  </a>
-</p>
+A two-minute demo of EdgeCraft-StrikeCity, built with [Remotion](https://www.remotion.dev): recordings of the live
+product on Strike mainnet (1920×1080, Chrome's screencast), cut with `@remotion/transitions` and kinetic type in IBM Plex.
 
-Welcome to your Remotion project!
-
-## Commands
-
-**Install Dependencies**
+- `src/Demo.tsx`: the cut, fifteen beats.
+- `public/clips/`: the recordings (not in the repository: they are made again by the recording script).
 
 ```console
-npm i --loglevel=error
+npm i
+npx remotion studio                                        # preview
+npx remotion render Demo out/EdgeCraft-StrikeCity-demo.mp4 --crf=18
 ```
 
-**Start Preview**
-
-```console
-npm run dev
-```
-
-**Render video**
-
-```console
-npx remotion render
-```
-
-**Upgrade Remotion**
-
-```console
-npx remotion upgrade
-```
-
-## Docs
-
-Get started with Remotion by reading the [fundamentals page](https://www.remotion.dev/docs/the-fundamentals).
-
-## Help
-
-We provide help on our [Discord server](https://discord.gg/6VzzNDwUwV).
-
-## Issues
-
-Found an issue with Remotion? [File an issue here](https://github.com/remotion-dev/remotion/issues/new).
-
-## License
-
-Note that for some entities a company license is needed. [Read the terms here](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).
+Remotion is free for individuals and small teams; check its licence before any other use.
