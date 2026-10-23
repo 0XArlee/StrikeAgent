@@ -85,7 +85,9 @@ agent walks in with you.
 ### Pick a strategy from the marketplace
 The landing page is a catalogue of strategies, each with its rules, its full backtest after every cost, and a page of
 its own. One registry (`config/strategies.json`) feeds the catalogue, the onboarding, the agents' host and the server,
-so a new strategy is added as data and appears everywhere at once.
+so a new strategy is added as data and appears everywhere at once. The two strategies listed today, Smart Flow and Smart
+Flow Pyramid, are the author's own: they come from [EdgeCraft](https://edgecraft.pages.dev/#faq), the author's studio of
+indicators for TradingView.
 
 <p align="center"><img src="docs/images/strategies.jpg" width="85%" alt="The strategy marketplace on the landing page"></p>
 

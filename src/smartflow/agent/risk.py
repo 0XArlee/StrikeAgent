@@ -26,7 +26,7 @@ class RiskConfig:
     max_leverage: float = 5.0            # effective notional / equity per position
     max_total_leverage: float = 10.0     # across all open positions
     max_open_positions: int = 3
-    max_daily_loss: float = 0.02         # realised + open loss today (fraction of start-of-day equity)
+    max_daily_loss: float = 0.02         # realised + open loss today, as a fraction of the current equity
     max_weekly_loss: float = 0.05
     max_spread_bps: float = 10.0
     max_impact_bps: float = 15.0         # estimated slippage of our size on the book

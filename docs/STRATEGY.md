@@ -2,8 +2,8 @@
 
 ## Smart Flow
 
-Smart Flow is EdgeCraft's trend-breakout strategy, run by every agent in the city. It trades Strike perpetuals on the
-4-hour timeframe.
+Smart Flow is the author's own trend-breakout strategy, from [EdgeCraft](https://edgecraft.pages.dev/#faq), the author's
+studio of indicators for TradingView. Every agent in the city runs it, on Strike perpetuals and the 4-hour timeframe.
 
 - **Entry**: a 4-hour candle with a range of at least 1 ATR and a body of at least 60 % that closes beyond the last 20
   candles, on 1.5× average volume, aligned with the daily market structure. Breakouts born inside a very wide range

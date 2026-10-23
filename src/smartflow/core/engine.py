@@ -140,7 +140,9 @@ class SignalEngine:
         ema_f, ema_s = self._ema_f.update(c.close), self._ema_s.update(c.close)
         ema_trend = 1 if gt(ema_f, ema_s) else -1 if lt(ema_f, ema_s) else 0
 
-        # composite money flow (lines 125-139)
+        # composite money flow (lines 125-139): the indicator's optional money-flow filter and money-flow exit. Neither is
+        # in the official configuration (research E8: the filter did worse, the exit better in only 2 of 3 periods); the
+        # paper-flowexit agent keeps measuring the exit live
         src = c.hlc3
         raw = src * vol
         mf_pos = self._mf_pos.update(raw if ge(src, prev["hlc3"]) else 0.0)
