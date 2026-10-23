@@ -90,7 +90,7 @@ published ([STRATEGY.md](STRATEGY.md#the-strike-city-score)).
 | What for | Endpoints |
 |---|---|
 | The owner's sub-accounts: name, equity, available money (and, with the copies, which one copies whom) | `GET /v2/sub-accounts` |
-| Start a copy in a sub-account the owner already has: one that copies nobody and has the money, or the one they chose | `POST /v2/copy/subscribe` with `sub_account_id` |
+| Start a copy in a sub-account the owner already has: one that copies nobody (with the money it holds, up to the plan's amount), or the one they chose | `POST /v2/copy/subscribe` with `sub_account_id` |
 | Only when none fits, start a managed copy: Strike creates a sub-account for it and funds it from the owner's main account | `POST /v2/copy/subscribe` (`auto_create_sub_account`, `source_account_id`, fixed ratio or fixed margin, `stop_loss_amount`, `excluded_symbols`, isolated `margin_settings`, an idempotent `request_id`) |
 | Change a running copy's limits | `PATCH /v2/copy/subscribe/{subscription_id}` |
 | Stop a copy | `DELETE /v2/copy/subscribe/{subscription_id}` |

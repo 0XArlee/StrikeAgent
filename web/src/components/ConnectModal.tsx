@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ApiError, api, messageHex, type AppInfo, type Challenge, type Linked, type RiskPreset } from "../api";
 import { shortAddr } from "../cardano/bech32";
-import { KNOWN_WALLETS, WalletError, connect, signMessage, watchWallets, type Connected, type DetectedWallet } from "../cardano/wallets";
+import { KNOWN_WALLETS, WalletError, connect, knownIcon, signMessage, watchWallets, type Connected, type DetectedWallet } from "../cardano/wallets";
 import { fmt, type Dict, type Lang } from "../i18n";
 import type { Look } from "../city/look";
 import type { Persona } from "../city/persona";
@@ -259,7 +259,7 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
                 {wallets.map((w) => (
                   <li key={w.key}>
                     <button type="button" className="list-btn" onClick={() => pickWallet(w)}>
-                      <WalletIcon name={w.name} icon={w.icon} />
+                      <WalletIcon name={w.name} icon={w.icon || knownIcon(w.name)} />
                       <span className="grow">{w.name}</span>
                       <span className="tag tag-ok">{m.detected}</span>
                       <Icon.chevron />
@@ -273,7 +273,7 @@ export function ConnectModal({ t, lang, info, onClose, onLinked, onOpenDashboard
               {missing.map((k) => (
                 <li key={k.id}>
                   <a className="list-btn" href={k.url} target="_blank" rel="noopener noreferrer">
-                    <WalletIcon name={k.name} />
+                    <WalletIcon name={k.name} icon={k.icon} />
                     <span className="grow">{k.name}</span>
                     <span className="tag tag-off">{m.install}</span>
                     <Icon.external />

@@ -28,17 +28,22 @@ export interface DetectedWallet {
   provider: Cip30Provider;
 }
 
-/** Well-known Cardano wallets, offered as install links when not detected. */
-export const KNOWN_WALLETS: { id: string; name: string; url: string }[] = [
-  { id: "lace", name: "Lace", url: "https://www.lace.io" },
-  { id: "eternl", name: "Eternl", url: "https://eternl.io" },
-  { id: "yoroi", name: "Yoroi", url: "https://yoroi-wallet.com" },
-  { id: "typhoncip30", name: "Typhon", url: "https://typhonwallet.io" },
-  { id: "vespr", name: "VESPR", url: "https://vespr.xyz" },
-  { id: "nufi", name: "NuFi", url: "https://nu.fi" },
-  { id: "begin", name: "Begin", url: "https://begin.is" },
-  { id: "gerowallet", name: "GeroWallet", url: "https://gerowallet.io" },
+/** Well-known Cardano wallets, offered as install links when not detected, each with its official icon (from the
+ *  wallet's own site or its extension's store page, served from /wallets). */
+export const KNOWN_WALLETS: { id: string; name: string; url: string; icon: string }[] = [
+  { id: "lace", name: "Lace", url: "https://www.lace.io", icon: "/wallets/lace.webp" },
+  { id: "eternl", name: "Eternl", url: "https://eternl.io", icon: "/wallets/eternl.webp" },
+  { id: "yoroi", name: "Yoroi", url: "https://yoroi-wallet.com", icon: "/wallets/yoroi.svg" },
+  { id: "typhoncip30", name: "Typhon", url: "https://typhonwallet.io", icon: "/wallets/typhon.webp" },
+  { id: "vespr", name: "VESPR", url: "https://vespr.xyz", icon: "/wallets/vespr.webp" },
+  { id: "nufi", name: "NuFi", url: "https://nu.fi", icon: "/wallets/nufi.webp" },
+  { id: "begin", name: "Begin", url: "https://begin.is", icon: "/wallets/begin.webp" },
+  { id: "gerowallet", name: "GeroWallet", url: "https://gerowallet.io", icon: "/wallets/gero.webp" },
 ];
+
+/** A detected wallet's own icon, or the official one we keep when it injects none. */
+export const knownIcon = (name: string) =>
+  KNOWN_WALLETS.find((k) => name.toLowerCase().startsWith(k.name.toLowerCase().slice(0, 4)))?.icon ?? "";
 
 const NON_WALLET_KEYS = new Set(["_events", "_eventsCount", "_maxListeners", "isEnabled", "enable"]);
 

@@ -54,9 +54,15 @@ news reading, the day's move, its day in R). The personality never changes how i
   under a finger, with a light outline; pressing it shows the trade (market, side, size, price, value and how long
   ago). With reduced motion the cars park along their road instead of driving.
 - **Weather**: calm, breezy or stormy with BTC's 24h move.
-- **Top bar**: agents online, agents in a trade, the trades and result over 24 hours, the news reading and the next US
-  macro release. On production they count real accounts only (the paper agents that test the strategies live on
-  staging); on staging they count every agent, paper and testnet, because that is what staging is for.
+- **Top bar**: the live badge, BTC, ETH and SOL with their 24-hour change, the news (with the next US macro release),
+  the weather and the language, nothing more: the map keeps the room.
+- **The city's figures** (Results, summary tab): agents online, agents in a trade, the trades and result over the last 24
+  hours, and the totals. On production they count real accounts only (the paper agents that test the strategies live
+  on staging); on staging they count every agent, paper and testnet, because that is what staging is for.
+- **Logos, as Strike shows them**: each agent's row carries the official logos of the markets it analyses, and each
+  trader's row those of what it holds (two logos, then "+n" for the rest; every name in its tooltip and for screen
+  readers). Strike's own image for each of its 33 markets, Hyperliquid's for an asset Strike does not list, as Strike's
+  app does. The wallet list shows every Cardano wallet's official icon, installed or not.
 
 ![Where everything in the city comes from: the host's snapshots and Strike's public market data](images/diagram-city-data.svg)
 
@@ -85,8 +91,8 @@ Without an agent of your own you go in as a visitor.
 
 ## The dock
 
-Map · Agents (every agent, and every trader people can copy on Strike: the ones walking the city first) · Results (tabs:
-a summary, the marketplace strategies with their live results next to each backtest, the copy pilot, Strike's copy
+Map · Agents (every agent with the logos of its markets, and every trader people can copy on Strike with the logos of
+what it holds: the ones walking the city first) · Results (tabs: a summary with the city's figures, the marketplace strategies with their live results next to each backtest, the copy pilot, Strike's copy
 trading, and the ranking with the best traders to copy) · Feed (what just happened) · Markets (every market
 Strike lists: the agents' markets first, then stocks, indices, commodities and more crypto, with price, 24-hour change,
 funding, volume and maximum leverage) · Guide (what everything means, a legend, the roadmap) · My agent · Suggest

@@ -301,8 +301,13 @@ class CopyPilot:
                 use, put = a, min(total, a["available"])
             else:
                 full = [a for a in free if a["available"] >= total]
+                some = [a for a in free if enough(a["available"])]
                 if pick == "auto" and full:              # a free sub-account that has the money: no new one
                     use, put = full[0], total
+                elif pick == "auto" and some:            # one with less: the copy runs with what it holds, never a new
+                    use, put = some[0], some[0]["available"]   # sub-account while one is free (topped up in Strike's app)
+                    if (st.get("log") or [{}])[-1].get("kind") != "short":
+                        self._note(st, now, "short", available=round(put, 2), account=use["name"])
                 elif main >= total:                      # a new one, funded from the main account
                     source, put = p["accountId"], total
                 elif full:                               # or from a free sub-account that has it

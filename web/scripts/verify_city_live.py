@@ -74,10 +74,13 @@ def real_mode(p, name, viewport, mobile):
     page.keyboard.press("Escape")
     page.wait_for_timeout(1500)
     check(f"{name}: LIVE badge in the header", page.locator(".city-top .city-live").is_visible())
-    stats = page.locator(".city-stats dt").all_inner_texts()
-    online = page.locator(".city-stats dd").first.inner_text()
-    n_online = sum(1 for a in real if a["status"] != "offline")
-    check(f"{name}: header counts the agents online", online.strip() == str(n_online), f"{stats[0]} = {online} (api: {n_online})")
+    # the city's figures, in Results' summary
+    page.locator(".city-dock-btn", has_text="Results").click()
+    page.wait_for_selector("#city-panel .rs-tile[data-k=online]")
+    online = page.locator("#city-panel .rs-tile[data-k=online] b").inner_text()
+    n_online = sum(1 for a in real if a["status"] not in ("paused", "offline"))
+    check(f"{name}: Results counts the agents online", online.strip() == str(n_online), f"{online} (api: {n_online})")
+    page.locator("#city-panel .city-panel-head .icon-btn").click()
     page.screenshot(path=str(OUT / f"l02_map_{name}.png"))
 
     # agents panel: real section first, LIVE tags, the demo switch

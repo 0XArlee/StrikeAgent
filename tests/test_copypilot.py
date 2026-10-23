@@ -213,6 +213,17 @@ def test_a_new_copy_reuses_a_free_sub_account_instead_of_making_another(tmp_path
     assert len(site.reports[-1][0]["accounts"][0]["history"]) == 2
 
 
+def test_a_free_sub_account_with_less_is_used_as_it_is_rather_than_a_new_one(tmp_path):
+    pilot, strike, site = make(tmp_path, plan(sizing={"kind": "fixed", "margin": 20, "funding": 102}))
+    strike.accounts, strike.balances = ["old"], {None: 500.0, "old": 100.0}
+    pilot.tick(NOW)
+    body = strike.calls[-1][1]
+    assert body["sub_account_id"] == "old" and not body.get("auto_create_sub_account") and "funding_amount" not in body
+    s = site.reports[-1][0]
+    assert s["state"] == "copying" and strike.accounts == ["old"]
+    assert [x["kind"] for x in s["log"]] == ["plan", "short", "start"] and s["log"][1]["available"] == 100.0
+
+
 def test_the_sub_account_its_owner_chose_waits_while_it_copies_someone_else(tmp_path):
     pilot, strike, site = make(tmp_path, plan(account="busy"))
     strike.accounts, strike.balances = ["busy"], {None: 100.0, "busy": 90.0}

@@ -68,7 +68,7 @@ export function Tip({ label, text }: { label: ReactNode; text: string }) {
 }
 
 export function WalletIcon({ name, icon }: { name: string; icon?: string }) {
-  if (icon && /^(data:image\/|https:\/\/)/.test(icon)) return <img className="wicon" src={icon} alt="" width={28} height={28} />;
+  if (icon && /^(data:image\/|https:\/\/|\/wallets\/)/.test(icon)) return <img className="wicon" src={icon} alt="" width={28} height={28} />;
   return <span className="wicon-letter" aria-hidden="true">{name.slice(0, 2)}</span>;
 }
 

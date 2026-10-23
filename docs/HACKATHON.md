@@ -97,8 +97,8 @@ which is what someone about to copy needs to know. The Copy Arena puts that in f
 ### 6. Your money, clearly
 
 - **Sub-accounts reused, or chosen.** A sub-account runs one copy at a time, so a new copy reuses one of the owner's
-  that copies nobody and has the money (or the one they choose when signing), and only when none does Strike creates a
-  new one. My agent lists every sub-account with its balance and whom it copies, and links to Strike's app to top one
+  that copies nobody, with the money it holds (or the one they choose when signing), and only when there is none does
+  Strike create a new one. My agent lists every sub-account with its balance and whom it copies, and links to Strike's app to top one
   up (Strike keeps transfers between accounts to its app).
 - **An account chart that never lies.** A tab per account: the result (deposits, withdrawals and money moved into a
   copy left out), every account together, the main account as it is, and each copy's sub-account. Money moved into a
@@ -124,11 +124,14 @@ which is what someone about to copy needs to know. The Copy Arena puts that in f
   Agents lists every trader people can copy on Strike.
 - **Real accounts only in production.** Production shows and counts real accounts only; the paper agents that test
   the strategies live on staging, where paper and testnet trading belong and count.
-- **A Results hub.** One button with tabs: a summary, the marketplace strategies (live results next to each backtest),
-  the copy pilot (which agent copies whom), Strike's copy trading, and the ranking.
+- **A Results hub.** One button with tabs: a summary (with the city's figures, which leave the top bar to the map), the
+  marketplace strategies (live results next to each backtest), the copy pilot (which agent copies whom), Strike's copy
+  trading, and the ranking.
+- **Logos, as Strike shows them.** Every agent shows the official logos of the markets it analyses and every trader
+  those of what it holds (two, then "+n"), from Strike's own images; every Cardano wallet shows its official icon.
 - **Questions by topic.** The landing's questions grouped in five topics, each one a short list of answers that open in
   place, covering everything new.
-- **Polish where people look.** Readable building signs, a top bar that never overflows, characters that never stand
+- **Polish where people look.** Readable building signs, a clean top bar, characters that never stand
   cut off at the edge of the map, Connect wallet right in the dock (My agent once a wallet is in), a complete Guide, and
   a Suggest button that takes feedback with a screenshot.
 
@@ -176,7 +179,7 @@ copy it starts brings money and copiers into Strike's own copy trading, and ever
 Strike account working with an agent from the first minute.
 
 **Technical execution.** Live on mainnet, with a staging copy on testnet. One engine for backtest and live, keys that
-never leave the host, wallet signatures verified server-side, hash-chained audit logs anchored off the host, 180
+never leave the host, wallet signatures verified server-side, hash-chained audit logs anchored off the host, 181
 tests, and real-browser checks with accessibility audits on every surface in two languages
 ([QUALITY.md](QUALITY.md)).
 

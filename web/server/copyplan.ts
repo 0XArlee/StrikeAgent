@@ -88,7 +88,7 @@ export function planLines(p: CopyPlan): string[] {
     ? `Fixed ratio: ${usd(p.sizing.amount)} (every order of the trader scaled to it).`
     : `Fixed margin: ${usd(p.sizing.margin)} per entry, ${usd(p.sizing.funding)} in all.`;
   const where = p.account === "new" ? "It runs in a new sub-account that Strike creates and funds from my main account."
-    : p.account === "auto" ? "It runs in a sub-account of mine that copies nobody and has the money; only if none does, Strike creates a new one funded from my main account."
+    : p.account === "auto" ? "It runs in a sub-account of mine that copies nobody, with the money in it up to this amount; only if there is none, Strike creates a new one funded from my main account."
     : `It runs in my sub-account ${p.account}, with the money that is in it.`;
   return [who,
     `${where} ${how}`,

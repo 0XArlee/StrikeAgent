@@ -32,7 +32,7 @@ Behind the city sits a complete product. You can create an agent that trades you
 wallet signature, choose whom to copy with a score that was tested on real copies, and let your agent run that copy
 for you under rules you sign.
 
-| Live | 1 | 46 | 389 | 180 | 0.20 % |
+| Live | 1 | 46 | 389 | 181 | 0.20 % |
 |:---:|:---:|:---:|:---:|:---:|:---:|
 | on Strike mainnet, with a staging copy on testnet | signature to start an agent on your own Strike account | Strike endpoints in use | real copies behind the score, re-tested hourly | automated tests, plus real-browser checks | builder fee per execution of the marketplace strategies only, approved by each user |
 
@@ -169,7 +169,7 @@ Each area, in detail and with its evidence: [docs/HACKATHON.md](docs/HACKATHON.m
 - **Keys stay on the host.** The site only knows public keys; the host never listens to the internet.
 - **Everything is evidence.** Every signed action, Strike request, fill and balance change is written to hash-chained
   logs whose heads are anchored on the site.
-- **Quality.** 180 Python tests, plus real-browser checks with Playwright and axe-core on every surface of the city, in
+- **Quality.** 181 Python tests, plus real-browser checks with Playwright and axe-core on every surface of the city, in
   English and Spanish, on desktop and phone sizes.
 
 More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/SECURITY.md](docs/SECURITY.md) and

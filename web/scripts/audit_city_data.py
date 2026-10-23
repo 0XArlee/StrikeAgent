@@ -56,8 +56,11 @@ with sync_playwright() as p:
     agents = doc["agents"]
     now = time.time() * 1000
 
-    # ---- the top bar
-    dd = pg.locator(".city-stats dd").all_inner_texts()
+    # ---- the city's figures (Results' summary)
+    pg.locator(".city-dock-btn", has_text="Results").click()
+    pg.wait_for_selector("#city-panel .rs-tile[data-k=online]")
+    dd = [pg.locator(f"#city-panel .rs-tile[data-k={k}] b").inner_text() for k in ("online", "inTrade", "trades24", "r24")]
+    pg.locator("#city-panel .city-panel-head .icon-btn").click()
     live = sum(1 for a in agents if a["status"] not in ("paused", "offline"))
     in_trade = sum(1 for a in agents if a.get("positions"))
     day = [t for a in agents for t in a.get("trades", []) if not t.get("test") and t["time"] >= now - 86400_000]

@@ -54,11 +54,15 @@ with sync_playwright() as p:
         pg.on("request", lambda r: reads.append(r.url) if "/price/v2/trades" in r.url else None)
         pg.goto(f"{BASE}/#/city?night=0", wait_until="load")   # daylight: the cars in their own colours
         pg.wait_for_selector(".city[data-ready]", timeout=45000)
-        bar = pg.locator(".city-stats").inner_text().replace("\n", " | ")
+        # what the figures count (Results' summary): every agent on staging, real accounts only in production
+        pg.locator(".city-dock-btn", has_text="Results").click()
+        pg.wait_for_selector("#city-panel .rs-tile[data-k=r24]")
+        bar = pg.locator("#city-panel .rs-panel").inner_text().replace("\n", " | ")
         if EXPECT == "all":
-            check(f"{name}: test site counts every agent (no 'real' label)", "real" not in bar.lower() and "result 24h" in bar, bar)
+            check(f"{name}: test site counts every agent", "Staging:" in bar and "Result, last 24 h" in bar, bar[:160])
         else:
-            check(f"{name}: production counts real accounts only", "real result 24h" in bar, bar)
+            check(f"{name}: production counts real accounts only", "Real accounts only" in bar and "Result, last 24 h" in bar, bar[:160])
+        pg.locator("#city-panel .city-panel-head .icon-btn").click()
         spot = None
         for _ in range(40):   # a car shows up as soon as a trade comes in (Strike trades every few seconds)
             pg.wait_for_timeout(1500)

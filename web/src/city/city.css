@@ -10,15 +10,22 @@
 .city-brand { display: flex; align-items: center; gap: 10px; color: var(--text); flex: none; border-radius: var(--radius-sm); }
 .city-brand:hover { text-decoration: none; }
 .city-word { font-weight: 700; letter-spacing: -0.01em; font-size: 17px; white-space: nowrap; }
-.city-stats { display: flex; gap: 20px; margin: 0 0 0 8px; }
-.city-stats > div { display: flex; flex-direction: column-reverse; }
-.city-stats dt { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
-.city-stats dd { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.2; }
 .city-tickers { display: flex; gap: 16px; margin: 0 0 0 auto; padding: 0; list-style: none; font-size: 13px; }
 .city-tickers li { display: flex; gap: 6px; align-items: baseline; white-space: nowrap; }
 .city-tickers .tk { font-weight: 700; color: var(--text-muted); font-size: 12px; }
 .city-top-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 .city-tickers + .city-top-actions { margin-left: 4px; }
+/* market logos (city/MarketLogos.tsx): two overlapping, then "+n" */
+.mk-logos { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.mk-stack { display: inline-flex; }
+.mk-logo { width: 22px; height: 22px; border-radius: 50%; background: #1f2421; box-shadow: 0 0 0 2px var(--surface); object-fit: cover; flex: none; }
+.mk-stack .mk-logo + .mk-logo { margin-left: -7px; }
+.mk-txt { display: inline-grid; place-items: center; font: 700 8px/1 var(--mono); color: var(--text-muted); }
+.mk-more { font: 700 11px/1 var(--mono); color: var(--text-muted); padding: 3px 5px; border: 1px solid var(--border); border-radius: 9999px; }
+.mk-one { font-size: 12px; color: var(--text-muted); }
+.city-row-end { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.city-hold { display: inline-flex; align-items: center; gap: 6px; }
+.city-hold .mk-logo { width: 18px; height: 18px; box-shadow: none; }
 .city-weather { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--border); border-radius: 9999px;
   font-size: 12px; font-weight: 600; cursor: help; }
 .city-weather.w0 { color: var(--text-muted); } .city-weather.w1 { color: var(--golden); } .city-weather.w2 { color: #93c5fd; }
@@ -40,9 +47,6 @@
 .city-news-btn .nb-read { padding-left: 7px; border-left: 1px solid var(--border); color: var(--text-muted); white-space: nowrap; }
 .city-news-btn .nb-read.pos { color: var(--primary); } .city-news-btn .nb-read.neg { color: var(--negative); }
 .city-event .ev-short { display: none; }
-.city-stat-weather { display: none !important; }
-.city-stat-weather dd { display: inline-flex; align-items: center; gap: 5px; }
-.city-stat-weather dd.w0 { color: var(--text-muted); } .city-stat-weather dd.w1 { color: var(--golden); } .city-stat-weather dd.w2 { color: #93c5fd; }
 /* a release coming up: its warning takes the prices' place (the towers' signs show them) */
 @media (max-width: 1720px) { .city-top:has(.city-event) .city-tickers { display: none; } .city-top:has(.city-event) .city-top-actions { margin-left: auto; } }
 
@@ -75,7 +79,7 @@
 .city-panel { position: absolute; top: 12px; right: 12px; bottom: 12px; width: 360px; display: flex; flex-direction: column; z-index: 3; animation: pop .18s ease-out; }
 .city-panel-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 8px 16px; border-bottom: 1px solid var(--border-soft); }
 .city-panel-head h2 { font-size: 16px; font-weight: 600; }
-.city-panel-body { padding: 12px 16px 16px; overflow: auto; display: grid; gap: 12px; align-content: start; overscroll-behavior: contain; }
+.city-panel-body { padding: 12px 16px 16px; overflow: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-content: start; overscroll-behavior: contain; }
 
 .city-search input { width: 100%; height: 40px; padding: 0 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border);
   border-radius: var(--radius); font: inherit; }
@@ -84,12 +88,12 @@
 .city-filters button { all: unset; cursor: pointer; font-size: 12px; font-weight: 600; padding: 5px 10px; border: 1px solid var(--border); border-radius: 9999px; color: var(--text-muted); }
 .city-filters button[aria-pressed="true"] { color: var(--primary); border-color: var(--primary); background: var(--primary-10); }
 .city-filters button:focus-visible { box-shadow: var(--focus); }
-.city-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.city-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .city-row { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 10px; background: transparent; color: var(--text);
   border: 1px solid transparent; border-radius: var(--radius); font: inherit; text-align: left; cursor: pointer; }
 .city-row:hover { background: var(--surface-2); }
 .city-row[aria-current="true"] { border-color: var(--primary-30); background: var(--primary-10); }
-.city-row .grow { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.city-row .grow { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
 .city-row-name { font-weight: 600; }
 .city-avatar { flex: none; image-rendering: pixelated; background: var(--surface-3); border-radius: 6px; padding: 2px; box-sizing: content-box; }
 .city-pill { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 1px 8px; border: 1px solid; border-radius: 9999px; white-space: nowrap; }
@@ -203,19 +207,14 @@
 @media (max-width: 760px) {
   .city-top { flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
   /* phones: the long name stacks (EDGECRAFT over STRIKECITY) and the live badge keeps only its dot, so the bar stays
-     on one row above the stats */
+     on one row */
   .city-word { font-size: 15px; line-height: 1; display: grid; gap: 3px; }
   .cw-pre { font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--text-muted); }
   .cw-dash { display: none; }
   .city-live { padding: 6px; }
   .city-live-txt { display: none; }
-  .city-stats { order: 3; width: 100%; margin: 0; justify-content: space-between; gap: 8px; }
-  .city-stats dd { font-size: 14px; }
-  .city-stats .hide-md { display: flex; }
-  .city-stat-weather { display: flex !important; }
   .city-top .hide-sm { display: none; }
   .city-top-actions { margin-left: auto; gap: 6px; }
-  .city-top-actions .city-weather { display: none; }   /* phones: the weather is a figure under the buttons */
   .city-news-btn { width: 34px; padding: 0; justify-content: center; }
   .city-news-btn .nb-label, .city-news-btn .nb-read { display: none; }
   .city-top .lang button { padding: 6px 9px; }
@@ -237,7 +236,7 @@
   .city-dialog-inner { padding: 20px 16px calc(16px + env(safe-area-inset-bottom)); }
   .city-statgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (max-width: 400px) { .city-stats .hide-xs { display: none !important; } .city-dock-btn { font-size: 10px; padding: 4px 2px; } }
+@media (max-width: 400px) { .city-dock-btn { font-size: 10px; padding: 4px 2px; } }
 @media (max-width: 350px) { .city-dock { padding-left: 2px; padding-right: 2px; } .city-dock-btn { font-size: 9px; padding: 4px 1px; } }
 @media (max-width: 370px) { .city-top .city-live { display: none; } }
 @media (prefers-reduced-motion: reduce) { .city-panel, .city-card, .city-dialog, .city-live-dot, .city-event-dot { animation: none; } }
@@ -253,7 +252,10 @@
 .city-tag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
   padding: 1px 6px; border-radius: 4px; white-space: nowrap; font-family: "IBM Plex Sans", sans-serif; }
 .city-tag.live { color: var(--primary); background: var(--primary-10); border: 1px solid var(--primary-30); }
-.city-row-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.city-row-tags { display: flex; flex-wrap: wrap; gap: 4px; max-width: 100%; }
+/* a tag never runs under the logos beside it: one too long for the row goes onto a second line, never cut */
+.city-row-tags > span { max-width: 100%; min-width: 0; }
+.city-row-tags .city-tag { display: inline-block; white-space: normal; overflow-wrap: anywhere; }
 .city-row.real { border-color: var(--primary-30); }
 .city-feed-meta { justify-content: flex-start; }
 .city-feed-meta time { margin-left: auto; }
@@ -540,7 +542,6 @@
 }
 @media (max-width: 1100px) {
   .city-live-txt { display: none; } .city-live { padding: 6px; }
-  .city-stats { gap: 14px; } .city-stats .hide-md { display: none; }
   .city-news-btn .nb-read { display: none; }
 }
 @media (min-width: 761px) and (max-width: 940px) {

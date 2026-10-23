@@ -83,8 +83,12 @@ def run(p, name, viewport, mobile):
     page.screenshot(path=str(OUT / f"c02_map_{name}.png"))
     check(f"{name}: no horizontal overflow", overflow(page) <= 0, f"{overflow(page)} px")
 
-    stats = page.locator(".city-stats dd").all_inner_texts()
-    check(f"{name}: top stats filled", len(stats) >= 3 and stats[0].strip() not in ("", "0"), " | ".join(stats))
+    # the city's figures live in Results' summary (the top bar keeps the map's room)
+    page.locator(".city-dock-btn", has_text="Results").click()
+    page.wait_for_selector("#city-panel .rs-tile[data-k=online]")
+    stats = [page.locator(f"#city-panel .rs-tile[data-k={k}] b").inner_text() for k in ("online", "inTrade", "trades24", "r24")]
+    check(f"{name}: the city's figures filled", stats[0].strip() not in ("", "0"), " | ".join(stats))
+    page.locator("#city-panel .city-panel-head .icon-btn").click()
 
     # keyboard: focus the map and zoom / pan
     page.focus(".city-canvas")

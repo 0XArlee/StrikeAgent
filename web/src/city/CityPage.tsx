@@ -20,7 +20,8 @@ import { dict } from "../i18n";
 import { voiceLine } from "../components/PersonaPicker";
 import { TEMPER_COLOR } from "./persona";
 import { useNews } from "./news";
-import { mainPosition, traderName, useCopy, type CopyState, type Trader } from "./copy";
+import { positionsBySize, traderName, useCopy, type CopyState, type Trader } from "./copy";
+import { MarketLogo, MarketLogos } from "./MarketLogos";
 import { CopyChooser, Evidence, LeadCard, StrikeStats } from "./CopyView";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
 import { ART2, BUILDINGS, artReady } from "./world";
@@ -356,7 +357,6 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   weather.current = !btc ? 0 : Math.abs(btc.change) >= 4 ? 2 : Math.abs(btc.change) >= 1.5 ? 1 : 0;
   // the screen's tape: the latest decision an agent made (its warnings, like Strike not answering, stay in Feed)
   const latest = store.feed.find((x) => x.d.kind !== "analysis" && x.d.kind !== "alert") ?? store.feed.find((x) => x.d.kind !== "alert");
-  const SL = T.stats;
   const tape = tapeLine(newsDoc, T, lang, Date.now());   // the news reading and the next US release, after the agents' line
   newsRef.current = newsDoc;
   newsTape.current = newsDoc && typeof newsDoc === "object"
@@ -392,17 +392,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
           <Mark size={32} /><span className="city-word"><span className="cw-pre">EdgeCraft<span className="cw-dash">-</span></span>StrikeCity</span>
         </a>
         {store.live && <span className="city-live" title={T.liveLong}><span className="city-live-dot" aria-hidden="true" /><span className="city-live-txt">{T.live}</span><span className="sr-only">: {T.liveLong}</span></span>}
-        <dl className="city-stats" aria-label={T.title}>
-          <div><dt>{SL.live}</dt><dd className="num">{totals.live}</dd></div>
-          <div><dt>{SL.inTrade}</dt><dd className="num">{totals.inTrade}</dd></div>
-          {/* real accounts only: the paper agents that test the strategies count apart (Ranks) */}
-          {/* on the staging site (Strike testnet) every agent counts: paper and testnet accounts */}
-          <div className="hide-xs hide-md" title={testSite ? SL.allTip : SL.realTip}><dt>{testSite ? SL.tradesAll : SL.trades}</dt><dd className="num">{totals.trades}</dd></div>
-          <div title={testSite ? SL.allTip : SL.realTip}><dt>{testSite ? SL.rAll : SL.r}</dt><dd className={`num ${totals.rToday >= 0 ? "pos" : "neg"}`}>{fmtR(totals.rToday, lang)}</dd></div>
-          {/* phones: the weather is one more figure here (the bar keeps one row of buttons) */}
-          <div className="city-stat-weather" title={T.weather.tip}><dt>{T.weather.label}</dt>
-            <dd className={`w${weather.current}`}><WeatherIcon w={weather.current} />{[T.weather.calm, T.weather.breezy, T.weather.storm][weather.current]}</dd></div>
-        </dl>
+        {/* the city's figures (online, in a trade, the last 24 hours) live in Results, the map keeps the room */}
         <ul className="city-tickers" aria-label={T.markets.title}>
           {["BTC-USD", "ETH-USD", "SOL-USD"].map((m) => {
             const p = store.prices[m];
@@ -470,7 +460,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
               {panel === "agents" && <AgentsPanel T={T} lang={lang} store={store} leads={leads.current} selected={agent?.id ?? lead?.id}
                                                   traders={copyDoc && typeof copyDoc === "object" ? copyDoc.traders : []}
                                                   onPick={(id) => choose({ kind: "agent", id })} onTrader={openTrader} />}
-              {panel === "ranks" && <ResultsPanel T={T} lang={lang} store={store} testSite={testSite} onPick={(id) => choose({ kind: "agent", id })} onConnect={onConnect}
+              {panel === "ranks" && <ResultsPanel T={T} lang={lang} store={store} testSite={testSite} totals={totals} onPick={(id) => choose({ kind: "agent", id })} onConnect={onConnect}
                                                leads={leads.current.length}
                                                 copy={copyDoc} onArena={enterArena} onTrader={openTrader} />}
               {panel === "feed" && <FeedPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "agent", id })} />}
@@ -734,9 +724,13 @@ const marketList = (ms: string[]) => ms.slice(0, 3).map(ticker).join(" · ") + (
 
 const owner = (T: CityText, a: AgentView) => (a.owner === "Strike user" ? T.ownerUser : a.owner);
 
-function KindTag({ T, a }: { T: CityText; a: AgentView }) {
-  // a user's agent on Strike testnet trades test money: never labelled as real
-  if (a.kind === "live" && a.real?.env === "testnet") return <span className="city-tag testnet">{T.kindTestnet}</span>;
+function KindTag({ T, a, short }: { T: CityText; a: AgentView; short?: boolean }) {
+  // a user's agent on Strike testnet trades test money: never labelled as real (a list row says "Testnet", the rest
+  // stays in its tooltip and for screen readers)
+  if (a.kind === "live" && a.real?.env === "testnet") {
+    return short ? <span className="city-tag testnet" title={T.kindTestnet}><span aria-hidden="true">{T.kindTestnetShort}</span><span className="sr-only">{T.kindTestnet}</span></span>
+      : <span className="city-tag testnet">{T.kindTestnet}</span>;
+  }
   return <span className={`city-tag ${a.kind === "live" ? "real" : "live"}`}>{a.kind === "live" ? T.kindLive : T.realTag}</span>;
 }
 
@@ -847,10 +841,17 @@ function AgentsPanel({ T, lang, store, leads, traders, selected, onPick, onTrade
       .sort((x, y) => (y.city ?? 0) - (x.city ?? 0))
     : [];
   const traderCount = leadList.length + others.length;
+  // what a trader holds: its side and market for one position, the logos of the largest two and "+n" for more
+  const holding = (t: Trader | undefined, score: number | null) => {
+    const ps = t ? positionsBySize(t) : [];
+    const side = (p: (typeof ps)[number]) => `${p.side === "long" ? "LONG" : "SHORT"} ${ticker(p.market)}`;
+    if (ps.length > 1) return <MarketLogos markets={ps.map((p) => p.market)} names={ps.map(side).join(", ")} label={T.agents.holds} />;
+    if (ps.length === 1) return <span className={`small strong city-hold ${ps[0].side === "long" ? "pos" : "neg"}`}><MarketLogo m={ps[0].market} />{side(ps[0])}</span>;
+    return <span className="num city-copy-score" title={T.copy.cityScore}><span className="sr-only">{T.copy.cityScore}: </span>{score == null ? "—" : Math.round(score)}</span>;
+  };
   const otherRows = (
     <ul className="city-list">
       {others.map((t) => {
-        const p = mainPosition(t);
         return (
           <li key={t.id}>
             <button type="button" className="city-row real" onClick={() => onTrader(t.id)}>
@@ -858,8 +859,7 @@ function AgentsPanel({ T, lang, store, leads, traders, selected, onPick, onTrade
               <span className="grow"><span className="city-row-name">{traderName(t)}</span>
                 <span className="city-row-tags"><span className="city-tag lead">{T.copy.leadTag}</span>
                   <span className={`cp-plat ${t.platform}`}>{t.platform === "hyperliquid" ? "Hyperliquid" : "Strike"}</span></span></span>
-              {p ? <span className={`small strong ${p.side === "long" ? "pos" : "neg"}`}>{p.side === "long" ? "LONG" : "SHORT"} {ticker(p.market)}</span>
-                : <span className="num city-copy-score" title={T.copy.cityScore}><span className="sr-only">{T.copy.cityScore}: </span>{t.city == null ? "—" : Math.round(t.city)}</span>}
+              {holding(t, t.city ?? null)}
             </button>
           </li>
         );
@@ -869,7 +869,6 @@ function AgentsPanel({ T, lang, store, leads, traders, selected, onPick, onTrade
   const leadRows = (
     <ul className="city-list">
       {leadList.map((a) => {
-        const p = a.position;
         return (
           <li key={a.id}>
             <button type="button" className="city-row real" aria-current={selected === a.id || undefined} onClick={() => onPick(a.id)}>
@@ -877,8 +876,7 @@ function AgentsPanel({ T, lang, store, leads, traders, selected, onPick, onTrade
               <span className="grow"><span className="city-row-name">{a.name}</span>
                 <span className="city-row-tags"><span className="city-tag lead">{T.copy.leadTag}</span>
                   <span className={`cp-plat ${a.lead?.platform}`}>{a.lead?.platform === "hyperliquid" ? "Hyperliquid" : "Strike"}</span></span></span>
-              {p ? <span className={`small strong ${p.side === "long" ? "pos" : "neg"}`}>{p.side === "long" ? "LONG" : "SHORT"} {ticker(p.market)}</span>
-                : <span className="num city-copy-score" title={T.copy.cityScore}><span className="sr-only">{T.copy.cityScore}: </span>{Math.round(a.lead?.city ?? 0)}</span>}
+              {holding(a.lead, a.lead?.city ?? 0)}
             </button>
           </li>
         );
@@ -892,9 +890,11 @@ function AgentsPanel({ T, lang, store, leads, traders, selected, onPick, onTrade
           <button type="button" className="city-row real" aria-current={selected === a.id || undefined} onClick={() => onPick(a.id)}>
             <Avatar id={a.id} look={a.look} />
             <span className="grow"><span className="city-row-name">{a.name}</span>
-              <span className="city-row-tags"><KindTag T={T} a={a} /><StatusPill T={T} a={a} /></span></span>
-            {a.position ? <span className={`num ${a.position.rOpen >= 0 ? "pos" : "neg"}`}>{fmtR(a.position.rOpen, lang)}</span>
-              : <span className="faint small">{ticker(a.focus)}</span>}
+              <span className="city-row-tags"><KindTag T={T} a={a} short /><StatusPill T={T} a={a} /></span></span>
+            <span className="city-row-end">
+              {a.position && <span className={`num ${a.position.rOpen >= 0 ? "pos" : "neg"}`}>{fmtR(a.position.rOpen, lang)}</span>}
+              <MarketLogos markets={a.markets.length ? a.markets : [a.focus]} label={T.agents.analyses} />
+            </span>
           </button>
         </li>
       ))}
@@ -939,8 +939,8 @@ const RTABS: RTab[] = ["overview", "strategies", "copilot", "strike", "ranking"]
 
 /** Results: the agents on the marketplace's strategies, the copies agents run, Strike's copy trading and the ranking,
  *  each in a tab (WAI-ARIA tabs: arrows move between them). Production counts real accounts only; staging all. */
-function ResultsPanel({ T, lang, store, testSite, onPick, onConnect, copy, onArena, onTrader, leads }: { T: CityText; lang: Lang; store: CityStore;
-  testSite?: boolean; onPick: (id: string) => void; onConnect: () => void; copy: CopyState; onArena: () => void; onTrader: (id: string) => void; leads: number }) {
+function ResultsPanel({ T, lang, store, testSite, totals, onPick, onConnect, copy, onArena, onTrader, leads }: { T: CityText; lang: Lang; store: CityStore;
+  testSite?: boolean; totals: ReturnType<CityStore["totals"]>; onPick: (id: string) => void; onConnect: () => void; copy: CopyState; onArena: () => void; onTrader: (id: string) => void; leads: number }) {
   const R = T.results, loc = lang === "es" ? "es-ES" : "en-US";
   const [tab, setTab] = useState<RTab>("overview");
   const btns = useRef<(HTMLButtonElement | null)[]>([]);
@@ -958,7 +958,7 @@ function ResultsPanel({ T, lang, store, testSite, onPick, onConnect, copy, onAre
     if (j < 0) return;
     e.preventDefault(); setTab(RTABS[j]); btns.current[j]?.focus();
   };
-  const tile = (label: string, value: string, tone = "") => <div className="rs-tile"><span>{label}</span><b className={`num ${tone}`}>{value}</b></div>;
+  const tile = (label: string, value: string, tone = "", k?: string) => <div className="rs-tile" data-k={k}><span>{label}</span><b className={`num ${tone}`}>{value}</b></div>;
   return (
     <div className="rs">
       <div className="rs-tabs" role="tablist" aria-label={R.tabs} onKeyDown={onKey}>
@@ -972,8 +972,11 @@ function ResultsPanel({ T, lang, store, testSite, onPick, onConnect, copy, onAre
           <>
             <p className="small faint">{testSite ? R.allHere : R.realOnly}</p>
             <div className="rs-tiles">
+              {tile(R.k.online, String(totals.live), "", "online")}
+              {tile(R.k.inTrade, String(totals.inTrade), "", "inTrade")}
+              {tile(R.k.trades24, totals.trades.toLocaleString(loc), "", "trades24")}
+              {tile(R.k.r24, fmtR(totals.rToday, lang), totals.trades ? (totals.rToday >= 0 ? "pos" : "neg") : "", "r24")}
               {tile(R.k.agents, String(agents.length))}
-              {tile(R.k.inTrade, String(agents.filter((a) => a.position).length))}
               {tile(R.k.trades, n.toLocaleString(loc))}
               {tile(R.k.win, n ? pct(wins / n) : "—")}
               {tile(R.k.total, n ? fmtR(totalR, lang) : "—", n ? (totalR >= 0 ? "pos" : "neg") : "")}

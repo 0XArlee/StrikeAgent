@@ -78,7 +78,12 @@ export const copiersWon = (t: Trader) => (t.copiers.n >= 3 ? t.copiers.won / t.c
 
 /** Its biggest open position (the market tower it walks to). */
 export function mainPosition(t: Trader) {
-  return [...(t.positions ?? [])].sort((a, b) => Math.abs(b.size * (b.entry ?? 1)) - Math.abs(a.size * (a.entry ?? 1)))[0];
+  return positionsBySize(t)[0];
+}
+
+/** Its open positions, the largest first. */
+export function positionsBySize(t: Trader) {
+  return [...(t.positions ?? [])].sort((a, b) => Math.abs(b.size * (b.entry ?? 1)) - Math.abs(a.size * (a.entry ?? 1)));
 }
 
 /** What can go wrong copying it, said plainly (the chooser shows these next to the numbers). */
