@@ -24,7 +24,7 @@ from pathlib import Path
 from ..net import HttpError, request_json
 from .strike import MAINNET, TESTNET, StrikePublic, StrikeWatch, label, pct, position_view, price, usd
 from .telegram import Telegram, TelegramError
-from .watch import AccountWatch, AgentWatch, copies_from_collector, hl_state, short
+from .watch import AccountWatch, AgentWatch, copies_from_collector, es_name, hl_state, short
 
 STRIKE_KINDS = ("move", "funding", "liquidation", "whale", "crowd", "listing", "security", "macro", "reading", "arena")
 MINE_KINDS = ("risk", "copy", "trades", "problems", "status")
@@ -431,7 +431,7 @@ class AlertsBot:
                     for p in (position_view(x) for x in st.positions(a)):
                         if p:
                             d = f" · {p['dist'] * 100:.1f}% {self.t(c, 'to_liq')}" if p["dist"] is not None else ""
-                            pos.append(f"• {p['side'].upper()} {label(p['symbol'])} {p['size']:g} @ {price(p['entry'])} ({usd(p['notional'])}){d} — {esc(an)}")
+                            pos.append(f"• {p['side'].upper()} {label(p['symbol'])} {p['size']:g} @ {price(p['entry'])} ({usd(p['notional'])}){d} — {esc(es_name(an) if c.get('lang') == 'es' else an)}")
                 lines.append(f"{self.t(c, 'status_pos')}:\n" + "\n".join(pos) if pos else self.t(c, "status_none"))
                 doc = st.account(acc)
                 mb, mm = doc.get("margin_balance"), doc.get("maintenance_margin")

@@ -40,6 +40,11 @@ def short(a: str) -> str:
     return a if len(a) <= 14 else f"{a[:6]}…{a[-4:]}"
 
 
+def es_name(n: str) -> str:
+    """An account's name as the Spanish messages say it."""
+    return "cuenta principal" if n == "main account" else n.replace("sub-account ", "subcuenta ")
+
+
 # ---------------------------------------------------------------- reads
 def hl_state(address: str, http=request_json) -> dict:
     _, doc, _ = http("POST", HYPERLIQUID, body=json.dumps({"type": "clearinghouseState", "user": address}).encode(),
@@ -119,7 +124,7 @@ class AccountWatch:
             seen[k] = lvl
             d, side, n = p["dist"] * 100, p["side"].upper(), label(p["symbol"])
             level = {3: "alert", 2: "warn", 1: "info"}[lvl]
-            where_en, where_es = (f"{who_en} · {name}" if who_en else name), (f"{who_es} · {name}" if who_es else name)
+            where_en, where_es = (f"{who_en} · {name}" if who_en else name), (f"{who_es} · {es_name(name)}" if who_es else es_name(name))
             act_en = "Add margin or reduce it now." if lvl == 3 else "Consider adding margin or reducing it."
             act_es = "Añade margen o redúcela ya." if lvl == 3 else "Valora añadir margen o reducirla."
             out.append(msg(f"liq:{k}:{lvl}", level,
@@ -146,7 +151,7 @@ class AccountWatch:
         return [msg(f"margin:{acc}:{lvl}", "alert" if lvl == 2 else "warn",
                     (f"{name}: margin {r * 100:.0f}% used", f"Maintenance margin {usd(mm)} of {usd(mb)}. At 100% Strike liquidates: "
                      "add funds or reduce positions."),
-                    (f"{name}: {r * 100:.0f}% del margen usado", f"Margen de mantenimiento {usd(mm)} de {usd(mb)}. Al 100% Strike liquida: "
+                    (f"{es_name(name)}: {r * 100:.0f}% del margen usado", f"Margen de mantenimiento {usd(mm)} de {usd(mb)}. Al 100% Strike liquida: "
                      "añade fondos o reduce posiciones."), url="https://app.strikefinance.org")]
 
     def _copy(self, c: dict, mine: dict[str, dict], name: str, mem: dict) -> list[dict]:
@@ -160,7 +165,7 @@ class AccountWatch:
             liq = st[key] == "liquidated"
             out.append(msg(f"copyend:{key}:{c.get('since')}", "alert" if liq else "info",
                            (f"Your copy of {lead_n} {'was liquidated' if liq else 'stopped'}", f"{name} no longer copies {lead_n} on Strike ({st[key]})."),
-                           (f"Tu copia de {lead_n} {'fue liquidada' if liq else 'se detuvo'}", f"{name} ya no copia a {lead_n} en Strike ({st[key]})."),
+                           (f"Tu copia de {lead_n} {'fue liquidada' if liq else 'se detuvo'}", f"{es_name(name)} ya no copia a {lead_n} en Strike ({st[key]})."),
                            kind="copy"))
         if st[key] != "active":
             return out
@@ -193,7 +198,7 @@ class AccountWatch:
                 n, side = label(m), p["side"].upper()
                 out.append(msg(k, "warn", (f"Your copy didn't take {side} {n}", f"{lead_n} holds {side} {n} ({usd(p['notional'])}) but {name} "
                                            "doesn't: a market the copy excludes, not enough margin, or below Strike's minimum. Check it in Strike's app."),
-                               (f"Tu copia no tomó {side} {n}", f"{lead_n} tiene {side} {n} ({usd(p['notional'])}) pero {name} no: un mercado que la "
+                               (f"Tu copia no tomó {side} {n}", f"{lead_n} tiene {side} {n} ({usd(p['notional'])}) pero {es_name(name)} no: un mercado que la "
                                 "copia excluye, margen insuficiente o por debajo del mínimo de Strike. Revísalo en la app de Strike."),
                                kind="copy", url="https://app.strikefinance.org"))
         # a position the copy still holds that the trader already left
@@ -207,7 +212,7 @@ class AccountWatch:
                 n, side = label(m), p["side"].upper()
                 out.append(msg(k, "warn", (f"{lead_n} left {n}; your copy didn't", f"{name} still holds {side} {n} ({usd(p['notional'])}, mark "
                                            f"{price(p['mark'])}) and the trader no longer does. Close it in Strike's app if you want to stay in step."),
-                               (f"{lead_n} salió de {n}; tu copia no", f"{name} sigue con {side} {n} ({usd(p['notional'])}, mark {price(p['mark'])}) "
+                               (f"{lead_n} salió de {n}; tu copia no", f"{es_name(name)} sigue con {side} {n} ({usd(p['notional'])}, mark {price(p['mark'])}) "
                                 "y el trader ya no. Ciérrala en la app de Strike si quieres ir a la par."),
                                kind="copy", url="https://app.strikefinance.org"))
         for k in [k for k in cnt if k.startswith(("miss:" + key, "left:" + key)) and not any(k.endswith(":" + m) for m in set(lead) | set(mine))]:
