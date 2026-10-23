@@ -214,7 +214,8 @@ export function fromApi(x: ApiAgent, prev: AgentView | undefined, R: () => numbe
   const all: Trade[] = (x.trades ?? []).map((t) => ({ market: t.market, side: t.side, entry: t.entry, exit: t.exit, r: t.r, reason: t.reason, time: t.time,
     test: !!t.test, pnl: t.pnl ?? null, pnlPct: t.pnlPct ?? null }));
   const markets = x.markets?.length ? x.markets : ["BTC-USD"];
-  const status: Status = x.status;
+  // its main account empty but a copy running in a sub-account: it works (copies, checks its candles), not waits at home
+  const status: Status = x.status === "unfunded" && x.copy ? "waiting" : x.status;
   // each real agent starts its market tour at a different market so two agents never walk in lockstep
   const tour = Math.floor(R() * markets.length);
   const a: AgentView = prev ?? {

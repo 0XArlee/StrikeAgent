@@ -26,7 +26,7 @@ class RiskConfig:
     max_leverage: float = 5.0            # effective notional / equity per position
     max_total_leverage: float = 10.0     # across all open positions
     max_open_positions: int = 3
-    max_daily_loss: float = 0.02         # realised + open loss today, as a fraction of the current equity
+    max_daily_loss: float = 0.02         # realised + open loss today (fraction of start-of-day equity, as in the backtest)
     max_weekly_loss: float = 0.05
     max_spread_bps: float = 10.0
     max_impact_bps: float = 15.0         # estimated slippage of our size on the book
@@ -126,9 +126,9 @@ class RiskEngine:
             # would tell the owner they lost money when they have only not deposited yet
             r.append("no equity: the account has no balance")
             return d
-        if a.day_pnl <= -c.max_daily_loss * a.equity:
+        if a.day_pnl <= -c.max_daily_loss * (a.equity - a.day_pnl):     # the equity at 00:00 UTC
             r.append(f"daily loss limit hit ({a.day_pnl:,.2f})")
-        if a.week_pnl <= -c.max_weekly_loss * a.equity:
+        if a.week_pnl <= -c.max_weekly_loss * (a.equity - a.week_pnl):  # and on Monday at 00:00 UTC
             r.append(f"weekly loss limit hit ({a.week_pnl:,.2f})")
         mid = (m.bid + m.ask) / 2 if m.bid > 0 and m.ask > 0 else m.mark
         spread_bps = (m.ask - m.bid) / mid * 1e4 if m.bid > 0 and m.ask > 0 else math.inf

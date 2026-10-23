@@ -263,7 +263,9 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
         {error && <Alert kind="err">{error}</Alert>}
         {notice && <Alert kind="info">{notice}</Alert>}
         {me?.hold && liveOn && <Alert kind="warn">{fmt(t.hold, { strategy: strategyName(strat) })}</Alert>}
-        {emptyAccount && <Alert kind="warn">{fmt(t.balance.empty, { min: `${MIN_BALANCE[riskNow]} $` })}</Alert>}
+        {emptyAccount && (me?.copy?.status?.state === "copying"   // the copy has its own money: only the strategy waits
+          ? <Alert kind="info">{fmt(t.balance.emptyCopy, { min: `${MIN_BALANCE[riskNow]} $` })}</Alert>
+          : <Alert kind="warn">{fmt(t.balance.empty, { min: `${MIN_BALANCE[riskNow]} $` })}</Alert>)}
         {lowBalance && <Alert kind="warn">{fmt(t.balance.low, { eq: usd(equityNow), min: `${MIN_BALANCE[riskNow]} $`, risk: t.modal.riskNames[riskNow].toLowerCase() })}</Alert>}
         {paper && !me?.live?.enabled && <Alert kind="info">{P.note}</Alert>}
         {liveCard && !wide && <div style={{ marginTop: 16 }}>{liveCard}</div>}

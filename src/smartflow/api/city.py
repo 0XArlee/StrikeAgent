@@ -418,17 +418,10 @@ def _points(hist: list, transfers: list[dict] | None) -> list:
     shows as a jump). Recomputed here so older points, kept without these, chart the same way."""
     if transfers is None:
         return hist
-    from ..strike.models import TX_DONE
-    moves = sorted((int(t.get("time") or 0), float(t.get("amount") or 0)) for t in transfers
+    from ..strike.models import TX_DONE, flow_totals
+    moves = sorted((int(t.get("time") or 0), str(t.get("type")), float(t.get("amount") or 0)) for t in transfers
                    if not t.get("base") and str(t.get("status")) in TX_DONE)
-    out, k, net, gross = [], 0, 0.0, 0.0
-    for h in sorted(hist, key=lambda h: h[0]):
-        while k < len(moves) and moves[k][0] <= h[0]:
-            net += moves[k][1]
-            gross += max(0.0, moves[k][1])
-            k += 1
-        out.append([h[0], h[1], round(net, 6), round(gross, 6)])
-    return out
+    return [[h[0], h[1], *flow_totals([(k, a) for t, k, a in moves if t <= h[0]])] for h in sorted(hist, key=lambda h: h[0])]
 
 
 def _tally(trades: list[dict]) -> dict:

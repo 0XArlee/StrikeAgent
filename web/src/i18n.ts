@@ -88,6 +88,7 @@ const en = {
     review: "Recommended balance: at least {min} in your Strike account. With less, some signals come out below Strike's minimum order (about 10 $) and the agent skips them.",
     low: "Your Strike account has {eq}, below the recommended {min}: some signals will come out below Strike's minimum order (about 10 $) and the agent will skip them. Deposit in the Strike app to reach at least {min}.",
     empty: "Your Strike account is empty. Your agent is connected but cannot trade yet: deposit at least {min} in the Strike app (strikefinance.org) and it takes the next signals by itself, nothing to restart. A deposit never counts as part of its result.",
+    emptyCopy: "Your copy runs in its own sub-account, with its own money. The strategy trades your main account, which is empty: deposit at least {min} there in the Strike app (strikefinance.org) if you want the strategy to trade too. The copy goes on either way.",
   },
   hold: "Smart Flow put the {strategy} strategy on a safety hold: its real results fell clearly below its backtest. Your agent opens no new trades until it is reviewed; any open trade keeps its stop on Strike. Nothing to do on your side.",
   control: {
@@ -552,6 +553,7 @@ const es: Dict = {
     review: "Saldo recomendado: al menos {min} en tu cuenta de Strike. Con menos, algunas señales salen por debajo de la orden mínima de Strike (unos 10 $) y el agente se las salta.",
     low: "Tu cuenta de Strike tiene {eq}, por debajo de los {min} recomendados: algunas señales saldrán por debajo de la orden mínima de Strike (unos 10 $) y el agente se las saltará. Deposita en la app de Strike hasta tener al menos {min}.",
     empty: "Tu cuenta de Strike está vacía. Tu agente ya está conectado pero todavía no puede operar: deposita al menos {min} en la app de Strike (strikefinance.org) y tomará las siguientes señales él solo, sin reiniciar nada. Un depósito nunca cuenta como parte de su resultado.",
+    emptyCopy: "Tu copia va en su propia subcuenta, con su propio dinero. La estrategia opera tu cuenta principal, que está vacía: deposita ahí al menos {min} en la app de Strike (strikefinance.org) si quieres que la estrategia también opere. La copia sigue igual en cualquier caso.",
   },
   hold: "Smart Flow ha puesto la estrategia {strategy} en pausa de seguridad: sus resultados reales han quedado claramente por debajo de su backtest. Tu agente no abre operaciones nuevas hasta que se revise; las que tenga abiertas mantienen su stop en Strike. No tienes que hacer nada.",
   control: {

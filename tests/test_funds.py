@@ -99,6 +99,15 @@ def test_transfers_already_in_the_starting_balance_never_count():
     assert net_flows(mig) == (20.0, 20.0)
 
 
+def test_money_sent_to_a_sub_account_and_back_is_not_brought_in_twice():
+    from smartflow.api.city import _points
+    from smartflow.live.fleet import net_flows
+    t = [{"id": i, "type": k, "amount": a, "status": "completed", "time": 300 + i}
+         for i, (k, a) in enumerate([("transfer", -50.0), ("transfer", 50.0), ("transfer", -11.0), ("transfer", 13.9), ("deposit", 20.0)])]
+    assert net_flows(t) == (22.9, 22.9)          # 2.9 more than went out to the sub-accounts, and the 20 deposited
+    assert [p[2:] for p in _points([[301, 1.0], [304, 1.0]], t)] == [[0.0, 0.0], [22.9, 22.9]]
+
+
 def test_existing_account_takes_its_first_reading_from_its_chart(tmp_path):
     """An account read before transfers were kept (the case of 2026-10-21): its start is the chart's first point, not
     the first line of the account log (written hours later), so the transfers in between count as money moved."""
@@ -122,14 +131,15 @@ def test_existing_account_takes_its_first_reading_from_its_chart(tmp_path):
     fleet.tick()
     acct = json.loads((run / "account.json").read_text())
     assert acct["first_time"] == t0 and acct["flows_v"] == 2
-    assert acct["flows"] == 2.9 and acct["inflows"] == 24.9      # -11 + 11 - 11 + 13.9 moved since the first reading
+    # -11 + 11 - 11 + 13.9 moved since the first reading; brought in: only the 2.9 beyond what went out before
+    assert acct["flows"] == 2.9 and acct["inflows"] == 2.9
     (run / "journal.jsonl").write_text(json.dumps({**BASE, "ts": iso(t0), "kind": "analysis", "market": "BTC-USD", "bar": 1,
                                                    "sig_dir": 0, "why": []}) + "\n")
     s = snapshot(load_live(runs, "mainnet")[0], t0 + 66_100_000)
     assert s["result"] == round(106.08 - 103.05 - 2.9, 6)          # +0.13 $, not the -10.87 $ of the wrong marks
     # the chart: the points kept from before carry the money moved by their time, recomputed from the transfers
     pts = s["portfolio"]["history"]
-    assert pts[0] == [t0, 103.05, 0.0, 0.0] and pts[-1][2:] == [2.9, 24.9]
+    assert pts[0] == [t0, 103.05, 0.0, 0.0] and pts[-1][2:] == [2.9, 2.9]
     for r in fleet.running.values():
         r.stop.set()
 

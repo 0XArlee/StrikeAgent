@@ -216,6 +216,21 @@ TX_TYPES = {1: "deposit", 2: "withdraw", 3: "fee", 4: "realized_pnl", 5: "liquid
 TX_DONE = {"completed", "settled"}   # what the balance already holds (pending ones are not credited yet)
 
 
+def flow_totals(moves: list[tuple[str, float]]) -> tuple[float, float]:
+    """(net money moved in, gross money brought in) over an account's done moves, oldest first, each (type, amount). A
+    deposit brings its money in; a transfer between the owner's own accounts only what it brings beyond what went out
+    to them before, so money sent to a sub-account and back is never counted twice."""
+    net = deposits = internal = peak = 0.0
+    for kind, amount in moves:
+        net += amount
+        if kind == "transfer":
+            internal += amount
+            peak = max(peak, internal)
+        elif amount > 0:
+            deposits += amount
+    return round(net, 6), round(deposits + peak, 6)
+
+
 @dataclass(frozen=True)
 class Transfer:
     id: int

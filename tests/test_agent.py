@@ -53,6 +53,16 @@ def test_risk_rejections(tmp_path, kw, needle):
     assert not d.accepted and any(needle in r for r in d.reasons), d.reasons
 
 
+def test_loss_limits_on_the_day_and_week_start(tmp_path):
+    # as the backtest (backtest/account.py): 2 % of the equity at 00:00 UTC, 5 % of Monday's; 10,000 at both starts
+    eng = RiskEngine(RiskConfig(), tmp_path)
+    hit = lambda d: [r for r in d.reasons if "loss limit" in r]   # noqa: E731
+    assert not hit(eng.evaluate(*ctx(equity=9_803.0, available=9_803.0, day_pnl=-197.0, week_pnl=-197.0)))   # 1.97 %
+    assert hit(eng.evaluate(*ctx(equity=9_799.0, available=9_799.0, day_pnl=-201.0, week_pnl=-201.0)))
+    assert not hit(eng.evaluate(*ctx(equity=9_520.0, available=9_520.0, week_pnl=-480.0)))                  # 4.8 %
+    assert hit(eng.evaluate(*ctx(equity=9_499.0, available=9_499.0, week_pnl=-501.0)))
+
+
 def test_kill_switch(tmp_path):
     (tmp_path / "KILL_SWITCH").write_text("stop")
     d = RiskEngine(RiskConfig(), tmp_path).evaluate(*ctx())

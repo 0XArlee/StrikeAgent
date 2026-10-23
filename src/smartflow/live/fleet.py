@@ -153,9 +153,10 @@ def account_flows(kept: list[dict] | None, transfers: list[dict] | None, first_t
 def net_flows(transfers: list[dict]) -> tuple[float, float]:
     """(net money moved in since the start, gross money moved in): what the result leaves out, and what it is
     measured on beside the starting balance."""
-    from ..strike.models import TX_DONE
-    live = [float(t.get("amount") or 0) for t in transfers if not t.get("base") and str(t.get("status")) in TX_DONE]
-    return round(sum(live), 6), round(sum(a for a in live if a > 0), 6)
+    from ..strike.models import TX_DONE, flow_totals
+    live = sorted((int(t.get("time") or 0), str(t.get("type")), float(t.get("amount") or 0)) for t in transfers
+                  if not t.get("base") and str(t.get("status")) in TX_DONE)
+    return flow_totals([(k, a) for _, k, a in live])
 
 
 def agent_config(link: dict, env: str, code: str, fee_bps: int, venue_markets: set[str], runs_root: str, data_root: str,
