@@ -10,7 +10,7 @@ import { atWork, lastChecks, leadTick, leadView, mulberry, newsTrip, nowDecision
 import { CityEngine, SCREEN_BOOK, SCREEN_CHART, STATUS_COLOR, drawIcon, type Sel } from "./engine";
 import type { Look } from "./look";
 import { FEET, FW, HEAD_TOP, frameAt, onSheet, sheetFor } from "./sprites";
-import { BOOK_MARKET, CITY_MARKETS, CityStore, type Book } from "./store";
+import { BOOK_MARKET, CITY_MARKETS, CityStore, type Book, type Trade } from "./store";
 import { EventSoon, NewsButton, NewsView, contextLine, signed, tapeLine } from "./NewsView";
 import { TowerView } from "./TowerView";
 import { ArenaView } from "./ArenaView";
@@ -18,7 +18,7 @@ import { dict } from "../i18n";
 import { voiceLine } from "../components/PersonaPicker";
 import { TEMPER_COLOR } from "./persona";
 import { useNews } from "./news";
-import { traderName, useCopy, type CopyState } from "./copy";
+import { mainPosition, traderName, useCopy, type CopyState, type Trader } from "./copy";
 import { CopyChooser, LeadCard } from "./CopyView";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
 import { ART2, BUILDINGS, artReady } from "./world";
@@ -33,6 +33,7 @@ interface Props {
   myAgent?: ReactNode;   // the owner's dashboard (null until they sign in with their wallet)
   owner?: { id: string; token: string } | null;   // signed in: their own agent shows with its amounts
   copyPilot?: boolean;   // copy with your agent is open: a trader's card offers it
+  testSite?: boolean;    // the staging site (Strike testnet): its figures count every agent, paper and testnet
 }
 
 const SCALE = [1, 10, 50, 250, 1000, 5000];
@@ -54,7 +55,7 @@ function readDeepLink(): string | null {
 /** #/city?lead=<account>: a lead of Strike's copy trading, selected and followed once the city has it. */
 const readLeadLink = () => /[?&]lead=([\w-]+)/.exec(location.hash)?.[1] ?? null;
 
-export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent, owner, copyPilot }: Props) {
+export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent, owner, copyPilot, testSite }: Props) {
   const T = cityText[lang];
   const store = useMemo(() => new CityStore(), []);
   store.owner = owner?.token ? owner : null;
@@ -67,6 +68,8 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   const [me, setMe] = useState(wantsMe);   // "My agent" open over the map
   const [details, setDetails] = useState(false);
   const [chart, setChart] = useState<string | null>(null);   // the market whose full chart is open
+  const [trade, setTrade] = useState<Trade | null>(null);     // the real Strike trade a pressed car is
+  useEffect(() => { if (!trade) return; const id = window.setTimeout(() => setTrade(null), 9000); return () => clearTimeout(id); }, [trade]);
   const [news, setNews] = useState<string | null>(null);     // the market whose news is open
   const [tower, setTower] = useState<null | "walking" | "inside">(null);   // the News Tower: your agent on its way, or inside
   const [arena, setArena] = useState<null | "walking" | "inside">(null);   // the Copy Arena, the same way
@@ -110,6 +113,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
       getJobLabel: (a) => jobLabel(a, newsRef.current, store.prices, langRef.current), getWeather: () => weather.current, reducedMotion: !!reduced, getBook: () => store.book,
       onSelect: (s) => { setSel(s); setDetails(false); if (s && isSmall()) setPanel(null); },
       onChart: (m) => setChart(m),
+      takeTrades: (now) => store.dueTrades(now), onTrade: (t) => setTrade(t),   // every car is a real trade on Strike
       // TradingView's chart and Strike's book follow the screen as the map moves: one transform each, written only
       // when it changes
       onScreen: (x, y, z) => {
@@ -299,7 +303,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   const closeWelcome = () => { setWelcome(false); try { localStorage.setItem("sf-city-welcome", "1"); } catch { /* private mode */ } canvas.current?.focus(); };
 
   // derived (recomputed at most once per second, when the store emits)
-  const totals = store.totals();
+  const totals = store.totals(testSite);
   const btc = store.prices["BTC-USD"];
   weather.current = !btc ? 0 : Math.abs(btc.change) >= 4 ? 2 : Math.abs(btc.change) >= 1.5 ? 1 : 0;
   // the screen's tape: the latest decision an agent made (its warnings, like Strike not answering, stay in Feed)
@@ -322,6 +326,8 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
     setCopy(null);
     location.hash = `#/city?me&copy=${t.id}&pf=${t.platform}`;
   };
+  // a trader from a list: followed in the city when it walks it, else its profile
+  const openTrader = (id: string) => (leads.current.some((a) => a.id === `lead:${id}`) ? followLead(id) : setCopy({ open: id }));
   // from the chooser: the lead walking the city, selected and followed
   const followLead = (id: string) => {
     setCopy(null);
@@ -341,8 +347,10 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
         <dl className="city-stats" aria-label={T.title}>
           <div><dt>{SL.live}</dt><dd className="num">{totals.live}</dd></div>
           <div><dt>{SL.inTrade}</dt><dd className="num">{totals.inTrade}</dd></div>
-          <div className="hide-xs hide-md"><dt>{SL.trades}</dt><dd className="num">{totals.trades}</dd></div>
-          <div><dt>{SL.r}</dt><dd className={`num ${totals.rToday >= 0 ? "pos" : "neg"}`}>{fmtR(totals.rToday, lang)}</dd></div>
+          {/* real accounts only: the paper agents that test the strategies count apart (Ranks) */}
+          {/* on the staging site (Strike testnet) every agent counts: paper and testnet accounts */}
+          <div className="hide-xs hide-md" title={testSite ? SL.allTip : SL.realTip}><dt>{testSite ? SL.tradesAll : SL.trades}</dt><dd className="num">{totals.trades}</dd></div>
+          <div title={testSite ? SL.allTip : SL.realTip}><dt>{testSite ? SL.rAll : SL.r}</dt><dd className={`num ${totals.rToday >= 0 ? "pos" : "neg"}`}>{fmtR(totals.rToday, lang)}</dd></div>
           {/* phones: the weather is one more figure here (the bar keeps one row of buttons) */}
           <div className="city-stat-weather" title={T.weather.tip}><dt>{T.weather.label}</dt>
             <dd className={`w${weather.current}`}><WeatherIcon w={weather.current} />{[T.weather.calm, T.weather.breezy, T.weather.storm][weather.current]}</dd></div>
@@ -405,9 +413,10 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
             </div>
             <div className="city-panel-body">
               {panel === "agents" && <AgentsPanel T={T} lang={lang} store={store} leads={leads.current} selected={agent?.id ?? lead?.id}
-                                                  onPick={(id) => choose({ kind: "agent", id })} />}
-              {panel === "ranks" && <RanksPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "agent", id })} onConnect={onConnect}
-                                                copy={copyDoc} onArena={enterArena} onTrader={(id) => (leads.current.some((a) => a.id === `lead:${id}`) ? followLead(id) : setCopy({ open: id }))} />}
+                                                  traders={copyDoc && typeof copyDoc === "object" ? copyDoc.traders : []}
+                                                  onPick={(id) => choose({ kind: "agent", id })} onTrader={openTrader} />}
+              {panel === "ranks" && <RanksPanel T={T} lang={lang} store={store} testSite={testSite} onPick={(id) => choose({ kind: "agent", id })} onConnect={onConnect}
+                                                copy={copyDoc} onArena={enterArena} onTrader={openTrader} />}
               {panel === "feed" && <FeedPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "agent", id })} />}
               {panel === "markets" && <MarketsPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "building", id })} />}
               {panel === "guide" && <GuidePanel T={T} n={totals.total} copyPilot={copyPilot} />}
@@ -470,6 +479,17 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
             <p>{T.tower.entering(mine.name)}</p>
             <button type="button" className="btn btn-primary" onClick={() => setTower("inside")}>{T.tower.enterNow}</button>
             <button type="button" className="icon-btn" aria-label={T.card.close} onClick={leaveTower}><Icon.close /></button>
+          </div>
+        )}
+
+        {trade && (   // a pressed car: the real Strike trade it is
+          <div className="city-toast city-trade" role="status">
+            <p><strong>{T.trade.title}</strong><br />
+              <span className={trade.side === "buy" ? "pos" : "neg"}>{ticker(trade.market)} · {trade.side === "buy" ? T.trade.bought : T.trade.sold}</span>{" "}
+              {trade.qty.toLocaleString(lang === "es" ? "es-ES" : "en-US", { maximumSignificantDigits: 6 })} @ {fmtPrice(trade.price, lang)} ·{" "}
+              {trade.usd.toLocaleString(lang === "es" ? "es-ES" : "en-US", { maximumFractionDigits: 2 })} $ · {ago(T, trade.time)}<br />
+              <span className="faint small">{T.trade.note}</span></p>
+            <button type="button" className="icon-btn" aria-label={T.card.close} onClick={() => setTrade(null)}><Icon.close /></button>
           </div>
         )}
 
@@ -734,14 +754,40 @@ function AgentCard({ T, lang, a, following, onFollow, onDetails, onClose, marks,
 }
 
 /** Everyone walking the city: the agents (Smart Flow's and its users'), then the traders people copy on Strike. */
-function AgentsPanel({ T, lang, store, leads, selected, onPick }: { T: CityText; lang: Lang; store: CityStore; leads: AgentView[]; selected?: string;
-  onPick: (id: string) => void }) {
+function AgentsPanel({ T, lang, store, leads, traders, selected, onPick, onTrader }: { T: CityText; lang: Lang; store: CityStore; leads: AgentView[];
+  traders: Trader[]; selected?: string; onPick: (id: string) => void; onTrader: (id: string) => void }) {
   const [q, setQ] = useState("");
   const [f, setF] = useState<"all" | "in_trade" | "analyzing" | "waiting" | "paused" | "leads">("all");
   const groups: Record<Exclude<typeof f, "leads">, Status[]> = { all: [], in_trade: ["in_trade", "entering"], analyzing: ["analyzing", "signal", "risk", "exiting"], waiting: ["waiting", "unfunded"], paused: ["paused", "offline"] };
   const match = (a: AgentView) => a.name.toLowerCase().includes(q.trim().toLowerCase());
   const list = f === "leads" ? [] : store.agents.filter((a) => (f === "all" || groups[f].includes(a.status)) && match(a));
   const leadList = f === "all" || f === "leads" ? leads.filter(match).sort((x, y) => (y.lead?.city ?? 0) - (x.lead?.city ?? 0)) : [];
+  // every other trader people can copy on Strike (only some walk the city at a time): its profile opens on a press
+  const walking = new Set(leads.map((a) => a.lead?.id.toLowerCase()));
+  const others = f === "all" || f === "leads"
+    ? traders.filter((t) => !walking.has(t.id.toLowerCase()) && traderName(t).toLowerCase().includes(q.trim().toLowerCase()))
+      .sort((x, y) => (y.city ?? 0) - (x.city ?? 0))
+    : [];
+  const traderCount = leadList.length + others.length;
+  const otherRows = (
+    <ul className="city-list">
+      {others.map((t) => {
+        const p = mainPosition(t);
+        return (
+          <li key={t.id}>
+            <button type="button" className="city-row real" onClick={() => onTrader(t.id)}>
+              <Avatar id={`lead:${t.id}`} />
+              <span className="grow"><span className="city-row-name">{traderName(t)}</span>
+                <span className="city-row-tags"><span className="city-tag lead">{T.copy.leadTag}</span>
+                  <span className={`cp-plat ${t.platform}`}>{t.platform === "hyperliquid" ? "Hyperliquid" : "Strike"}</span></span></span>
+              {p ? <span className={`small strong ${p.side === "long" ? "pos" : "neg"}`}>{p.side === "long" ? "LONG" : "SHORT"} {ticker(p.market)}</span>
+                : <span className="num city-copy-score" title={T.copy.cityScore}><span className="sr-only">{T.copy.cityScore}: </span>{t.city == null ? "—" : Math.round(t.city)}</span>}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
   const leadRows = (
     <ul className="city-list">
       {leadList.map((a) => {
@@ -785,30 +831,53 @@ function AgentsPanel({ T, lang, store, leads, selected, onPick }: { T: CityText;
         {(Object.keys(groups) as (typeof f)[]).map((k) => (
           <button key={k} type="button" aria-pressed={f === k} onClick={() => setF(k)}>{k === "all" ? T.agents.all : T.status[k as Status]}</button>
         ))}
-        {leads.length > 0 && <button type="button" aria-pressed={f === "leads"} onClick={() => setF("leads")}>{T.agents.leads}</button>}
+        {(leads.length > 0 || traders.length > 0) && <button type="button" aria-pressed={f === "leads"} onClick={() => setF("leads")}>{T.agents.leads}</button>}
       </div>
-      <p className="faint small" aria-live="polite">{f === "leads" ? T.agents.leadCount(leadList.length) : f === "all" && leads.length
-        ? `${T.agents.count(list.length)} · ${T.agents.leadCount(leadList.length)}` : T.agents.count(list.length)}</p>
-      {!list.length && !leadList.length && <p className="muted">{T.agents.none}</p>}
+      <p className="faint small" aria-live="polite">{f === "leads" ? T.agents.leadCount(traderCount) : f === "all" && traderCount
+        ? `${T.agents.count(list.length)} · ${T.agents.leadCount(traderCount)}` : T.agents.count(list.length)}</p>
+      {!list.length && !traderCount && <p className="muted">{T.agents.none}</p>}
       {list.length > 0 && rows(list)}
-      {leadList.length > 0 && (
+      {traderCount > 0 && (
         <section className="city-leads" aria-labelledby="city-leads-title">
           <h3 id="city-leads-title" className="city-leads-title">{T.agents.leads}</h3>
-          <p className="small faint">{T.agents.leadsAbout}</p>
-          {leadRows}
+          {leadList.length > 0 && <>
+            <h4 className="city-leads-sub">{T.agents.inCity} · {leadList.length}</h4>
+            <p className="small faint">{T.agents.leadsAbout}</p>
+            {leadRows}
+          </>}
+          {others.length > 0 && <>
+            <h4 className="city-leads-sub">{T.agents.moreTraders} · {others.length}</h4>
+            <p className="small faint">{T.agents.moreAbout}</p>
+            {otherRows}
+          </>}
         </section>
       )}
     </>
   );
 }
 
-function RanksPanel({ T, lang, store, onPick, onConnect, copy, onArena, onTrader }: { T: CityText; lang: Lang; store: CityStore;
+function RanksPanel({ T, lang, store, testSite, onPick, onConnect, copy, onArena, onTrader }: { T: CityText; lang: Lang; store: CityStore; testSite?: boolean;
   onPick: (id: string) => void; onConnect: () => void; copy: CopyState; onArena: () => void; onTrader: (id: string) => void }) {
   const top = copy && typeof copy === "object" ? copy.traders.slice(0, 3) : [];
+  // real accounts and paper agents are ranked apart: paper results never mix with real money
+  const real = store.agents.filter((a) => a.kind === "live");
+  const paper = store.agents.filter((a) => a.kind !== "live");
   return (
     <>
       <p className="muted small">{T.ranks.by}</p>
-      {store.agents.length > 0 && <RankTable T={T} lang={lang} agents={store.agents} onPick={onPick} />}
+      <section className="city-ranks-group" aria-labelledby="ranks-real-title">
+        <h3 id="ranks-real-title" className="city-leads-title">{testSite ? T.ranks.testTitle : T.ranks.realTitle}</h3>
+        <p className="small faint">{testSite ? T.ranks.testNote : T.ranks.realNote}</p>
+        {real.some((a) => stats(a).n > 0) ? <RankTable T={T} lang={lang} agents={real} onPick={onPick} />
+          : <p className="small muted">{T.ranks.realNone}</p>}
+      </section>
+      {paper.length > 0 && (
+        <section className="city-ranks-group" aria-labelledby="ranks-paper-title">
+          <h3 id="ranks-paper-title" className="city-leads-title">{T.ranks.paperTitle}</h3>
+          <p className="small faint">{T.ranks.paperNote}</p>
+          <RankTable T={T} lang={lang} agents={paper} onPick={onPick} />
+        </section>
+      )}
       <button type="button" className="btn btn-outline btn-block city-cta" onClick={onConnect}>{T.ranks.cta}</button>
       {top.length > 0 && (   // and the traders people copy on Strike: the Copy Arena's three best
         <section className="city-copy-top" aria-labelledby="ranks-copy-title">
@@ -873,6 +942,10 @@ function FeedPanel({ T, lang, store, onPick }: { T: CityText; lang: Lang; store:
 
 function MarketsPanel({ T, lang, store, onPick }: { T: CityText; lang: Lang; store: CityStore; onPick: (building: string) => void }) {
   const tower: Record<string, string> = { "BTC-USD": "btc", "ETH-USD": "eth", "SOL-USD": "sol" };
+  const loc = lang === "es" ? "es-ES" : "en-US";
+  // the rest of Strike's markets, busiest first (their prices come in the same reading as the agents' markets)
+  const more = Object.keys(store.prices).filter((m) => !CITY_MARKETS.includes(m))
+    .sort((x, y) => (store.prices[y].volume ?? 0) - (store.prices[x].volume ?? 0));
   return (
     <>
       <p className="small faint"><span className={`dot ${store.source === "strike" ? "" : store.source === "binance" ? "warn" : "err"}`} aria-hidden="true" />
@@ -900,6 +973,33 @@ function MarketsPanel({ T, lang, store, onPick }: { T: CityText; lang: Lang; sto
           );
         })}
       </ul>
+      {more.length > 0 && (   // and every other market Strike lists: stocks, indices, commodities, more crypto
+        <section className="city-leads" aria-labelledby="markets-more-title">
+          <h3 id="markets-more-title" className="city-leads-title">{T.markets.more} · {more.length}</h3>
+          <p className="small faint">{T.markets.moreAbout(CITY_MARKETS.filter((m) => store.prices[m]).length + more.length)}</p>
+          <ul className="city-markets">
+            {more.map((m) => {
+              const p = store.prices[m], info = store.markets[m];
+              return (
+                <li key={m}>
+                  <div className="city-market-top">
+                    <span className="city-market-name"><strong>{ticker(m)}</strong>{info && info.name.toUpperCase() !== ticker(m) && <span className="faint small"> {info.name}</span>}</span>
+                    <span className="num">{fmtPrice(p.price, lang)}</span>
+                    <span className={`num ${p.change >= 0 ? "pos" : "neg"}`}>{fmtPct(p.change, lang)}</span>
+                  </div>
+                  <div className="city-market-sub small">
+                    <span className="faint" title={T.markets.fundingTip}>{T.markets.funding}</span>
+                    <span className={`num ${p.funding >= 0 ? "pos" : "neg"}`}>{fmtPct(p.funding * 100, lang, 4)}</span>
+                    {p.volume != null && <><span className="faint">{T.markets.volume}</span>
+                      <span className="num">{p.volume.toLocaleString(loc, { notation: "compact", maximumFractionDigits: 1 })} $</span></>}
+                    {info?.maxLev ? <><span className="faint">{T.markets.leverage}</span><span className="num">{T.markets.upTo(info.maxLev)}</span></> : null}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
       <p className="note">{T.markets.fundingTip}</p>
     </>
   );
@@ -925,6 +1025,8 @@ function GuidePanel({ T, n, copyPilot }: { T: CityText; n: number; copyPilot?: b
         <li><span className="city-legend-lead" aria-hidden="true">★ 62</span>{T.legend.leadIdle}</li>
         <li><span className="city-legend-lead pos" aria-hidden="true">LONG BTC</span>{T.legend.leadPos}</li>
         <li><span className="city-legend-trail" aria-hidden="true" />{T.legend.copiers}</li>
+        <li><span className="city-legend-car buy" aria-hidden="true" />{T.legend.carBuy}</li>
+        <li><span className="city-legend-car sell" aria-hidden="true" />{T.legend.carSell}</li>
       </ul>
       <h3 className="city-h3">{T.roadmap.title}</h3>
       <div className="city-roadmap">

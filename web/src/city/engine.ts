@@ -2,12 +2,12 @@
 import type { AgentView, Prices, Status } from "./agents";
 import { atWork, isActive, readingNews, step } from "./agents";
 import { FEET, HEAD_TOP, drawFrame, hash, sheetFor, type Anim, type Dir } from "./sprites";
-import type { Book } from "./store";
+import type { Book, Trade } from "./store";
 import { ART2, BUILDINGS, FOUNTAIN, H, SCREEN, TILE, W, footprint, renderGlow, renderLight, renderStatic } from "./world";
 import { ticker } from "./text";
 
 export type Sel = { kind: "agent" | "building"; id: string };
-type Hit = Sel | { kind: "screen"; id: string };
+type Hit = Sel | { kind: "screen"; id: string } | { kind: "car"; id: string };
 
 /** The chart on the exchange's screen (world px): TradingView's live chart is laid over it (city/tradingview.tsx). */
 export const SCREEN_CHART = { x: SCREEN.x + 2, y: SCREEN.y + 2, w: Math.round(SCREEN.w * 0.64) - 2, h: SCREEN.h - 19 };
@@ -28,6 +28,8 @@ export interface EngineOpts {
   onSelect: (sel: Sel | null) => void;
   onChart?: (market: string) => void;                  // the exchange's screen was pressed: open that market's chart
   onScreen?: (x: number, y: number, zoom: number) => void;   // every frame: where SCREEN_CHART's corner is (CSS px)
+  takeTrades?: (now: number) => Trade[];               // Strike's real trades due to drive in now (each one is a car)
+  onTrade?: (t: Trade) => void;                        // a car was pressed: the trade it is
   reducedMotion: boolean;
   interactive?: boolean;                               // false: a picture of the city (landing): no input at all
   view?: { cx: number; cy: number; zoom: number };     // fixed camera for wide frames (desktop)
@@ -86,10 +88,13 @@ export class CityEngine {
   private follow: string | null = null;
   selected: Sel | null = null;
   private hovered: string | null = null;
+  private heldCar: string | null = null;   // the car under the pointer stops, so it can be pressed
+  private mouse: { x: number; y: number } | null = null;   // where the mouse rests (a car may drive under it)
   private pointers = new Map<number, { x: number; y: number }>();
   private drag: { x: number; y: number; cx: number; cy: number; moved: boolean } | null = null;
   private pinch: { d: number; zoom: number } | null = null;
-  private cars = Array.from({ length: 22 }, (_, i) => ({ lane: i % 10, t: Math.random(), speed: 0.025 + Math.random() * 0.03 }));
+  // every car is a real trade on Strike mainnet: it drives in when the trade comes in and leaves at the end of its road
+  private cars: { lane: number; t: number; speed: number; trade: Trade; x: number; y: number; until: number }[] = [];
   private rain = Array.from({ length: 140 }, () => ({ x: Math.random(), y: Math.random(), v: 0.6 + Math.random() * 0.6 }));
   private t0 = performance.now();
   private placed: { x: number; y: number; w: number; h: number }[] = [];   // bubbles already drawn this frame
@@ -190,7 +195,10 @@ export class CityEngine {
         this.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, zoom: this.zoom };
         this.drag = null;
       } else this.drag = { x: e.offsetX, y: e.offsetY, cx: this.cx, cy: this.cy, moved: false };
+      const hit = this.pick(e.offsetX, e.offsetY);   // a finger on a car stops it too
+      if (hit?.kind === "car") this.heldCar = hit.id;
     }) as EventListener);
+    this.on(c, "pointerleave", (() => { this.hovered = null; this.heldCar = null; this.mouse = null; }) as EventListener);
     this.on(c, "pointermove", ((e: PointerEvent) => {
       if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, { x: e.offsetX, y: e.offsetY });
       if (this.pinch && this.pointers.size === 2) {
@@ -204,8 +212,10 @@ export class CityEngine {
         if (Math.abs(dx) + Math.abs(dy) > 5) this.drag.moved = true;
         if (this.drag.moved) { this.follow = null; this.cx = this.drag.cx - dx / this.zoom; this.cy = this.drag.cy - dy / this.zoom; this.clamp(); c.style.cursor = "grabbing"; }
       } else if (e.pointerType === "mouse") {
+        this.mouse = { x: e.offsetX, y: e.offsetY };
         const hit = this.pick(e.offsetX, e.offsetY);
         this.hovered = hit?.kind === "agent" ? hit.id : null;
+        this.heldCar = hit?.kind === "car" ? hit.id : null;
         c.style.cursor = hit ? "pointer" : "grab";
       }
     }) as EventListener);
@@ -214,9 +224,12 @@ export class CityEngine {
       if (this.pointers.size < 2) this.pinch = null;
       if (this.drag && !this.drag.moved) {
         const hit = this.pick(e.offsetX, e.offsetY);
-        if (hit?.kind === "screen") this.o.onChart?.(hit.id); else this.select(hit);
+        if (hit?.kind === "screen") this.o.onChart?.(hit.id);
+        else if (hit?.kind === "car") { const car = this.cars.find((x) => String(x.trade.id) === hit.id); if (car) this.o.onTrade?.(car.trade); }
+        else this.select(hit);
       }
       this.drag = null;
+      if (e.pointerType !== "mouse") this.heldCar = null;
       c.style.cursor = "grab";
     }) as EventListener;
     this.on(c, "pointerup", up);
@@ -246,6 +259,11 @@ export class CityEngine {
       if (d < bd) { bd = d; best = a.id; }
     }
     if (best) return { kind: "agent", id: best };
+    if (this.o.onTrade) {   // a car: the trade it is
+      let car: string | null = null, cd = 20 / this.zoom + 9;   // generous: a moving car is hard to tap
+      for (const x of this.cars) { const d = Math.hypot(x.x - w.x, x.y - w.y); if (d < cd) { cd = d; car = String(x.trade.id); } }
+      if (car) return { kind: "car", id: car };
+    }
     if (this.o.onChart && w.x >= SCREEN.x && w.x < SCREEN.x + SCREEN.w && w.y >= SCREEN.y && w.y < SCREEN.y + SCREEN.h) return { kind: "screen", id: "BTC-USD" };
     for (const b of BUILDINGS) {
       const f = footprint(b);
@@ -443,18 +461,45 @@ export class CityEngine {
       { h: false, x: 72 * TILE + 8, dir: 1 }, { h: false, x: 73 * TILE + 8, dir: -1 },
       { h: false, x: 48 * TILE + 8, dir: 1, top: true }, { h: false, x: 49 * TILE + 8, dir: -1, top: true },
     ];
-    const paint = ["#1e293b", "#3f1d2b", "#1f3a33", "#2b2a45", "#3a2f1b"];
-    this.cars.forEach((car, idx) => {
-      if (!this.o.reducedMotion) car.t = (car.t + car.speed * dt + 1) % 1;
+    const now = performance.now();
+    for (const trade of this.o.takeTrades?.(now) ?? []) {
+      // a road per trade (spread over the city's ten lanes); with reduced motion it parks along its road for a while
+      const lane = (hash(trade.market) + trade.id) % lanes.length;
+      this.cars.push({ lane, t: this.o.reducedMotion ? 0.15 + ((trade.id % 70) / 100) : 0, speed: 0.032 + ((trade.id % 7) / 7) * 0.016,
+        trade, x: -999, y: -999, until: now + 20_000 });
+    }
+    if (this.mouse && !this.drag) {   // a car that drives under the resting mouse stops as well
+      const hit = this.pick(this.mouse.x, this.mouse.y);
+      this.heldCar = hit?.kind === "car" ? hit.id : null;
+      if (hit?.kind === "car") this.canvas.style.cursor = "pointer";
+    }
+    if (this.cars.length > 60) this.cars.splice(0, this.cars.length - 60);
+    this.cars = this.cars.filter((car) => (this.o.reducedMotion ? now < car.until : car.t < 1));
+    for (const car of this.cars) {
+      const held = String(car.trade.id) === this.heldCar;
+      if (!this.o.reducedMotion && !held) car.t += car.speed * dt;
       const L = lanes[car.lane] as { h: boolean; x?: number; y?: number; dir: number; top?: boolean };
       const span = L.h ? W : L.top ? 18 * TILE : H;
       const p = L.dir > 0 ? car.t * span : (1 - car.t) * span;
       const cx = L.h ? p : L.x!, cy = L.h ? L.y! : p;
-      const len = 13, wid = 7, front = L.dir > 0 ? 1 : -1;
+      car.x = cx; car.y = cy;
+      // bought green, sold red; the bigger the trade, the bigger the car (a truck from 5,000 $)
+      const usd = car.trade.usd, truck = usd >= 5000;
+      const len = truck ? 19 : usd >= 100 ? 13 : 11, wid = truck ? 8 : usd >= 100 ? 7 : 6, front = L.dir > 0 ? 1 : -1;
       g.fillStyle = "rgba(0,0,0,0.35)";
       if (L.h) g.fillRect(cx - len / 2 + 1, cy - wid / 2 + 2, len, wid); else g.fillRect(cx - wid / 2 + 1, cy - len / 2 + 2, wid, len);
-      g.fillStyle = paint[idx % paint.length];
+      if (held) {   // a light outline: this one can be pressed
+        g.fillStyle = "#fff7d6";
+        if (L.h) g.fillRect(cx - len / 2 - 1.5, cy - wid / 2 - 1.5, len + 3, wid + 3); else g.fillRect(cx - wid / 2 - 1.5, cy - len / 2 - 1.5, wid + 3, len + 3);
+      }
+      g.fillStyle = car.trade.side === "buy" ? "#1d7a55" : "#9b2c3b";
       if (L.h) g.fillRect(cx - len / 2, cy - wid / 2, len, wid); else g.fillRect(cx - wid / 2, cy - len / 2, wid, len);
+      if (truck) {   // the cargo box
+        g.fillStyle = car.trade.side === "buy" ? "#4efab0" : "#fb7185";
+        const bl = len - 7;
+        if (L.h) g.fillRect(front > 0 ? cx - len / 2 + 1 : cx - len / 2 + 6, cy - wid / 2 + 1, bl, wid - 2);
+        else g.fillRect(cx - wid / 2 + 1, front > 0 ? cy - len / 2 + 1 : cy - len / 2 + 6, wid - 2, bl);
+      }
       g.fillStyle = "rgba(160,200,220,0.35)";   // windscreen
       if (L.h) g.fillRect(cx + front * 2 - 1, cy - 2.5, 2, 5); else g.fillRect(cx - 2.5, cy + front * 2 - 1, 5, 2);
       g.fillStyle = "#fff7d6";
@@ -464,7 +509,7 @@ export class CityEngine {
       g.fillStyle = "#ef4444";
       const bx = front > 0 ? -len / 2 : len / 2 - 1;
       if (L.h) g.fillRect(cx + bx, cy - 3, 1, 6); else g.fillRect(cx - 3, cy + bx, 6, 1);
-    });
+    }
   }
 
   private drawBuildingFocus(g: CanvasRenderingContext2D, id: string, t: number) {

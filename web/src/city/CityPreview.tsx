@@ -65,6 +65,7 @@ export default function CityPreview({ onStats }: { onStats?: (s: { online: numbe
       store.start();
       engine = new CityEngine(c, {
         getAgents: () => store.agents, getPrices: () => store.prices, getHistory: (m) => store.hist[m] ?? [],
+        takeTrades: (now) => store.dueTrades(now),   // the cars are Strike's real trades here too
         getHeadline: () => {
           const btc = store.prices["BTC-USD"], t = store.totals();
           const px = btc ? ` · BTC ${Math.round(btc.price).toLocaleString("en-US")} ${btc.change >= 0 ? "▲" : "▼"}${Math.abs(btc.change).toFixed(2)}%` : "";

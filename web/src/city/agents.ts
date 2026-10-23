@@ -83,7 +83,7 @@ export function isActive(a: Pick<AgentView, "status" | "path" | "trip">): boolea
 }
 const ACTIVE = new Set<Status>(["analyzing", "signal", "risk", "entering", "in_trade", "exiting"]);
 
-export interface Prices { [market: string]: { price: number; change: number; funding: number } }
+export interface Prices { [market: string]: { price: number; change: number; funding: number; volume?: number } }
 /** Win/loss counts in R over every closed strategy trade (smartflow/api/city.py _tally). */
 export interface Tally { n: number; wins: number; won: number; lost: number; best: number }   // change: % 24h · funding: per hour
 
@@ -124,13 +124,18 @@ export function findPath(sx: number, sy: number, tx: number, ty: number): { x: n
 
 export function building(id: string): Building { return BUILDINGS.find((b) => b.id === id)!; }
 
+/** Characters never stand this close to the map's edge: their name and bubble would be cut where the camera stops
+ *  (Alt Row's door is near the right edge). */
+const EDGE = 3;
+const inside = (tx: number, ty: number) => ({ tx: Math.min(COLS - 1 - EDGE, Math.max(EDGE, tx)), ty: Math.min(ROWS - 1 - EDGE, Math.max(EDGE, ty)) });
+
 export function goTo(a: AgentView, id: string, R: () => number): void {
   const b = building(id);
   const sx = Math.floor(a.x / TILE), sy = Math.floor(a.y / TILE);
   // spread agents around the door so they do not stack on one tile
   const spread = b.kind === "tower" ? 13 : 7;
   for (let i = 0; i < 8; i++) {
-    const tx = b.door.x + Math.floor(R() * spread) - Math.floor(spread / 2), ty = b.door.y + Math.floor(R() * 3);
+    const { tx, ty } = inside(b.door.x + Math.floor(R() * spread) - Math.floor(spread / 2), b.door.y + Math.floor(R() * 3));
     const p = findPath(sx, sy, tx, ty);
     if (p.length) { a.path = p; a.target = id; return; }
   }
@@ -170,7 +175,7 @@ function spot(id: string, R: () => number): { x: number; y: number } {
   const b = building(id);
   const spread = b.kind === "tower" ? 13 : 9;   // towers have a long frontage: use it
   for (let i = 0; i < 20; i++) {
-    const tx = b.door.x + Math.floor(R() * spread) - Math.floor(spread / 2), ty = b.door.y + Math.floor(R() * 3);
+    const { tx, ty } = inside(b.door.x + Math.floor(R() * spread) - Math.floor(spread / 2), b.door.y + Math.floor(R() * 3));
     if (canWalk(tx, ty)) return { x: tx * TILE + 8, y: ty * TILE + 12 };
   }
   return { x: b.door.x * TILE + 8, y: b.door.y * TILE + 12 };

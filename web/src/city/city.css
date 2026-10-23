@@ -112,6 +112,7 @@
 .city-markets { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .city-markets li { padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
 .city-market-top { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: baseline; }
+.city-market-name { min-width: 0; overflow-wrap: anywhere; }
 .city-market-sub { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin-top: 6px; }
 .city-market-sub > :nth-child(even) { text-align: right; }
 .city-ls { margin-top: 8px; height: 4px; border-radius: 2px; background: var(--negative); overflow: hidden; opacity: .8; }
@@ -331,6 +332,11 @@
 .news-body { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); align-content: start;
   gap: 0 24px; padding: 16px 18px 0; }
 .news-side { display: grid; gap: 14px; align-content: start; }
+/* the reading stays in view while the headlines scroll beside it (no empty column next to a long list) */
+@media (min-width: 761px) {
+  .news-side { position: sticky; top: 0; align-self: start; max-height: calc(min(880px, 100dvh - 32px) - 84px); overflow-y: auto;
+    padding-bottom: 12px; scrollbar-width: thin; }
+}
 .news-body h3 { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
 .news-pending { color: var(--text-muted); font-size: 14px; line-height: 1.5; padding: 12px 14px; border: 1px dashed var(--border); border-radius: var(--radius); }
 .news-read { display: grid; gap: 12px; }
@@ -390,6 +396,9 @@
 @media (max-width: 760px) {
   .city-dialog.city-news { width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
   .news-body { grid-template-columns: minmax(0, 1fr); padding: 14px 16px 0; }
+  /* the eight markets in two even rows, none left alone on a line */
+  .city-news .chart-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; margin-left: 0; order: 3; }
+  .city-news .chart-tabs button { text-align: center; }
   .news-list { margin-top: 16px; border-top: 1px solid var(--border-soft); padding-top: 12px; }
   .news-note { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
 }
@@ -474,7 +483,7 @@
 .tw-clock-t { font-size: 22px; font-weight: 600; }
 /* walking to the tower: a line over the map with "go in now" */
 .city-toast { position: absolute; left: 50%; bottom: 84px; z-index: 6; transform: translateX(-50%); display: flex; align-items: center; gap: 12px;
-  max-width: calc(100% - 32px); padding: 10px 12px 10px 16px; border: 1px solid #fbbf24; border-radius: 10px; background: rgba(10, 10, 10, .94); }
+  width: max-content; max-width: calc(100% - 32px); padding: 10px 12px 10px 16px; border: 1px solid #fbbf24; border-radius: 10px; background: rgba(10, 10, 10, .94); }
 .city-toast p { margin: 0; font-size: 14px; }
 @media (max-width: 1000px) {
   .tw { overflow-y: auto; }
@@ -685,7 +694,15 @@
 /* Agents: the Strike traders after the agents */
 .city-leads { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-soft); }
 .city-leads-title { margin: 0 0 2px; font-size: 14px; }
+.city-legend-car { display: inline-block; width: 16px; height: 8px; border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+.city-legend-car.buy { background: #1d7a55; box-shadow: inset -5px 0 0 #4efab0; }
+.city-legend-car.sell { background: #9b2c3b; box-shadow: inset -5px 0 0 #fb7185; }
+.city-trade p { line-height: 1.45; }
+.city-ranks-group { margin: 12px 0 4px; }
+.city-ranks-group > p { margin: 0 0 6px; }
+.city-ranks-group + .city-ranks-group { padding-top: 12px; border-top: 1px solid var(--border-soft); }
 .city-leads > p { margin: 0 0 8px; }
+.city-leads-sub { margin: 12px 0 2px; font-size: 12.5px; font-weight: 600; color: var(--text-muted); }
 .city-row-tags .cp-plat { align-self: center; }
 
 /* the Guide's legend: a Strike trader's bubble (rose border, as on the map) and their copiers' trail */

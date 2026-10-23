@@ -146,7 +146,7 @@ export function App() {
         <ErrorBoundary onClose={() => { location.hash = ""; }}>
         <Suspense fallback={<div className="city-boot" role="status"><span className="sr-only">Loading EdgeCraft-StrikeCity</span></div>}>
           <CityPage lang={lang} setLang={setLang} onConnect={() => (link ? openCity(link.cityId ?? link.accountId) : openConnect(true))}
-                    onFeedback={() => setFeedback(true)} copyPilot={!!info.copyPilot}
+                    onFeedback={() => setFeedback(true)} copyPilot={!!info.copyPilot} testSite={info.env === "testnet"}
                     myAgent={link ? <Dashboard t={t} lang={lang} info={info} link={link} onUnlinked={unlink} onSignOut={() => signOut(t.dash.signedOut)}
                                                onSignIn={() => { unlink(); openConnect(true); }} onOpenCity={openCity} /> : null}
                     owner={link?.token ? { id: link.cityId ?? link.accountId, token: link.token } : null} />

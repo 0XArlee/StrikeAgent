@@ -34,7 +34,25 @@ async function strikePrices(): Promise<Prices> {
     const m = String(t.symbol);
     if (!m.endsWith("-USD")) continue;
     const p = prem.find((x) => x.symbol === m);
-    out[m] = { price: +(p?.markPrice ?? t.lastPrice), change: +t.priceChangePercent, funding: +(p?.fundingRate ?? 0) };
+    out[m] = { price: +(p?.markPrice ?? t.lastPrice), change: +t.priceChangePercent, funding: +(p?.fundingRate ?? 0), volume: +(t.quoteVolume ?? 0) };
+  }
+  return out;
+}
+
+/** A real trade on Strike mainnet (public, GET /price/v2/trades): each one drives through the city as a car. */
+export interface Trade { id: number; market: string; side: "buy" | "sell"; price: number; qty: number; usd: number; time: number }
+const TAPE_EVERY = 15_000;    // a reading of Strike's trades every 15 s: BTC and three of the busiest other markets in turn
+const TAPE_TURN = 3, TAPE_POOL = 12, TAPE_MAX = 24, TAPE_BACK = 180_000;
+
+/** Every market Strike lists, with its full name and the highest leverage it allows (public, GET /v2/markets). */
+export interface MarketInfo { name: string; maxLev: number }
+async function strikeMarkets(): Promise<Record<string, MarketInfo>> {
+  const d = (await getJson("https://api.strikefinance.org/v2/markets")) as { markets?: Record<string, { name?: string; status?: string;
+    default_leverage?: number; margin_tiers?: { max_leverage?: number }[] }> };
+  const out: Record<string, MarketInfo> = {};
+  for (const [m, x] of Object.entries(d.markets ?? {})) {
+    if (x.status && x.status !== "trading") continue;
+    out[m] = { name: String(x.name ?? m).replace(/\s*\/\s*USD$/, ""), maxLev: Math.max(0, ...(x.margin_tiers ?? []).map((t) => +(t.max_leverage ?? 0)), +(x.default_leverage ?? 0)) };
   }
   return out;
 }
@@ -88,6 +106,10 @@ export class CityStore {
   apiOk = false;                     // the API answered at least once
   prices: Prices = {};
   hist: Record<string, number[]> = {};
+  markets: Record<string, MarketInfo> = {};   // every market Strike lists (Markets shows them all)
+  private seen: Record<string, number> = {};   // the newest trade id read per market
+  private turn = 0;
+  private due: { at: number; t: Trade }[] = [];   // trades waiting for their moment to drive in (performance.now)
   book: Book | null = null;          // Strike's BTC-USD order book, every few seconds (the exchange's screen)
   source: PriceSource = "offline";
   updatedAt = 0;
@@ -110,6 +132,8 @@ export class CityStore {
   async load(progress: (k: number) => void): Promise<void> {
     progress(0.1);
     await Promise.all([this.refreshPrices(), this.refreshCity(), this.refreshBook()]);   // the book is on screen with the city
+    void this.refreshMarkets();
+    void this.refreshTrades();
     progress(0.55);
     await Promise.all(["BTC-USD", "ETH-USD", "SOL-USD"].map(async (m) => {
       try { this.hist[m] = await history(this.source === "offline" ? "strike" : this.source, m); } catch { this.hist[m] = []; }
@@ -139,6 +163,54 @@ export class CityStore {
     }
     this.source = "offline";
     this.dirty = true;
+  }
+
+  /** Strike's list of markets (names, leverage): once, then every 10 minutes; a failure keeps the last one. */
+  async refreshMarkets(): Promise<void> {
+    try { this.markets = await strikeMarkets(); this.dirty = true; } catch { /* Markets falls back to the symbols */ }
+  }
+
+  /** Strike's latest trades: BTC every time and three of the twelve busiest other markets in turn (a few requests every
+   *  15 s, whatever the number of markets). The new ones enter the city spread over the next 15 s, in the order they
+   *  happened; with more than 24, the biggest. The first reading takes all of them at once and brings the last three
+   *  minutes, so the city opens with its traffic. */
+  async refreshTrades(): Promise<void> {
+    if (document.hidden || this.source !== "strike") return;
+    const pool = Object.keys(this.prices).filter((m) => m !== "BTC-USD")
+      .sort((x, y) => (this.prices[y].volume ?? 0) - (this.prices[x].volume ?? 0)).slice(0, TAPE_POOL);
+    const pick = this.turn === 0 ? ["BTC-USD", ...pool]
+      : ["BTC-USD", ...Array.from({ length: Math.min(TAPE_TURN, pool.length) }, (_, i) => pool[(this.turn * TAPE_TURN + i) % pool.length])];
+    this.turn++;
+    const now = Date.now();
+    const fresh: Trade[] = [];
+    await Promise.all([...new Set(pick)].map(async (m) => {
+      try {
+        const rows = (await getJson(`${STRIKE}/trades?symbol=${m}&limit=40`, 6000)) as Row[];
+        const first = !(m in this.seen), last = this.seen[m] ?? 0;
+        let max = last;
+        for (const r of rows) {
+          const id = +r.id;
+          if (!(id > last)) continue;
+          max = Math.max(max, id);
+          if (first && now - +r.time > TAPE_BACK) continue;
+          fresh.push({ id, market: m, side: String(r.isBuyerMaker) === "true" ? "sell" : "buy", price: +r.price, qty: +r.qty,
+            usd: +r.quoteQty, time: +r.time });
+        }
+        this.seen[m] = max;
+      } catch { /* that market waits for its next turn */ }
+    }));
+    const keep = (fresh.length > TAPE_MAX ? [...fresh].sort((a, b) => b.usd - a.usd).slice(0, TAPE_MAX) : fresh).sort((a, b) => a.time - b.time);
+    const at = performance.now();
+    keep.forEach((t, i) => this.due.push({ at: at + (i / Math.max(1, keep.length)) * (TAPE_EVERY - 1000), t }));
+    if (this.due.length > TAPE_MAX * 2) this.due.splice(0, this.due.length - TAPE_MAX * 2);
+  }
+
+  /** The trades whose moment to drive in has come (the engine takes them every frame). */
+  dueTrades(now: number): Trade[] {
+    if (!this.due.length || this.due[0].at > now) return [];
+    const out: Trade[] = [];
+    while (this.due.length && this.due[0].at <= now) out.push(this.due.shift()!.t);
+    return out;
   }
 
   /** Agents from /api/city. A failure keeps the last snapshot. */
@@ -174,6 +246,8 @@ export class CityStore {
     this.timers.push(window.setInterval(() => { void this.refreshPrices(); }, 15_000));
     this.timers.push(window.setInterval(() => { void this.refreshCity(); }, 10_000));   // the host pushes within ~10 s
     this.timers.push(window.setInterval(() => { void this.refreshBook(); }, 2500));
+    this.timers.push(window.setInterval(() => { void this.refreshMarkets(); }, 600_000));
+    this.timers.push(window.setInterval(() => { void this.refreshTrades(); }, TAPE_EVERY));
     // the UI re-renders at most once per second
     this.timers.push(window.setInterval(() => { if (this.dirty) { this.dirty = false; this.emit(); } }, 1000));
   }
@@ -182,13 +256,17 @@ export class CityStore {
 
   agent(id: string | null): AgentView | undefined { return id ? this.agents.find((a) => a.id === id) : undefined; }
 
-  totals() {
+  /** The city's figures; `all`: the staging site counts every agent (paper and testnet), production only real accounts. */
+  totals(all = false) {
     // one waiting for its first deposit is online too: it checks every candle, it only has no money to trade yet
     const live = this.agents.filter((a) => a.status !== "paused" && a.status !== "offline").length;
     const inTrade = this.agents.filter((a) => a.position).length;
+    // trades and results: real accounts only (users' agents on their own Strike accounts); the paper agents that test the
+    // strategies are counted apart (Ranks)
     const today = Date.now() - 24 * 3600_000;
-    const trades = this.agents.reduce((s, a) => s + a.trades.filter((x) => x.time >= today).length, 0);
-    const rToday = this.agents.reduce((s, a) => s + a.trades.filter((x) => x.time >= today).reduce((q, x) => q + x.r, 0), 0);
+    const real = all ? this.agents : this.agents.filter((a) => a.kind === "live");
+    const trades = real.reduce((s, a) => s + a.trades.filter((x) => x.time >= today).length, 0);
+    const rToday = real.reduce((s, a) => s + a.trades.filter((x) => x.time >= today).reduce((q, x) => q + x.r, 0), 0);
     return { total: this.agents.length, live, inTrade, trades, rToday };
   }
 
