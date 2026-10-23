@@ -159,6 +159,11 @@
 .city-dock-btn:focus-visible { box-shadow: var(--focus); }
 .city-dock-fb { color: var(--golden); }   /* suggestions: in the dock, in its own colour so it is seen */
 .city-dock-fb:hover { color: #ffd29a; }
+/* no wallet yet: connecting one, in the place of My agent and in the brand's colour so it is found at once */
+.city-dock-connect { color: var(--primary); }
+.city-dock-connect:hover { color: #9dffd6; }
+.city-dock-connect .sm { display: none; }
+@media (max-width: 480px) { .city-dock-connect .lg { display: none; } .city-dock-connect .sm { display: inline; } }
 
 /* ---------- loading ---------- */
 .city-loading { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 40%, #0b1d17, #05070a 70%); }
@@ -298,6 +303,10 @@
 .chart-tabs button:focus-visible { box-shadow: var(--focus); }
 .chart-body { flex: 1; min-height: 0; background: #0a0a0a; }
 .chart-body .tradingview-widget-container, .chart-body iframe { display: block; width: 100%; height: 100%; border: 0; }
+/* STRIKE on Strike Finance's screen (city/dexscreener.tsx): DEX Screener's chart drawn at 1.5x, its top toolbar cropped off */
+.dex-crop { position: relative; width: 100%; height: 100%; overflow: hidden; background: #020806; }
+.dex-crop iframe { position: absolute; left: 0; top: 0; width: 150%; height: calc(150% + 38px); border: 0;
+  transform-origin: 0 0; transform: scale(0.6667) translateY(-38px); }
 .chart-note { padding: 8px 18px 10px; font-size: 12px; color: var(--text-faint); border-top: 1px solid var(--border-soft); }
 @media (max-width: 760px) {
   .city-dialog.city-chart { width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
@@ -712,3 +721,37 @@
 .city-legend-trail { flex: none; width: 18px; height: 6px; border-radius: 3px;
   background: radial-gradient(circle, #fb7185 2px, transparent 2.5px) 0 0 / 6px 6px repeat-x; opacity: .8; }
 .nowrap { white-space: nowrap; }
+
+/* ---------- Strike Finance's hall (city/StrikeView.tsx): its numbers beside the scene */
+.hq-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 10px 0 16px; }
+.hq-kpis.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hq-kpi { min-width: 0; padding: 10px 12px; border: 1px solid var(--border-soft); border-radius: 10px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--room) 9%, var(--surface-2)), var(--surface-2)); }
+.hq-kpi span { display: block; font-size: 11.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hq-kpi b { display: block; margin-top: 3px; font-size: 18px; line-height: 1.2; color: var(--text); letter-spacing: -0.01em; white-space: nowrap; }
+.hq-kpis.three .hq-kpi b { font-size: 16px; }
+.hq-chart { margin: 14px 0 16px; }
+.hq-chart figcaption { font-size: 13px; margin-bottom: 6px; }
+.hq-chart svg { display: block; width: 100%; height: auto; }
+.hq-chart p { margin: 4px 0 0; }
+.hq-grid { stroke: rgba(255, 255, 255, .06); stroke-width: 1; }
+.hq-axis { stroke: rgba(255, 255, 255, .2); stroke-width: 1; }
+.hq-lbl { fill: var(--text-faint); font: 9px var(--mono, "IBM Plex Mono", monospace); }
+.hq-mbars, .hq-sides, .hq-vaults { list-style: none; margin: 6px 0 14px; padding: 0; display: grid; gap: 7px; }
+.hq-mbars li, .hq-sides li { display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 12.5px; }
+.hq-mbars li > span:first-child, .hq-sides li > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hq-mbar, .hq-side-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--surface-2); }
+.hq-mbar i { display: block; height: 100%; background: var(--room); border-radius: 4px; }
+.hq-side-bar i, .hq-split i { display: block; height: 100%; font-style: normal; }
+.hq-side-bar .l, .hq-split .l { background: #22c55e; }
+.hq-side-bar .s, .hq-split .s { background: #ef4444; }
+.hq-split { display: flex; height: 24px; border-radius: 6px; overflow: hidden; margin: 2px 0 6px; }
+.hq-split i { display: flex; align-items: center; padding: 0 8px; min-width: 0; font-size: 12px; font-weight: 700; color: #04120b; white-space: nowrap; overflow: hidden; }
+.hq-split .s { justify-content: flex-end; color: #fff; }
+.hq-vaults li { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--border-soft); border-radius: 8px; background: var(--surface-2); }
+.hq-table-wrap { overflow-x: auto; margin: 8px 0 10px; }
+.hq-table th[scope="row"] { font-weight: 600; text-align: left; }
+.hq-table td.hq-strike { color: var(--room); font-weight: 700; }
+.hq-source { margin-top: 18px; }
+.hq .ar-h { margin-top: 18px; }
+.hq-mbars.wide li { grid-template-columns: 112px minmax(0, 1fr) auto; }

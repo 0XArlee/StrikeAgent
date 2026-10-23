@@ -94,7 +94,8 @@ def run(p, tag, viewport, mobile):
     # not the city's errors: TradingView's own requests, and a failed answer from Strike's public price API (the city keeps
     # the last order book for 60 s, then hides it)
     # the browser's "Failed to load resource" lines carry no address: our own site's failures are caught by address below
-    noise = ("tradingview", "telemetry", "api.strikefinance.org/price/", "failed to load resource")
+    # (and DEX Screener's own analytics, which its chart's iframe sends and its own server refuses)
+    noise = ("tradingview", "telemetry", "api.strikefinance.org/price/", "failed to load resource", "dexscreener.com")
     pg.on("console", lambda m: errors.append(m.text) if m.type == "error" and not any(n in m.text.lower() for n in noise) else None)
     own = BASE.split("/")[2]
     pg.on("requestfailed", lambda r: errors.append(f"{r.failure} {r.url[:100]}")
@@ -124,7 +125,7 @@ def run(p, tag, viewport, mobile):
     audit(pg, tag, "top bar", ".city-top")
     audit(pg, tag, "dock", ".city-dock")
     # every dock label shows whole inside its button (8 of them share a phone's width)
-    fit = pg.evaluate("""() => [...document.querySelectorAll('.city-dock-btn')].map(b => { const r = b.getBoundingClientRect(), s = b.querySelector('span:not(.sr-only)');
+    fit = pg.evaluate("""() => [...document.querySelectorAll('.city-dock-btn')].map(b => { const r = b.getBoundingClientRect(), s = [...b.querySelectorAll('span:not(.sr-only)')].find(x => x.getClientRects().length);
         const t = s ? s.getBoundingClientRect() : r; return [s ? s.innerText : '?', t.left >= r.left - 0.5 && t.right <= r.right + 0.5 && r.right <= innerWidth + 0.5]; })""")
     check(f"{tag} dock: {len(fit)} buttons, every label whole", len(fit) >= 8 and all(ok for _, ok in fit), ", ".join(n for n, ok in fit if not ok))
 
@@ -312,10 +313,13 @@ def run(p, tag, viewport, mobile):
         check(f"{tag} tower: exit returns to the map", pg.locator(".tw").count() == 0)
     step(tag, "tower", tower)
 
-    # ---- My agent without a session: the wallet dialog
+    # ---- without a wallet: Connect wallet in My agent's place, and it opens the wallet dialog
     def me():
         open_city()
-        dock(L["me"]).click()
+        conn = pg.locator(".city-dock .city-dock-connect")
+        check(f"{tag} no wallet: the dock offers to connect one, not My agent", conn.count() == 1 and conn.is_visible() and dock(L["me"]).count() == 0,
+              conn.inner_text().replace("\n", " ") if conn.count() else "-")
+        conn.click()
         pg.wait_for_selector("[role=dialog]", timeout=8000)
         audit(pg, tag, "connect dialog", "[role=dialog]")
         pg.keyboard.press("Escape"); pg.wait_for_timeout(400)

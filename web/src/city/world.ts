@@ -52,7 +52,7 @@ export const BUILDINGS: Building[] = [
   { id: "alts", kind: "shop", label: "ALT ROW", sub: "XRP · BNB · ADA · NEAR · ZEC", x: 88, y: 6, w: 7, d: 4, h: 30, wall: "#262033", roof: "#342b47", neon: "#c084fc", door: { x: 91, y: 16 } },
   // the News Tower by the plaza (Edgar, 2026-10-21); the risk office and the alley moved to the bottom right
   { id: "news", kind: "news", label: "NEWS TOWER", sub: "news and catalysts", x: 4, y: 21, w: 16, d: 4, h: 240, wall: "#1a2440", roof: "#243052", neon: "#fbbf24", door: { x: 12, y: 40 } },
-  { id: "exchange", kind: "exchange", label: "STRIKE EXCHANGE", sub: "order book", x: 32, y: 21, w: 32, d: 6, h: 52, wall: "#0d1f19", roof: "#123026", neon: "#4efab0", door: { x: 48, y: 31 } },
+  { id: "exchange", kind: "exchange", label: "STRIKE FINANCE", sub: "the exchange · go in for its numbers", x: 32, y: 21, w: 32, d: 6, h: 52, wall: "#0d1f19", roof: "#123026", neon: "#4efab0", door: { x: 48, y: 31 } },
   { id: "vault", kind: "vault", label: "VAULT BANK", sub: "strike vaults", x: 77, y: 22, w: 14, d: 6, h: 40, wall: "#1f2333", roof: "#2a3046", neon: "#facc15", door: { x: 84, y: 34 } },
   { id: "clan", kind: "clan", label: "CLAN HALL", x: 78, y: 34, w: 12, d: 4, h: 30, wall: "#251a33", roof: "#33244a", neon: "#a78bfa", door: { x: 84, y: 40 } },
   { id: "homes", kind: "home", label: "AGENT HOMES", sub: "paused agents rest here", x: 3, y: 46, w: 18, d: 7, h: 34, wall: "#22262d", roof: "#2e333c", neon: "#93c5fd", door: { x: 12, y: 59 } },
@@ -73,6 +73,17 @@ export const PLAZA = { x: 27, y: 28, w: 44, d: 13 };
 export const FOUNTAIN = { x: 48 * TILE + TILE, y: 35 * TILE };
 // the exchange's big screen: across its roof edge and down its front (30 x 6.5 tiles), its sign under it
 export const SCREEN = { x: 33 * TILE, y: 21 * TILE - 2, w: 30 * TILE, h: 104 };
+// each market tower's screen: across its roof edge and down the top of its front (its sign moves under it), the
+// market's chart on it, the way the exchange has one
+export interface TowerScreen { id: string; market: string; x: number; y: number; w: number; h: number }
+export const TOWER_SCREENS: TowerScreen[] = (["btc", "eth", "sol"] as const).map((id) => {
+  const g = (city2.buildings as { id: string; facade?: number[] }[]).find((b) => b.id === id)!;
+  const [fx, fy, fw] = g.facade!;
+  const b = BUILDINGS.find((x) => x.id === id)!;
+  return { id, market: b.market!, x: fx + 8, y: 6, w: fw - 16, h: fy + 52 - 6 };
+});
+/** Every screen in the city (world px): lit by itself, so the night's lit windows and darkness never cover it. */
+export const SCREENS = [{ x: SCREEN.x, y: SCREEN.y, w: SCREEN.w, h: SCREEN.h }, ...TOWER_SCREENS];
 
 // ---------------------------------------------------------------- walkability
 export const walk = new Uint8Array(COLS * ROWS);   // 1 = walkable
@@ -385,6 +396,7 @@ export function renderGlow(): HTMLCanvasElement {
       g.globalAlpha = 1; g.fillRect(x - 2, y - 1, 4, 3);
     }
     g.globalAlpha = 1;
+    for (const r of SCREENS) g.clearRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);   // no window shines through a screen
     return c;
   }
   for (const s of GLOWS) {
@@ -394,6 +406,8 @@ export function renderGlow(): HTMLCanvasElement {
     g.globalAlpha = s.a;
     g.fillRect(s.x, s.y, s.w, s.h);
   }
+  g.globalAlpha = 1;
+  for (const r of SCREENS) g.clearRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
   return c;
 }
 
@@ -416,5 +430,7 @@ export function renderLight(): HTMLCanvasElement {
   pool(FOUNTAIN.x, FOUNTAIN.y, 150, 0.7);
   for (const k of KIOSKS) pool(k.x * TILE + 16, k.y * TILE + 20, 34, 0.8);
   for (const b of BUILDINGS) pool(b.door.x * TILE + 8, (b.y + b.d) * TILE + b.h, 40, 0.85);
+  g.fillStyle = "#000";
+  for (const r of SCREENS) g.fillRect(r.x, r.y, r.w, r.h);   // the screens light themselves: the night never dims them
   return c;
 }

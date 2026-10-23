@@ -71,7 +71,7 @@ export default function CityPreview({ onStats }: { onStats?: (s: { online: numbe
           const px = btc ? ` · BTC ${Math.round(btc.price).toLocaleString("en-US")} ${btc.change >= 0 ? "▲" : "▼"}${Math.abs(btc.change).toFixed(2)}%` : "";
           return `EDGECRAFT-STRIKECITY · ${t.live} AGENTS ONLINE · ${t.inTrade} IN A TRADE${px}`;
         },
-        getWeather: () => 0, onSelect: () => undefined, getBook: () => store.book,
+        getWeather: () => 0, onSelect: () => undefined, getBook: () => store.book, getToken: () => store.token,
         reducedMotion: !!reduced, interactive: false, view: VIEW, viewSmall: VIEW_SMALL,
       });
       run();

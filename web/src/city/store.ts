@@ -15,6 +15,9 @@ export type PriceSource = "strike" | "binance" | "offline";
 export interface Book { bids: [number, number][]; asks: [number, number][]; at: number }
 export const BOOK_MARKET = "BTC-USD";
 
+/** STRIKE, Strike Finance's own token (Cardano): its pool on SundaeSwap, as DEX Screener lists it (its only one). */
+export const STRIKE_PAIR = "e20b2a2ada3297878401938f077edfa329fa5706f0a046d15477650c";
+
 async function getJson(url: string, ms = 8000): Promise<unknown> {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), ms);
@@ -111,6 +114,7 @@ export class CityStore {
   private turn = 0;
   private due: { at: number; t: Trade }[] = [];   // trades waiting for their moment to drive in (performance.now)
   book: Book | null = null;          // Strike's BTC-USD order book, every few seconds (the exchange's screen)
+  token: { price: number; change: number } | null = null;   // STRIKE in USD and its 24 h move (DEX Screener, every minute)
   source: PriceSource = "offline";
   updatedAt = 0;
   cityAt = 0;                        // when the API built the last snapshot
@@ -133,6 +137,7 @@ export class CityStore {
     progress(0.1);
     await Promise.all([this.refreshPrices(), this.refreshCity(), this.refreshBook()]);   // the book is on screen with the city
     void this.refreshMarkets();
+    void this.refreshToken();
     void this.refreshTrades();
     progress(0.55);
     await Promise.all(["BTC-USD", "ETH-USD", "SOL-USD"].map(async (m) => {
@@ -168,6 +173,17 @@ export class CityStore {
   /** Strike's list of markets (names, leverage): once, then every 10 minutes; a failure keeps the last one. */
   async refreshMarkets(): Promise<void> {
     try { this.markets = await strikeMarkets(); this.dirty = true; } catch { /* Markets falls back to the symbols */ }
+  }
+
+  /** STRIKE's price and 24 h move, from DEX Screener's public API; a failure keeps the last one. */
+  async refreshToken(): Promise<void> {
+    try {
+      const d = (await getJson(`https://api.dexscreener.com/latest/dex/pairs/cardano/${STRIKE_PAIR}`, 6000)) as
+        { pairs?: { priceUsd?: string; priceChange?: { h24?: number } }[]; pair?: { priceUsd?: string; priceChange?: { h24?: number } } };
+      const p = d.pairs?.[0] ?? d.pair;
+      const price = Number(p?.priceUsd);
+      if (Number.isFinite(price) && price > 0) this.token = { price, change: Number(p?.priceChange?.h24 ?? 0) || 0 };
+    } catch { /* the screen keeps its last price, or just the name */ }
   }
 
   /** Strike's latest trades: BTC every time and three of the twelve busiest other markets in turn (a few requests every
@@ -247,6 +263,7 @@ export class CityStore {
     this.timers.push(window.setInterval(() => { void this.refreshCity(); }, 10_000));   // the host pushes within ~10 s
     this.timers.push(window.setInterval(() => { void this.refreshBook(); }, 2500));
     this.timers.push(window.setInterval(() => { void this.refreshMarkets(); }, 600_000));
+    this.timers.push(window.setInterval(() => { if (!document.hidden) void this.refreshToken(); }, 60_000));
     this.timers.push(window.setInterval(() => { void this.refreshTrades(); }, TAPE_EVERY));
     // the UI re-renders at most once per second
     this.timers.push(window.setInterval(() => { if (this.dirty) { this.dirty = false; this.emit(); } }, 1000));

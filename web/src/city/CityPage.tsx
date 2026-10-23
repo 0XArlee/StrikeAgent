@@ -7,13 +7,15 @@ import "./city.css";
 import type { Lang } from "../i18n";
 import { Icon, Mark } from "../components/ui";
 import { atWork, lastChecks, leadTick, leadView, mulberry, newsTrip, nowDecision, readingNews, stats, type AgentView, type FeedItem, type Prices, type Status } from "./agents";
-import { CityEngine, SCREEN_BOOK, SCREEN_CHART, STATUS_COLOR, drawIcon, type Sel } from "./engine";
+import { CityEngine, SCREEN_BOOK, SCREEN_CHART, STATUS_COLOR, TOWER_CHARTS, drawIcon, type Sel } from "./engine";
 import type { Look } from "./look";
 import { FEET, FW, HEAD_TOP, frameAt, onSheet, sheetFor } from "./sprites";
 import { BOOK_MARKET, CITY_MARKETS, CityStore, type Book, type Trade } from "./store";
 import { EventSoon, NewsButton, NewsView, contextLine, signed, tapeLine } from "./NewsView";
 import { TowerView } from "./TowerView";
 import { ArenaView } from "./ArenaView";
+import { StrikeView } from "./StrikeView";
+import { useStrikeStats } from "./strikestats";
 import { dict } from "../i18n";
 import { voiceLine } from "../components/PersonaPicker";
 import { TEMPER_COLOR } from "./persona";
@@ -24,6 +26,7 @@ import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, 
 import { ART2, BUILDINGS, artReady } from "./world";
 import { PortfolioView, livePosition } from "./portfolio";
 import { TradingViewChart, warmTradingView } from "./tradingview";
+import { STRIKE_CHART_URL, StrikeChart } from "./dexscreener";
 
 type Panel = "agents" | "ranks" | "feed" | "markets" | "guide";
 
@@ -47,6 +50,10 @@ const CHART_MARKETS = CITY_MARKETS;
 // transforms it (no new layout inside the iframe), and its text stays readable from the default zoom
 const TV_K = 2.5;
 warmTradingView();   // as the city's code arrives: TradingView's connections open while the city loads
+
+// what is laid over the map's screens (world px): STRIKE on Strike Finance's, its order book beside it, each tower's market
+const OVERLAYS: [string, { x: number; y: number; w: number; h: number }][] =
+  [["strike", SCREEN_CHART], ["book", SCREEN_BOOK], ...TOWER_CHARTS.map((t) => [t.id, t] as [string, typeof t])];
 
 function readDeepLink(): string | null {
   const m = /[?&]agent=([\w-]+)/.exec(location.hash);
@@ -73,15 +80,20 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   const [news, setNews] = useState<string | null>(null);     // the market whose news is open
   const [tower, setTower] = useState<null | "walking" | "inside">(null);   // the News Tower: your agent on its way, or inside
   const [arena, setArena] = useState<null | "walking" | "inside">(null);   // the Copy Arena, the same way
+  const [hq, setHq] = useState<null | "walking" | "inside">(null);         // Strike Finance's building, the same way
+  const hqStats = useStrikeStats(hq !== null);               // Strike's numbers, read once someone heads in
   const newsDoc = useNews(ready);                             // read once the city is drawn, then every minute
   const copyDoc = useCopy(ready);                             // Strike's copy trading, the same way
   const [copy, setCopy] = useState<{ open: string | null } | null>(null);   // the chooser of whom to copy (a profile open)
   const leads = useRef<AgentView[]>([]);   // the leads walking the city with their copiers: out of the agents' totals (Agents lists them apart)
   const leadR = useMemo(() => mulberry(0x1ead), []);
   const leadLink = useRef(readLeadLink());
-  const [tvOn, setTvOn] = useState(false);                   // TradingView's candles are drawn: show them
-  const tvScreen = useRef<HTMLDivElement>(null);
-  const bookScreen = useRef<HTMLDivElement>(null);
+  // the screens' charts: shown once drawn (until then the city's own drawing shows); a tower's loads only once it has
+  // been on screen, so the city never loads three charts nobody is looking at
+  const [chartOn, setChartOn] = useState<Record<string, boolean>>({});
+  const [towerSeen, setTowerSeen] = useState<Record<string, boolean>>({});
+  const seen = useRef<Record<string, boolean>>({});
+  const overlay = useRef<Record<string, HTMLDivElement | null>>({});
   const [welcome, setWelcome] = useState(() => { try { return localStorage.getItem("sf-city-welcome") !== "1"; } catch { return true; } });
   const [, force] = useState(0);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -95,6 +107,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   const deepLink = useRef(readDeepLink());   // read before the hash is rewritten below
   const towerLink = useRef(/[?&]tower\b/.test(location.hash));   // #/city?tower: straight into the News Tower
   const arenaLink = useRef(/[?&]arena\b/.test(location.hash));   // #/city?arena: straight into the Copy Arena
+  const hqLink = useRef(/[?&]strike\b/.test(location.hash));     // #/city?strike: straight into Strike Finance
 
   useEffect(() => {
     let alive = true;
@@ -111,6 +124,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
       getPrices: () => store.prices, getHistory: (m) => store.hist[m] ?? [],
       getHeadline: () => headline.current, getNewsTape: () => newsTape.current,
       getJobLabel: (a) => jobLabel(a, newsRef.current, store.prices, langRef.current), getWeather: () => weather.current, reducedMotion: !!reduced, getBook: () => store.book,
+      getToken: () => store.token,
       onSelect: (s) => { setSel(s); setDetails(false); if (s && isSmall()) setPanel(null); },
       onChart: (m) => setChart(m),
       takeTrades: (now) => store.dueTrades(now), onTrade: (t) => setTrade(t),   // every car is a real trade on Strike
@@ -119,13 +133,15 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
       onScreen: (x, y, z) => {
         const c = canvas.current;
         if (!c) return;
-        for (const [el, r] of [[tvScreen.current, SCREEN_CHART], [bookScreen.current, SCREEN_BOOK]] as const) {
-          if (!el) continue;
+        for (const [id, r] of OVERLAYS) {
           const sx = x + (r.x - SCREEN_CHART.x) * z, sy = y + (r.y - SCREEN_CHART.y) * z;
+          const on = sx + r.w * z > 0 && sy + r.h * z > 0 && sx < c.clientWidth && sy < c.clientHeight;
+          if (on && !seen.current[id]) { seen.current[id] = true; setTowerSeen({ ...seen.current }); }
+          const el = overlay.current[id];
+          if (!el) continue;
           const k = `${sx.toFixed(1)},${sy.toFixed(1)},${z.toFixed(4)}`;
           if (el.dataset.k === k) continue;
           el.dataset.k = k;
-          const on = sx + r.w * z > 0 && sy + r.h * z > 0 && sx < c.clientWidth && sy < c.clientHeight;
           el.style.transform = `translate3d(${sx}px, ${sy}px, 0) scale(${z / TV_K})`;
           el.style.visibility = on ? "" : "hidden";
         }
@@ -190,9 +206,9 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   useEffect(() => {
     if (!ready) return;
     const base = "#/city";
-    const want = me ? `${base}?me` : arena === "inside" ? `${base}?arena` : sel?.kind === "agent" ? (sel.id.startsWith("lead:") ? `${base}?lead=${sel.id.slice(5)}` : `${base}?agent=${sel.id}`) : base;
+    const want = me ? `${base}?me` : arena === "inside" ? `${base}?arena` : hq === "inside" ? `${base}?strike` : sel?.kind === "agent" ? (sel.id.startsWith("lead:") ? `${base}?lead=${sel.id.slice(5)}` : `${base}?agent=${sel.id}`) : base;
     if (location.hash !== want) history.replaceState(null, "", want);
-  }, [sel, ready, me, arena]);
+  }, [sel, ready, me, arena, hq]);
 
   const choose = (s: Sel | null) => {
     engine.current?.select(s, false);
@@ -212,8 +228,8 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
     const e = engine.current;
     if (!e) return;
     // only this page stops drawing the city: the agents keep trading and everyone else sees the city as always
-    if (me || tower === "inside" || arena === "inside") e.pause(); else e.start();
-  }, [me, ready, tower, arena]);
+    if (me || tower === "inside" || arena === "inside" || hq === "inside") e.pause(); else e.start();
+  }, [me, ready, tower, arena, hq]);
 
   // the News Tower: your agent runs to its door (the camera follows it) and you go in with it; without an agent of
   // your own you go in as a visitor
@@ -281,6 +297,38 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
     }, 200);
     return () => window.clearInterval(id);
   }, [arena, mine]);
+
+  // Strike Finance: the same walk to its door, then inside its hall
+  const enterHq = () => {
+    const a = mine;
+    if (!a || reduced) { setHq("inside"); return; }
+    a.trip = { to: "exchange", until: performance.now() + 10 * 60_000 };
+    a.rush = true; a.nextAt = 0; a.path = [];
+    choose({ kind: "agent", id: a.id });
+    engine.current?.setFollow(true);
+    setHq("walking");
+  };
+  const leaveHq = () => {
+    const a = mine;
+    if (a?.trip?.to === "exchange") { a.trip = undefined; a.rush = false; a.nextAt = 0; }
+    setHq(null);
+    canvas.current?.focus();
+  };
+  useEffect(() => {
+    if (!ready || !hqLink.current) return;
+    hqLink.current = false;
+    enterHq();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, version]);
+  useEffect(() => {
+    if (hq !== "walking") return;
+    const t0 = Date.now();
+    const id = window.setInterval(() => {
+      const a = mine;
+      if (!a || (a.target === "exchange" && !a.path.length) || Date.now() - t0 > 15_000) { window.clearInterval(id); setHq("inside"); }
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [hq, mine]);
 
   // the hash changes inside the city (e.g. right after creating your agent): select it as soon as the city has it
   const pending = useRef<string | null>(null);
@@ -385,13 +433,20 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
         {/* it loads as soon as the city is drawn (loading it during the city's own load delayed the city ~0.35 s, measured);
             until its candles are drawn the screen shows the city's own chart (Strike's prices), then it fades in */}
         {ready && (
-          <div ref={tvScreen} className={`city-tv${tvOn ? " on" : ""}`} aria-hidden="true"
+          <div ref={(el) => { overlay.current.strike = el; }} className={`city-tv${chartOn.strike ? " on" : ""}`} aria-hidden="true"
                style={{ width: SCREEN_CHART.w * TV_K, height: SCREEN_CHART.h * TV_K, visibility: "hidden" }}>
-            <TradingViewChart market="BTC-USD" lang={lang} title={T.chart.screen} onReady={() => setTvOn(true)} />
+            <StrikeChart title={T.chart.screen} onReady={() => setChartOn((v) => ({ ...v, strike: true }))} />
           </div>
         )}
+        {ready && TOWER_CHARTS.filter((t) => towerSeen[t.id]).map((t) => (
+          <div key={t.id} ref={(el) => { overlay.current[t.id] = el; }} className={`city-tv${chartOn[t.id] ? " on" : ""}`} aria-hidden="true"
+               style={{ width: t.w * TV_K, height: t.h * TV_K, visibility: "hidden" }}>
+            <TradingViewChart market={t.market} lang={lang} title={T.chart.tower.replace("{m}", ticker(t.market))}
+                              onReady={() => setChartOn((v) => ({ ...v, [t.id]: true }))} />
+          </div>
+        ))}
         {ready && store.book && (
-          <div ref={bookScreen} className="city-book" aria-hidden="true"
+          <div ref={(el) => { overlay.current.book = el; }} className="city-book" aria-hidden="true"
                style={{ width: SCREEN_BOOK.w * TV_K, height: SCREEN_BOOK.h * TV_K, visibility: "hidden" }}>
             <BookRows book={store.book} lang={lang} />
           </div>
@@ -457,7 +512,12 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
             <p className="small faint">{T.building.agentsHere(store.agents.filter((a) => a.target === bld.id && !a.path.length).length)}</p>
             {bld.id === "arena" && leads.current.length > 0 && <p className="small faint">{T.copy.inCity(leads.current.length)}</p>}
             {(bld.market || bld.id === "exchange") && (
-              <button type="button" className="btn btn-ghost btn-block city-card-chart" onClick={() => setChart(bld.market ?? "BTC-USD")}>{T.chart.open}</button>
+              <button type="button" className="btn btn-ghost btn-block city-card-chart" onClick={() => setChart(bld.market ?? "STRIKE")}>{T.chart.open}</button>
+            )}
+            {bld.id === "exchange" && (
+              <div className="city-card-actions">
+                <button type="button" className="btn btn-primary btn-block" onClick={enterHq}>{T.hq.enter}</button>
+              </div>
             )}
             {bld.id === "arena" && (
               <div className="city-card-actions">
@@ -490,6 +550,14 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
               {trade.usd.toLocaleString(lang === "es" ? "es-ES" : "en-US", { maximumFractionDigits: 2 })} $ · {ago(T, trade.time)}<br />
               <span className="faint small">{T.trade.note}</span></p>
             <button type="button" className="icon-btn" aria-label={T.card.close} onClick={() => setTrade(null)}><Icon.close /></button>
+          </div>
+        )}
+
+        {hq === "walking" && mine && (
+          <div className="city-toast" role="status">
+            <p>{T.hq.entering(mine.name)}</p>
+            <button type="button" className="btn btn-primary" onClick={() => setHq("inside")}>{T.tower.enterNow}</button>
+            <button type="button" className="icon-btn" aria-label={T.card.close} onClick={leaveHq}><Icon.close /></button>
           </div>
         )}
 
@@ -530,7 +598,12 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
         <DockBtn label={T.nav.feed} active={panel === "feed"} onClick={() => togglePanel("feed")} icon={<Ico.pulse />} controls />
         <DockBtn label={T.nav.markets} active={panel === "markets"} onClick={() => togglePanel("markets")} icon={<Ico.bars />} controls />
         <DockBtn label={T.nav.guide} active={panel === "guide"} onClick={() => togglePanel("guide")} icon={<Ico.help />} controls />
-        <DockBtn label={T.nav.me} active={me} onClick={openMe} icon={<Ico.user />} />
+        {myAgent ? <DockBtn label={T.nav.me} active={me} onClick={openMe} icon={<Ico.user />} /> : (
+          // no wallet yet: this place is where you connect one (My agent comes back once you have)
+          <button type="button" className="city-dock-btn city-dock-connect" onClick={onConnect} aria-haspopup="dialog" aria-label={T.nav.connect}>
+            <Ico.wallet /><span className="lg" aria-hidden="true">{T.nav.connect}</span><span className="sm" aria-hidden="true">{T.nav.connectShort}</span>
+          </button>
+        )}
         {onFeedback && (   // suggestions, where everyone sees them: it opens a dialog (no pressed state)
           <button type="button" className="city-dock-btn city-dock-fb" onClick={onFeedback} aria-haspopup="dialog" title={dict[lang].feedback.title}>
             <FeedbackIcon size={20} /><span>{T.nav.feedback}</span>
@@ -566,6 +639,10 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
           <div className="cp-body"><CopyChooser T={T} lang={lang} doc={copyDoc} initial={copy.open} onFollow={followLead}
                                                  onCopy={copyPilot ? copyWithAgent : undefined} /></div>
         </Modal>
+      )}
+      {hq === "inside" && (
+        <StrikeView T={T} lang={lang} stats={hqStats} agent={mine ?? null} onExit={leaveHq}
+                    vol24={Object.values(store.prices).reduce((a, p) => a + (p.volume ?? 0), 0) || null} />
       )}
       {arena === "inside" && (
         <ArenaView T={T} lang={lang} doc={copyDoc} agent={mine ?? null} onExit={leaveArena}
@@ -1176,16 +1253,19 @@ function ChartModal({ T, lang, market, onMarket, onClose }: { T: CityText; lang:
       <div className="chart-head">
         <h2 id="chart-title">{ticker(market)} · {T.chart.title}</h2>
         <div className="chart-tabs" role="group" aria-label={T.chart.markets}>
-          {CHART_MARKETS.map((m) => (
+          {["STRIKE", ...CHART_MARKETS].map((m) => (
             <button key={m} type="button" aria-pressed={m === market} onClick={() => onMarket(m)}>{ticker(m)}</button>
           ))}
         </div>
         <button type="button" className="icon-btn" aria-label={T.card.close} data-autofocus onClick={onClose}><Icon.close /></button>
       </div>
       <div className="chart-body">
-        <TradingViewChart market={market} lang={lang} full title={T.chart.frame.replace("{m}", ticker(market))} />
+        {market === "STRIKE" ? <StrikeChart full title={T.chart.frame.replace("{m}", "STRIKE")} />
+          : <TradingViewChart market={market} lang={lang} full title={T.chart.frame.replace("{m}", ticker(market))} />}
       </div>
-      <p className="chart-note">{T.chart.note} <a href="https://www.tradingview.com/" target="_blank" rel="noopener nofollow">TradingView<span className="sr-only"> (opens in a new tab)</span></a></p>
+      {market === "STRIKE"
+        ? <p className="chart-note">{T.chart.noteStrike} <a href={STRIKE_CHART_URL} target="_blank" rel="noopener nofollow">DEX Screener<span className="sr-only"> (opens in a new tab)</span></a></p>
+        : <p className="chart-note">{T.chart.note} <a href="https://www.tradingview.com/" target="_blank" rel="noopener nofollow">TradingView<span className="sr-only"> (opens in a new tab)</span></a></p>}
     </Modal>
   );
 }
@@ -1228,6 +1308,7 @@ const Ico = {
   pulse: () => <svg {...SI}><path d="M3 12h4l2.5-6 4 12 2.5-6H21" /></svg>,
   bars: () => <svg {...SI}><path d="M6 4v16M6 8h-2v7h2M12 3v18M12 6h-2v9h2M18 6v14M18 10h-2v6h2" /></svg>,
   user: () => <svg {...SI}><circle cx="12" cy="8" r="4" /><path d="M4 20.5c1-4 4-6.2 8-6.2s7 2.2 8 6.2" /></svg>,
+  wallet: () => <svg {...SI}><path d="M4 7h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1z" /><path d="M4 7l12-3.5V7M16.5 13.5h.01" /></svg>,
   help: () => <svg {...SI}><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.6 2.6 0 1 1 3.6 2.4c-.7.3-1.1.9-1.1 1.6v.5M12 17h.01" /></svg>,
   target: () => <svg {...SI} width={16} height={16}><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>,
 };

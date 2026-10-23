@@ -50,7 +50,8 @@ def open_city(browser, base, viewport, mobile, welcome=True, block_api=False, ha
         ctx.route("**/api/city", lambda r: r.abort())
     page = ctx.new_page()
     errors = []
-    page.on("console", lambda m: errors.append(m.text) if m.type == "error" and "api/city" not in m.text and "telemetry.tradingview.com" not in m.text else None)
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" and "api/city" not in m.text and "telemetry.tradingview.com" not in m.text
+            and "dexscreener.com" not in m.text and "dexscreener.com" not in (m.location or {}).get("url", "") else None)   # DEX Screener's chart iframe: its own analytics, refused by its own server
     page.on("pageerror", lambda e: errors.append(str(e)))
     if not welcome:
         page.add_init_script("localStorage.setItem('sf-city-welcome', '1')")

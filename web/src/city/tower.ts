@@ -43,6 +43,9 @@ export const roomArt = (id: RoomId) => `${import.meta.env.BASE_URL ?? "/"}art/to
 /** The Copy Arena's hall (drawn with the tower's floors, its own building in the city). */
 export const ARENA = (tower.rooms as unknown as Record<string, RoomData>).arena;
 export const arenaArt = `${import.meta.env.BASE_URL ?? "/"}art/tower/arena.webp`;
+/** Strike Finance's hall (the exchange's own numbers; drawn with the tower's floors, its own building in the city). */
+export const HQ = (tower.rooms as unknown as Record<string, RoomData>).strike;
+export const hqArt = `${import.meta.env.BASE_URL ?? "/"}art/tower/strike.webp`;
 
 /** The tiles from (sx, sy) to (tx, ty) through the room's walkable tiles (none: unreachable). */
 export function roomPath(room: RoomData, sx: number, sy: number, tx: number, ty: number): [number, number][] {

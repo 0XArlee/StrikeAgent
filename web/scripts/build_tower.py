@@ -557,12 +557,65 @@ def arena(l1) -> Room:
     return r
 
 
+def strike(l1) -> Room:
+    """Strike Finance (its own building in the city, the same size, no lift): the exchange's own numbers. The volume
+    wall at the back (the page draws each day's volume as bars), users on the left, the treasury on the right, the open
+    interest on a glass console in the middle, two trading floors either side, a carpet from the door to the console."""
+    r = Room("strike")
+    shell(r, l1, (1, 30), (8, 28), tint=(0.62, 0.98, 0.86), door=True, lift=False)
+    r.start = (13, H - 2)
+    put, d = r.put, r.d
+    # the carpet, from the door to the console: dark teal, a mint edge
+    x0, x1, y0, y1 = 11 * T + 4, 17 * T - 5, 8 * T, (H - 1) * T - 1
+    d.rectangle([x0, y0, x1, y1], fill=(10, 52, 44, 255))
+    d.rectangle([x0, y0, x1, y1], outline=(78, 250, 176, 255))
+    d.rectangle([x0 + 2, y0 + 2, x1 - 2, y1], outline=(18, 92, 72, 255))
+    # the volume wall (an LED board) and the screens either side
+    panel(r, 7, 1, 14, 2, glass=(3, 12, 9), frame=(20, 40, 33), rim=(60, 120, 98), dots=(8, 26, 19), name="board", inset=2)
+    panel(r, 2, 1, 4.5, 2, glass=(4, 10, 12), name="users")
+    panel(r, 21.5, 1, 4.5, 2, glass=(4, 10, 12), name="treasury")
+    # the open interest's console: dark glass on a lit table, its front a step down
+    cx0, cx1, cy0, cy1 = int(10.5 * T), int(17.5 * T) - 1, 5 * T, int(7.5 * T) - 1
+    d.rectangle([cx0 + 3, cy1 + 1, cx1 + 3, cy1 + 4], fill=(0, 0, 0, 110))
+    d.rectangle([cx0, cy0, cx1, cy1], fill=(30, 44, 46, 255), outline=(10, 16, 18, 255))
+    d.rectangle([cx0 + 1, cy0 + 1, cx1 - 1, cy0 + 1], fill=(96, 150, 132, 255))
+    d.rectangle([cx0 + 1, cy1 - 2, cx1 - 1, cy1 - 1], fill=(16, 26, 28, 255))
+    gx0, gy0, gx1, gy1 = cx0 + 4, cy0 + 4, cx1 - 4, cy1 - 5
+    d.rectangle([gx0, gy0, gx1, gy1], fill=(3, 14, 12, 255))
+    r.screens["oi"] = [gx0, gy0, gx1 - gx0 + 1, gy1 - gy0 + 1]
+    r.blocked.append((10, 5, 8, 3))
+    # two trading floors: terminals and chairs, either side of the console
+    for y in (5, 9):
+        for i, x in enumerate((2, 3, 4, 5, 6, 7)):
+            put(single("13_Conference", (29, 31, 30, 32, 29, 28)[i]), x, y)
+            put(single("13_Conference", (29, 31, 30, 32, 29, 28)[(i + 3) % 6]), x + 18, y)
+        r.blocked += [(2, y, 6, 2), (20, y, 6, 2)]
+        for x in (2, 4, 6, 20, 22, 24):
+            put(single("13_Conference", 37), x, y + 1.6, block=(x, y + 2, 1, 1))
+    # palms by the door
+    put(single("22_Museum", 196), 9, 11, block=(9, 13, 2, 1))
+    put(single("22_Museum", 196), 17, 11, block=(17, 13, 2, 1))
+    r.spots.update({
+        "board":    {"rect": r.screens["board"], "stand": [14, 3], "face": "up"},
+        "users":    {"rect": r.screens["users"], "stand": [4, 3], "face": "up"},
+        "treasury": {"rect": r.screens["treasury"], "stand": [23, 3], "face": "up"},
+        "oi":       {"rect": [cx0, cy0, cx1 - cx0 + 1, cy1 - cy0 + 1], "stand": [14, 8], "face": "up"},
+        "funding":  {"rect": [2 * T, 5 * T, 6 * T, 7 * T], "stand": [9, 8], "face": "left"},
+        "door":     {"rect": [12 * T, (H - 1) * T, 4 * T, T], "stand": [13, H - 2], "face": "down"},
+    })
+    r.staff = [{"x": 4, "y": 8, "dir": "up", "anim": "phone", "seed": "strike-trader-1"},
+               {"x": 22, "y": 8, "dir": "up", "anim": "read", "seed": "strike-trader-2"},
+               {"x": 3, "y": 12, "dir": "up", "anim": "idle", "seed": "strike-trader-3"},
+               {"x": 24, "y": 12, "dir": "left", "anim": "idle", "seed": "strike-analyst"}]
+    return r
+
+
 def main() -> None:
     if not TV.exists():
         raise SystemExit(f"LimeZu's Modern Interiors is not unpacked in {MI}")
     l1, l2, l3 = (Image.open(TV / f"Tv_Studio_Design_layer_{i}.png").convert("RGBA") for i in (1, 2, 3))
     generic = Image.open(GENERIC).convert("RGBA")
-    rooms = [lobby(l1, l2, l3, generic), macro(l1), geo(l1), rules(l1), money(l1), security(l1), arena(l1)]
+    rooms = [lobby(l1, l2, l3, generic), macro(l1), geo(l1), rules(l1), money(l1), security(l1), arena(l1), strike(l1)]
     OUT.mkdir(parents=True, exist_ok=True)
     for old in OUT.glob("floor*"):
         old.unlink()
@@ -570,7 +623,7 @@ def main() -> None:
            "tile": T, "w": W, "h": H, "rooms": {}}
     for r in rooms:
         r.im.convert("RGB").save(OUT / f"{r.id}.webp", lossless=True, method=6)
-        out["rooms"][r.id] = {"spots": r.spots, "screens": r.screens, "staff": r.staff, "walk": r.walk(door=r.id in ("lobby", "arena")), **r.extra}
+        out["rooms"][r.id] = {"spots": r.spots, "screens": r.screens, "staff": r.staff, "walk": r.walk(door=r.id in ("lobby", "arena", "strike")), **r.extra}
         print(f"{r.id}: {(OUT / f'{r.id}.webp').stat().st_size / 1e3:.0f} KB, {len(r.spots)} spots")
     MANIFEST.write_text(json.dumps(out, separators=(",", ":")) + "\n", encoding="utf-8", newline="\n")
 

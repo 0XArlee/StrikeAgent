@@ -3,16 +3,18 @@ import type { AgentView, Prices, Status } from "./agents";
 import { atWork, isActive, readingNews, step } from "./agents";
 import { FEET, HEAD_TOP, drawFrame, hash, sheetFor, type Anim, type Dir } from "./sprites";
 import type { Book, Trade } from "./store";
-import { ART2, BUILDINGS, FOUNTAIN, H, SCREEN, TILE, W, footprint, renderGlow, renderLight, renderStatic } from "./world";
+import { ART2, BUILDINGS, FOUNTAIN, H, SCREEN, TILE, TOWER_SCREENS, W, footprint, renderGlow, renderLight, renderStatic } from "./world";
 import { ticker } from "./text";
 
 export type Sel = { kind: "agent" | "building"; id: string };
 type Hit = Sel | { kind: "screen"; id: string } | { kind: "car"; id: string };
 
-/** The chart on the exchange's screen (world px): TradingView's live chart is laid over it (city/tradingview.tsx). */
+/** The chart on Strike Finance's screen (world px): STRIKE, Strike Finance's own token, is laid over it (city/dexscreener.tsx). */
 export const SCREEN_CHART = { x: SCREEN.x + 2, y: SCREEN.y + 2, w: Math.round(SCREEN.w * 0.64) - 2, h: SCREEN.h - 19 };
 /** And the order book beside it: Strike's real BTC-USD book (the city lays its prices and sizes over it). */
 export const SCREEN_BOOK = { x: SCREEN.x + Math.round(SCREEN.w * 0.66), y: SCREEN.y + 2, w: SCREEN.w - Math.round(SCREEN.w * 0.66) - 2, h: SCREEN.h - 19 };
+/** The chart on each market tower's screen (world px): TradingView's live chart of that market is laid over it. */
+export const TOWER_CHARTS = TOWER_SCREENS.map((s) => ({ id: s.id, market: s.market, x: s.x + 2, y: s.y + 2, w: s.w - 4, h: s.h - 4 }));
 /** The news strip along the screen's foot (world px). */
 const STRIP = 15;
 
@@ -24,9 +26,10 @@ export interface EngineOpts {
   getNewsTape?: () => string;                          // the News Tower's LED band (the latest stories)
   getJobLabel?: (a: AgentView) => string | null;       // an agent at work in its trade's building: what it reads there
   getBook?: () => Book | null;                         // Strike's order book for the exchange's screen
+  getToken?: () => { price: number; change: number } | null;   // STRIKE, Strike Finance's token (its screen until its chart is in)
   getWeather: () => 0 | 1 | 2;   // calm · breezy · storm
   onSelect: (sel: Sel | null) => void;
-  onChart?: (market: string) => void;                  // the exchange's screen was pressed: open that market's chart
+  onChart?: (market: string) => void;                  // a screen was pressed: open its chart ("STRIKE" or a market)
   onScreen?: (x: number, y: number, zoom: number) => void;   // every frame: where SCREEN_CHART's corner is (CSS px)
   takeTrades?: (now: number) => Trade[];               // Strike's real trades due to drive in now (each one is a car)
   onTrade?: (t: Trade) => void;                        // a car was pressed: the trade it is
@@ -264,7 +267,10 @@ export class CityEngine {
       for (const x of this.cars) { const d = Math.hypot(x.x - w.x, x.y - w.y); if (d < cd) { cd = d; car = String(x.trade.id); } }
       if (car) return { kind: "car", id: car };
     }
-    if (this.o.onChart && w.x >= SCREEN.x && w.x < SCREEN.x + SCREEN.w && w.y >= SCREEN.y && w.y < SCREEN.y + SCREEN.h) return { kind: "screen", id: "BTC-USD" };
+    if (this.o.onChart && w.x >= SCREEN.x && w.x < SCREEN.x + SCREEN.w && w.y >= SCREEN.y && w.y < SCREEN.y + SCREEN.h) return { kind: "screen", id: "STRIKE" };
+    if (this.o.onChart) for (const s of TOWER_SCREENS) {
+      if (w.x >= s.x && w.x < s.x + s.w && w.y >= s.y && w.y < s.y + s.h) return { kind: "screen", id: s.market };
+    }
     for (const b of BUILDINGS) {
       const f = footprint(b);
       if (w.x >= f.x0 * TILE && w.x < f.x1 * TILE && w.y >= f.y0 * TILE && w.y < f.y1 * TILE) return { kind: "building", id: b.id };
@@ -311,6 +317,7 @@ export class CityEngine {
     const time = this.o.reducedMotion ? 0 : (now - this.t0) / 1000;
     this.drawFountain(g, time);
     this.drawScreen(g, time, dt);
+    this.drawTowerScreens(g);
     this.drawNewsTower(g, time);
     if (this.o.onScreen) { const p = this.toScreen(SCREEN_CHART.x, SCREEN_CHART.y); this.o.onScreen(p.x, p.y, this.zoom); }
     this.drawCars(g, dt);
@@ -382,25 +389,21 @@ export class CityEngine {
     g.fillStyle = "#020806"; g.fillRect(x, y, w, h);
     g.strokeStyle = "rgba(78,250,176,0.6)"; g.lineWidth = 1; g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
     const chartH = h - STRIP - 2;
-    const hist = this.o.getHistory("BTC-USD");
     g.fillStyle = "rgba(78,250,176,0.08)";
     for (let gx = x + 8; gx < x + w * 0.62; gx += 16) g.fillRect(gx, y + 3, 1, chartH - 4);
-    if (hist.length > 2) {
-      const lw = w * 0.62, min = Math.min(...hist), max = Math.max(...hist);
-      const up = hist[hist.length - 1] >= hist[0];
-      g.strokeStyle = up ? "#4efab0" : "#f43f5e";
-      g.lineWidth = 1.2;
-      g.beginPath();
-      hist.forEach((v, i) => {
-        const px = x + 4 + (i / (hist.length - 1)) * (lw - 8);
-        const py = y + chartH - 3 - ((v - min) / (max - min || 1)) * (chartH - 10);
-        if (i) g.lineTo(px, py); else g.moveTo(px, py);
-      });
-      g.stroke();
-      g.font = `700 7px "IBM Plex Mono", monospace`;
-      g.fillStyle = up ? "#4efab0" : "#f43f5e";
-      g.textBaseline = "top"; g.textAlign = "left";
-      g.fillText("BTC-USD · 48H", x + 6, y + 4);
+    // STRIKE, Strike Finance's token: its name and price until its chart (DEX Screener) is drawn over this part
+    const tok = this.o.getToken?.();
+    g.textAlign = "left"; g.textBaseline = "top";
+    g.font = `700 13px "IBM Plex Mono", monospace`;
+    g.fillStyle = "#4efab0";
+    g.fillText("STRIKE", x + 10, y + 10);
+    g.font = `600 7px "IBM Plex Mono", monospace`;
+    g.fillStyle = "rgba(199,253,228,0.7)";
+    g.fillText("STRIKE FINANCE · STRIKE/ADA · SUNDAESWAP", x + 10, y + 27);
+    if (tok) {
+      g.font = `700 11px "IBM Plex Mono", monospace`;
+      g.fillStyle = tok.change >= 0 ? "#4efab0" : "#f43f5e";
+      g.fillText(`$${tok.price.toFixed(4)}  ${tok.change >= 0 ? "▲" : "▼"}${Math.abs(tok.change).toFixed(2)}%`, x + 10, y + 40);
     }
     // order book (right third): Strike's real one, asks above and bids below, the best ones in the middle; each bar is
     // a level's size against the biggest shown, and eases to every new reading (store.refreshBook, every 2.5 s)
@@ -431,6 +434,31 @@ export class CityEngine {
     g.fillStyle = "#c7fde4";
     for (let k = -1; k < 3; k++) g.fillText(txt, x + 4 - off + k * tw, ny + STRIP / 2);
     g.restore();
+  }
+
+  /** Each market tower's screen: glass, a rim in the tower's colour, and the market's last 48 hours (Strike's prices)
+   *  until TradingView's live chart of it is drawn over it. */
+  private drawTowerScreens(g: CanvasRenderingContext2D) {
+    for (const s of TOWER_SCREENS) {
+      const b = BUILDINGS.find((x) => x.id === s.id)!;
+      g.fillStyle = "#020806"; g.fillRect(s.x, s.y, s.w, s.h);
+      g.strokeStyle = b.neon; g.globalAlpha = 0.75; g.lineWidth = 1; g.strokeRect(s.x + 0.5, s.y + 0.5, s.w - 1, s.h - 1);
+      g.globalAlpha = 1;
+      const hist = this.o.getHistory(s.market);
+      if (hist.length < 3) continue;
+      const min = Math.min(...hist), max = Math.max(...hist), up = hist[hist.length - 1] >= hist[0];
+      g.strokeStyle = up ? "#4efab0" : "#f43f5e"; g.lineWidth = 1.2;
+      g.beginPath();
+      hist.forEach((v, i) => {
+        const px = s.x + 6 + (i / (hist.length - 1)) * (s.w - 12);
+        const py = s.y + s.h - 8 - ((v - min) / (max - min || 1)) * (s.h - 26);
+        if (i) g.lineTo(px, py); else g.moveTo(px, py);
+      });
+      g.stroke();
+      g.font = `700 7px "IBM Plex Mono", monospace`;
+      g.fillStyle = b.neon; g.textAlign = "left"; g.textBaseline = "top";
+      g.fillText(`${s.market} · 48H`, s.x + 6, s.y + 5);
+    }
   }
 
   /** The News Tower's LED band over its entrance (the new art only; its name is drawn at the top). */
@@ -602,7 +630,8 @@ export class CityEngine {
     g.textAlign = "center";
     g.textBaseline = "middle";
     for (const b of BUILDINGS) {
-      const wy = b.kind === "exchange" ? Math.max((b.y + b.d) * TILE + 7, SCREEN.y + SCREEN.h + 9) : (b.y + b.d) * TILE + 7;
+      const ts = TOWER_SCREENS.find((x) => x.id === b.id);
+      const wy = b.kind === "exchange" ? Math.max((b.y + b.d) * TILE + 7, SCREEN.y + SCREEN.h + 9) : ts ? ts.y + ts.h + 9 : (b.y + b.d) * TILE + 7;
       const s = this.toScreen((b.x + b.w / 2) * TILE, wy);
       if (s.x < -200 || s.x > this.vw + 200 || s.y < -40 || s.y > this.vh + 60) continue;
       const big = b.kind === "exchange" || b.kind === "news";

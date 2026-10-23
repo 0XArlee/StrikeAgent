@@ -58,7 +58,9 @@ def run(p, name, viewport, mobile):
     page = ctx.new_page()
     errors = []
     # TradingView's own telemetry failing (some networks) is not the city's error
-    page.on("console", lambda m: errors.append(m.text) if m.type == "error" and "telemetry.tradingview.com" not in m.text else None)
+    # (nor DEX Screener's own analytics, which its chart's iframe sends and its own server refuses)
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" and "telemetry.tradingview.com" not in m.text and "dexscreener.com" not in m.text
+            and "dexscreener.com" not in (m.location or {}).get("url", "") else None)
     page.on("pageerror", lambda e: errors.append(str(e)))
 
     page.goto(f"{BASE}/#/city", wait_until="load")   # not "networkidle": TradingView keeps requests of its own open
