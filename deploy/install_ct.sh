@@ -39,6 +39,7 @@ install -m 644 "$APP/deploy/smartflow-fleet.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-fleet-mainnet.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-copypilot.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-copypilot-mainnet.service" /etc/systemd/system/
+install -m 644 "$APP/deploy/smartflow-telegram.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-backup.service" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-backup.timer" /etc/systemd/system/
 install -m 644 "$APP/deploy/smartflow-watchdog.service" /etc/systemd/system/
@@ -98,12 +99,13 @@ if [ -f /etc/smartflow/fleet-mainnet.env ]; then
 else
   systemctl disable --now smartflow-fleet-mainnet >/dev/null 2>&1 || true
 fi
-# the copy pilots: restarted where the operator switched them on, so they run this code and not what they started with
-for u in smartflow-copypilot smartflow-copypilot-mainnet; do
+# the copy pilots and the alerts bot: restarted where the operator switched them on, so they run this code and not
+# what they started with
+for u in smartflow-copypilot smartflow-copypilot-mainnet smartflow-telegram; do
   if systemctl is-enabled --quiet "$u"; then systemctl restart "$u"; fi
 done
 sleep 20
-systemctl --no-pager --lines=0 status $(for i in $PAPER; do echo "smartflow-paper@$i"; done) smartflow-api smartflow-push smartflow-push-qa smartflow-news smartflow-copy smartflow-fleet smartflow-fleet-mainnet smartflow-copypilot smartflow-copypilot-mainnet | grep -E "Loaded|Active|Main PID|Memory"
+systemctl --no-pager --lines=0 status $(for i in $PAPER; do echo "smartflow-paper@$i"; done) smartflow-api smartflow-push smartflow-push-qa smartflow-news smartflow-copy smartflow-fleet smartflow-fleet-mainnet smartflow-copypilot smartflow-copypilot-mainnet smartflow-telegram | grep -E "Loaded|Active|Main PID|Memory"
 echo "--- push"
 journalctl -u smartflow-push -n 3 --no-pager | cut -c1-200
 echo "--- news"
