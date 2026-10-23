@@ -32,7 +32,7 @@ Behind the city sits a complete product. You can create an agent that trades you
 wallet signature, choose whom to copy with a score that was tested on real copies, and let your agent run that copy
 for you under rules you sign.
 
-| Live | 1 | 46 | 389 | 181 | 0.20 % |
+| Live | 1 | 46 | 389 | 195 | 0.20 % |
 |:---:|:---:|:---:|:---:|:---:|:---:|
 | on Strike mainnet, with a staging copy on testnet | signature to start an agent on your own Strike account | Strike endpoints in use | real copies behind the score, re-tested hourly | automated tests, plus real-browser checks | builder fee per execution of the marketplace strategies only, approved by each user |
 
@@ -103,6 +103,15 @@ releases (Fed, CPI, jobs, PCE, GDP).
 
 <p align="center"><img src="docs/images/tower-newsroom.jpg" width="85%" alt="Inside the News Tower: the newsroom"></p>
 
+### Get the alerts that matter
+[@EdgeCraftStrikeCityBot](https://t.me/EdgeCraftStrikeCityBot) on Telegram watches Strike every minute. For everyone:
+a market moving hard, extreme funding, a large position close to liquidation, whales, crowded markets, new or halted
+markets, the security alarm, the big US releases, the Copy Arena's top traders; in the city each fresh one glows over its
+building (Liquidation Alley, the Funding Cafe, a market's tower...). Link your agent from the **Alerts** tab and it also
+looks after your own: every position's distance to liquidation in your account and sub-accounts, a trade your copy didn't
+take, a position the trader already left, the trader in trouble on Strike or Hyperliquid, your agent's trades and
+problems. Or `/watch` any Strike account, no wallet needed. → [docs/ALERTS.md](docs/ALERTS.md)
+
 ## Built on Strike
 
 Strike is the venue for everything here, not just a data source: **46 Strike endpoints in six areas**, on mainnet
@@ -139,10 +148,11 @@ version of the city and the strategy marketplace. Between 21 and 23 October, in 
 |---|---|
 | **Copy Arena** | A collector for the whole of Strike's copy trading (13 new endpoints) with history kept beyond Strike's 30 days, every trader linked by account with Strike's names and badges, traders walking the city with the people copying them, and the arena building with its leaderboard, podium and copiers' wall |
 | **Strike City score** | A study of every copy Strike has published, a score built from what actually predicted a good copy, and an hourly public re-test shown inside the arena |
-| **Copy with your agent** | Signed copy plans (one trader, or the agent choosing by your rules) carried out on Strike's own copy trading, in sub-accounts Strike creates and funds, with Strike enforcing the stop-loss; proven on testnet, then opened on mainnet |
+| **Copy with your agent** | Signed copy plans (one trader, or the agent choosing by your rules) carried out on Strike's own copy trading, in the owner's sub-accounts (a free one reused, a new one only when none is free), with Strike enforcing the stop-loss; proven on testnet, then opened on mainnet |
 | **News Tower** | Tiered sources, model scoring, one vote per story, reactions measured on Strike's mark price, a reading per market, and a six-floor building your agent walks through |
 | **Strike Finance, inside** | The exchange's building renamed and opened: Strike's own numbers live (daily volume as bars, open interest, longs and shorts, users, trades, TVL, revenue, funding against other exchanges, vaults) from Strike's statistics API (11 new endpoints), and STRIKE, Strike Finance's token, on its screen |
 | **A living city** | The map redrawn with licensed LimeZu art, a character creator, personalities and trades for every agent, TradingView's live chart on every market tower, every car a real Strike trade, all 33 of Strike's markets, every copyable trader, a Results hub (strategies, copy pilot, Strike's copy trading, ranking), production showing real accounts only, and Connect wallet right in the dock |
+| **Alerts** | A Telegram bot and an Alerts tab: Strike Finance's moments for everyone (moves, funding, the liquidation radar from Strike's live positions, whales, crowds, listings, security, US macro, the Copy Arena), shown over their buildings in the city; and, linked with a one-time code, each owner's agent, accounts, sub-accounts and copies (liquidation risk, trades a copy missed, positions the trader left, the trader in trouble) |
 | **Your money, clearly** | An account chart with a tab per account (result, all accounts, main account, each copy sub-account), so money moved into a copy never counts as a loss in the result; sub-accounts reused instead of piling up; strategy and copy independent; questions answered by topic |
 | **Security review** | Authentication, builder connect, copy plans end to end, host endpoints, headers, dependencies and secrets, reviewed before mainnet: no critical or high findings |
 | **Verification** | Staging on Strike testnet first for every change, and real-browser checks with accessibility audits on every surface, in two languages, at desktop and phone sizes |
@@ -169,7 +179,7 @@ Each area, in detail and with its evidence: [docs/HACKATHON.md](docs/HACKATHON.m
 - **Keys stay on the host.** The site only knows public keys; the host never listens to the internet.
 - **Everything is evidence.** Every signed action, Strike request, fill and balance change is written to hash-chained
   logs whose heads are anchored on the site.
-- **Quality.** 181 Python tests, plus real-browser checks with Playwright and axe-core on every surface of the city, in
+- **Quality.** 195 Python tests, plus real-browser checks with Playwright and axe-core on every surface of the city, in
   English and Spanish, on desktop and phone sizes.
 
 More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/SECURITY.md](docs/SECURITY.md) and
@@ -191,6 +201,7 @@ in [docs/ROADMAP.md](docs/ROADMAP.md).
 | [HACKATHON.md](docs/HACKATHON.md) | What was built during the hackathon, the judging criteria, a guide for judges |
 | [STRIKE_INTEGRATION.md](docs/STRIKE_INTEGRATION.md) | Every Strike endpoint we call, and why |
 | [CITY.md](docs/CITY.md) | The city: buildings, characters, live data, accessibility |
+| [ALERTS.md](docs/ALERTS.md) | The alerts: Strike Finance for everyone, your agent and copies for you, the bot |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components, services, data flows, design decisions |
 | [STRATEGY.md](docs/STRATEGY.md) | Smart Flow, the research, risk levels, the builder fee, the Strike City score |
 | [SECURITY.md](docs/SECURITY.md) | How users are protected, and the security review |

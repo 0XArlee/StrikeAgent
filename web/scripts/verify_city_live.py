@@ -73,7 +73,7 @@ def real_mode(p, name, viewport, mobile):
     axe(page, f"{name} live welcome")
     page.keyboard.press("Escape")
     page.wait_for_timeout(1500)
-    check(f"{name}: LIVE badge in the header", page.locator(".city-top .city-live").is_visible())
+    check(f"{name}: no LIVE badge in the header (the welcome says it)", page.locator(".city-top .city-live").count() == 0)
     # the city's figures, in Results' summary
     page.locator(".city-dock-btn", has_text="Results").click()
     page.wait_for_selector("#city-panel .rs-tile[data-k=online]")
@@ -204,7 +204,7 @@ def real_mode(p, name, viewport, mobile):
 def fixture_mode(p, name, viewport, mobile):
     browser = p.chromium.launch()
     ctx, page, errors = open_city(browser, FIX, viewport, mobile, welcome=False)
-    page.wait_for_selector(".city-dock-btn", timeout=20000)
+    page.wait_for_selector(".city-dock-btn:visible", timeout=20000)
     api = page.evaluate("() => fetch('/api/city').then(r => r.json())")
     pos = api["agents"][0]["positions"][0]
     page.locator(".city-dock-btn", has_text="Agents").click()

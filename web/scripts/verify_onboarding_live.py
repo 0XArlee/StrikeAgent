@@ -79,7 +79,7 @@ def run(p, tag, viewport, mobile):
     page.expose_function("pySign", py_sign)
     page.add_init_script(f"({WALLET_JS})('{w.addr_bytes.hex()}', {NET})")
     page.goto(f"{BASE}/#/city", wait_until="load")   # not "networkidle": the screens' charts keep connections of their own open
-    page.wait_for_selector(".city-dock-btn", timeout=30000)
+    page.wait_for_selector(".city-dock-btn:visible", timeout=30000)
     page.wait_for_timeout(1200)
     page.screenshot(path=str(OUT / f"o01_city_{tag}.png"))
     n0 = page.evaluate("() => fetch('/api/city').then(r => r.json()).then(d => d.agents.length)")
@@ -251,7 +251,7 @@ def run(p, tag, viewport, mobile):
     page.evaluate("() => { localStorage.removeItem('sf-link'); sessionStorage.removeItem('sf-link') }")
     page.goto(f"{BASE}/#/city", wait_until="load")   # not "networkidle": the screens' charts keep connections of their own open
     page.reload(wait_until="load")   # not "networkidle": the screens' charts keep connections of their own open
-    page.wait_for_selector(".city-dock-btn", timeout=30000)
+    page.wait_for_selector(".city-dock-btn:visible", timeout=30000)
     n_signed = len(signed)
     page.locator(".city-dock .city-dock-connect").click()   # no session: Connect wallet in My agent's place
     page.wait_for_selector("[role=dialog]")
@@ -375,7 +375,7 @@ def review_es(p):
     page.expose_function("pySign", lambda payload_hex: w.sign_data(bytes.fromhex(payload_hex)))
     page.add_init_script(f"({WALLET_JS})('{w.addr_bytes.hex()}', {NET})")
     page.goto(f"{BASE}/#/city", wait_until="load")   # not "networkidle": TradingView keeps requests of its own open
-    page.wait_for_selector(".city-dock-btn", timeout=30000)
+    page.wait_for_selector(".city-dock-btn:visible", timeout=30000)
     page.locator(".city-dock .city-dock-connect").click()   # no wallet yet: "Conectar" in the dock
     page.get_by_role("button", name="TestWallet").click()
     page.get_by_role("button", name="Continuar").click()                 # character -> personality

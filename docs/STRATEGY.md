@@ -12,8 +12,9 @@ Smart Flow is EdgeCraft's trend-breakout strategy, run by every agent in the cit
   and the chosen risk, with room left for slippage.
 - **Exit**: a 4 ATR chandelier stop that follows the price on the exchange, and a close back through the 10-candle
   channel.
-- **Smart Flow** holds one position per market. **Smart Flow Pyramid** takes the same signals and adds up to 3 entries
-  in the same direction while the trend goes on, each with its own stop and exit.
+- **Smart Flow** holds one position per market. **Smart Flow Pyramid** takes the same signals: the first opens an
+  entry, and each new signal in the same direction while the trend goes on adds another, up to 3 per market (never all
+  at once, and never twice on the same candle), each with its own stop and exit.
 
 It is a trend strategy: about one trade in three wins, and the winners are several times larger than the losers. It is
 judged over many trades, never over a handful.

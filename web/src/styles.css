@@ -108,6 +108,7 @@ main { padding-bottom: calc(var(--status-h) + 24px); }
   border-radius: var(--radius); border: 1px solid transparent; font: inherit; font-size: 13px; font-weight: 600;
   cursor: pointer; transition: background-color .15s, border-color .15s, color .15s, opacity .15s; white-space: nowrap; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-sm { height: 30px; padding: 0 12px; font-size: 12px; }
 .btn-primary { background: var(--primary); color: var(--primary-ink); }
 .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
 .btn-outline { background: transparent; color: var(--primary); border-color: var(--primary); }

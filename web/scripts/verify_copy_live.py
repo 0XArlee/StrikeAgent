@@ -77,7 +77,7 @@ with sync_playwright() as p:
     ctx.add_init_script(f"({WALLET_JS})('{w.addr_bytes.hex()}', {NET})")
     # ---- a throwaway agent, connected to Strike testnet
     page.goto(f"{BASE}/#/city", wait_until="load")   # not "networkidle": the screens' charts keep connections of their own open
-    page.wait_for_selector(".city-dock-btn", timeout=30000)
+    page.wait_for_selector(".city-dock-btn:visible", timeout=30000)
     page.locator(".city-dock .city-dock-connect").click()   # no wallet yet: the dock offers to connect one
     page.get_by_role("button", name="TestWallet").click()
     page.wait_for_selector("text=Create your character", timeout=15000)

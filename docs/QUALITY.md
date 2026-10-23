@@ -21,7 +21,7 @@ staging first and only reach production once a real run has been verified there.
 
 ## The test suite
 
-181 Python tests (`pytest`) cover the parts where a mistake would cost money or trust:
+195 Python tests (`pytest`) cover the parts where a mistake would cost money or trust:
 
 | Area | What is checked |
 |---|---|
@@ -31,6 +31,7 @@ staging first and only reach production once a real run has been verified there.
 | Users' agents | The encrypted key pool (keys never reused, signatures verifiable with the public key), the fleet, strategy health and the safety hold |
 | Copy trading | History kept beyond Strike's 30 days, position changes, who copies whom, the score, and the copy pilot carrying out signed plans against a fake Strike: sub-accounts reused or chosen (one copy at a time each), a new one only when none fits, the security alarm (hacks and exchanges going down) and the macro pause, each sub-account's equity over time |
 | News | Feeds, de-duplication by story, reactions measured on Strike, the per-market reading and the scoreboard |
+| Alerts | Every Strike alert and when it repeats, the liquidation levels escalating and resetting, a copy's missed trades and left positions confirmed on two checks and never for what the trader held before, the agent's journal read from the moment of linking, links, settings, mute, HTML escaping, and the bot token kept out of every error |
 | Audit trail | Hash-chained logs, tamper detection, the report that answers a user's claim |
 | Strategy registry | Every strategy in one place, and a new entry turning into working agents with no other change |
 | Efficiency | Shared candle downloads, one positions call per turn, no rebuild of the city when nothing changed |
@@ -63,13 +64,14 @@ connections of its own open.
 
 | Script | Checks | Environment |
 |---|---|---|
-| `verify_city_ui.py` | Every panel, button, tab and dialog of the city (every tab of Results included), text cut off or overflowing, the dock fitting from 320 to 412 px, Connect wallet in My agent's place without a session, axe on each surface: 276 checks per language | staging and production |
+| `verify_city_ui.py` | Every panel, button, tab and dialog of the city (every tab of Results and the Alerts tab included), text cut off or overflowing, the dock fitting from 320 to 412 px, Connect wallet in My agent's place without a session, axe on each surface: 282 checks per language | staging and production |
 | `verify_city.py` | The map paints and animates, panels, keyboard control, deep links, reduced motion, no horizontal overflow: 56 checks | both |
 | `verify_city_live.py` | What the city shows matches the API and Strike: agents and traders counted apart, every trader people can copy listed, real accounts and paper agents ranked apart: 46 checks | both |
 | `verify_city_cars.py` | The cars are Strike's real trades: the city reads `/price/v2/trades`, a car drives in, stops under the mouse, and pressing it shows its trade; the city's figures count what each site should: 12 checks | both |
 | `verify_city_hq.py` | Strike Finance and the screens: STRIKE on the building's screen, TradingView on every tower once in view, the building's card takes you inside, Strike's figures, the daily volume as bars and the open interest are there, every spot answers, axe on the hall, nothing overflows at 390 px, the deep link and the way out: 29 checks | both |
 | `verify_onboarding_live.py` | Creates an agent with a test wallet on Strike testnet, edits it, hides it, signs in again, switches wallets and deletes it, at 1440 and 390 px: over 100 checks | staging only |
 | `verify_copy_live.py` | A signed copy plan carried out on Strike testnet, then stopped | staging only |
+| `verify_telegram_link.py` | A test agent links the alerts bot: a one-time code, the bot's own client on the agents' host looks it up and claims it, a used code says nothing, the owner sees and removes the chat: 11 checks | staging only |
 
 The last full run before this submission (23 October 2026, on staging) passed everywhere: 276 of 276 checks in
 English and in Spanish, 56 of 56, 46 of 46, 12 of 12 for the cars, 29 of 29 for Strike Finance and the screens, 103 of

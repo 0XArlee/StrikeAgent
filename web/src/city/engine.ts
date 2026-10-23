@@ -28,6 +28,7 @@ export interface EngineOpts {
   getBook?: () => Book | null;                         // Strike's order book for the exchange's screen
   getToken?: () => { price: number; change: number } | null;   // STRIKE, Strike Finance's token (its screen until its chart is in)
   getWeather: () => 0 | 1 | 2;   // calm · breezy · storm
+  getAlerts?: () => Record<string, { level: "info" | "warn" | "alert"; text: string }>;   // Strike's fresh alerts, by building
   onSelect: (sel: Sel | null) => void;
   onChart?: (market: string) => void;                  // a screen was pressed: open its chart ("STRIKE" or a market)
   onScreen?: (x: number, y: number, zoom: number) => void;   // every frame: where SCREEN_CHART's corner is (CSS px)
@@ -625,6 +626,7 @@ export class CityEngine {
    *  tower adds its live price under its name. */
   private drawSigns(g: CanvasRenderingContext2D, t: number, night: number) {
     const prices = this.o.getPrices();
+    const alerts = this.o.getAlerts?.() ?? {};
     const font = `"IBM Plex Mono", monospace`;
     g.save();
     g.textAlign = "center";
@@ -649,6 +651,7 @@ export class CityEngine {
       g.fillText(b.label, s.x, s.y + 1);
       g.globalAlpha = 1;
       g.shadowBlur = 0;
+      let below = s.y + h / 2 + 4;   // where an alert goes: under the plate (and the price), never over a tower's screen
       if (b.market && prices[b.market]) {
         const p = prices[b.market];
         const ps = Math.max(11, Math.round(size * 0.78));
@@ -661,8 +664,35 @@ export class CityEngine {
         g.lineWidth = 1; g.stroke();
         g.fillStyle = p.change >= 0 ? "#4efab0" : "#f43f5e";
         g.fillText(txt, s.x, py + ph / 2 + 0.5);
+        below = py + ph + 4;
       }
+      const al = alerts[b.id];
+      if (al) this.drawAlert(g, al, s.x, below, size, t);
     }
+    g.restore();
+  }
+
+  /** One of Strike's fresh alerts over the building it concerns (a move over its tower, funding at the Funding Cafe,
+   *  a position near liquidation over Liquidation Alley...): a badge that breathes, red, amber or blue by how serious. */
+  private drawAlert(g: CanvasRenderingContext2D, al: { level: string; text: string }, x: number, top: number, size: number, t: number) {
+    const color = al.level === "alert" ? "#f43f5e" : al.level === "warn" ? "#fbbf24" : "#60a5fa";
+    const fs = Math.max(11, Math.round(size * 0.8));
+    g.font = `700 ${fs}px "IBM Plex Mono", monospace`;
+    const text = al.text.length > 34 ? al.text.slice(0, 33) + "…" : al.text;
+    const label = `▲ ${text}`;
+    const w = g.measureText(label).width + fs * 1.2, h = Math.round(fs * 1.7), y = top;
+    // never cut by the map's edge or under an open panel (Alt Row stands at the right edge)
+    x = Math.min(this.vw - this.inset.right - w / 2 - 60, Math.max(this.inset.left + w / 2 + 8, x));   // 60: the zoom buttons
+    const pulse = this.o.reducedMotion ? 1 : 0.55 + 0.45 * Math.sin(t * 4);
+    g.save();
+    g.shadowColor = color;
+    g.shadowBlur = 10 * pulse;
+    roundRect(g, x - w / 2, y, w, h, h / 2);
+    g.fillStyle = "rgba(8,6,8,0.92)"; g.fill();
+    g.lineWidth = 1.5; g.strokeStyle = color; g.globalAlpha = 0.5 + 0.5 * pulse; g.stroke();
+    g.globalAlpha = 1; g.shadowBlur = 0;
+    g.fillStyle = color;
+    g.fillText(label, x, y + h / 2 + 0.5);
     g.restore();
   }
 

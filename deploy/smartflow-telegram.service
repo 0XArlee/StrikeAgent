@@ -1,0 +1,29 @@
+# Smart Flow -> the alerts bot on Telegram (@EdgeCraftStrikeCityBot): Strike Finance for everyone, and each owner's agent,
+# accounts and copies (smartflow/alerts). Outbound only: long polling to Telegram, signed requests to both sites, Strike's
+# and Hyperliquid's public APIs. /etc/smartflow/telegram.env (root 0600): the token and both sites' URL and secret.
+[Unit]
+Description=Smart Flow alerts bot on Telegram
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=smartflow
+Group=smartflow
+WorkingDirectory=/opt/smartflow/app
+EnvironmentFile=/etc/smartflow/telegram.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/smartflow/app/.venv/bin/smartflow telegram --site testnet=env:TG_TESTNET --site mainnet=env:TG_MAINNET --runs runs
+Restart=always
+RestartSec=30
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/smartflow/app /var/lib/smartflow/copy /var/lib/smartflow/news
+ReadWritePaths=/var/lib/smartflow/alerts
+MemoryMax=200M
+
+[Install]
+WantedBy=multi-user.target

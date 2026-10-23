@@ -1,5 +1,5 @@
 # Smart Flow -> copy with your agent (the QA site, Strike testnet): each owner's copy plan, signed with their wallet on the site, carried out
-# on Strike's own copy trading from a sub-account of its own (Strike creates and funds it), with the owner's stop-loss.
+# on Strike's own copy trading in a sub-account of the owner's (a free one reused; a new one only when none is free), with the owner's stop-loss.
 # Pulls the plans (GET /api/internal/copyplans) and reports how they go (POST /api/internal/copystatus), HMAC like the
 # fleet. Signs with the owners' API-wallet keys (only read here, never written). Never touches the agents' trading.
 [Unit]

@@ -61,6 +61,7 @@ Python 3.13, standard library HTTP, one runtime dependency (`cryptography`). Lay
 | `smartflow-copy` | Copy Arena collector, outbound only, no keys |
 | `smartflow-copypilot` / `-mainnet` | Owners' signed copy plans on Strike testnet / mainnet |
 | `smartflow-news` | The News Tower's data, every 5 minutes |
+| `smartflow-telegram` | The alerts bot (both networks): Strike's public alerts every minute, each linked owner's agent, accounts and copies every two minutes; posts the public alerts to both sites ([ALERTS.md](ALERTS.md)) |
 | `smartflow-push` / `-qa` | Signed snapshots of the city, the news and the Copy Arena to production / staging; forwards suggestions to the operator |
 | `smartflow-watchdog.timer` | Every 5 min: a stopped service, a site without fresh data, an agent that stopped checking candles, a full disk |
 | `smartflow-health.timer` | Every hour: each strategy's paper agent against its backtest; can put a strategy on a safety hold |

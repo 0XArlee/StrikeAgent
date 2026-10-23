@@ -44,6 +44,10 @@ real copies. This page explains what protects them, and what a security review o
   its sub-account, and **Strike** enforces the stop-loss. A copy Strike refused or stopped halts the plan until the owner
   signs again.
 - A deleted agent has its Strike connection turned off and any copy it runs stopped.
+- **Alerts on Telegram** never hold a key and never act: they read Strike's and Hyperliquid's public data. An agent is
+  linked to a chat only with a one-time code made with its owner's session (ten minutes, one use); the owner sees the
+  linked chat and can remove it. The bot's token sits in a root-only file and never reaches a log; the bot opens no
+  port (long polling).
 
 ## Evidence: tamper-evident records
 

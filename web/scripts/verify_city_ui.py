@@ -19,10 +19,10 @@ OUT = Path(sys.argv[2]); OUT.mkdir(parents=True, exist_ok=True)
 BASE = (sys.argv[3] if len(sys.argv) > 3 else "https://edgecraft-strikecity.pages.dev").rstrip("/")
 LANG = sys.argv[4] if len(sys.argv) > 4 else "es"
 L = {
-    "es": {"enter": "Entrar en la ciudad", "panels": ["Agentes", "Resultados", "Actividad", "Mercados", "Guía"], "zoomIn": "Acercar", "zoomOut": "Alejar",
+    "es": {"enter": "Entrar en la ciudad", "panels": ["Agentes", "Resultados", "Actividad", "Mercados", "Alertas", "Guía"], "zoomIn": "Acercar", "zoomOut": "Alejar",
            "follow": "Seguir", "details": "Detalles", "close": "Cerrar", "map": "Mapa", "me": "Mi agente", "chart": "Ver el gráfico",
            "arena": "Entrar en la Copy Arena", "open": "Ver ficha", "back": "Volver a la lista", "exitArena": "Salir de la arena", "exitTower": "Salir de la torre"},
-    "en": {"enter": "Enter the city", "panels": ["Agents", "Results", "Feed", "Markets", "Guide"], "zoomIn": "Zoom in", "zoomOut": "Zoom out",
+    "en": {"enter": "Enter the city", "panels": ["Agents", "Results", "Feed", "Markets", "Alerts", "Guide"], "zoomIn": "Zoom in", "zoomOut": "Zoom out",
            "follow": "Follow", "details": "Details", "close": "Close", "map": "Map", "me": "My agent", "chart": "Open the chart",
            "arena": "Enter the Copy Arena", "open": "See profile", "back": "Back to the list", "exitArena": "Leave the arena", "exitTower": "Leave the tower"},
 }[LANG]
@@ -163,7 +163,8 @@ def run(p, tag, viewport, mobile):
         pg.locator(".city-top .lang button", has_text=other).click()
         pg.wait_for_timeout(500)
         txt = pg.locator(".city-dock").inner_text()
-        check(f"{tag} language: {other} switches the city", ("Map" in txt) if other == "EN" else ("Mapa" in txt), txt[:40].replace("\n", " "))
+        # Alerts / Alertas: in the dock at every width (phones leave out Map: each panel has its close button)
+        check(f"{tag} language: {other} switches the city", ("Alerts" in txt) if other == "EN" else ("Alertas" in txt), txt[:40].replace("\n", " "))
         pg.locator(".city-top .lang button", has_text=LANG.upper()).click()
         pg.wait_for_timeout(400)
     step(tag, "language", language)

@@ -6,7 +6,7 @@ import "@fontsource/ibm-plex-mono/700.css";
 import "./city.css";
 import type { Lang } from "../i18n";
 import { Icon, Mark } from "../components/ui";
-import { atWork, lastChecks, leadTick, leadView, mulberry, newsTrip, nowDecision, readingNews, stats, type AgentView, type FeedItem, type Prices, type Status } from "./agents";
+import { atWork, keepLeadSlots, lastChecks, leadTick, leadView, mulberry, newsTrip, nowDecision, readingNews, stats, type AgentView, type FeedItem, type Prices, type Status } from "./agents";
 import { CityEngine, SCREEN_BOOK, SCREEN_CHART, STATUS_COLOR, TOWER_CHARTS, drawIcon, type Sel } from "./engine";
 import type { Look } from "./look";
 import { FEET, FW, HEAD_TOP, frameAt, onSheet, sheetFor } from "./sprites";
@@ -22,6 +22,8 @@ import { TEMPER_COLOR } from "./persona";
 import { useNews } from "./news";
 import { positionsBySize, traderName, useCopy, type CopyState, type Trader } from "./copy";
 import { MarketLogo, MarketLogos } from "./MarketLogos";
+import { AlertsPanel } from "./AlertsPanel";
+import { byPlace, useAlerts, type CityAlert } from "./alerts";
 import { CopyChooser, Evidence, LeadCard, StrikeStats } from "./CopyView";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
 import { ART2, BUILDINGS, artReady } from "./world";
@@ -29,7 +31,7 @@ import { PortfolioView, livePosition } from "./portfolio";
 import { TradingViewChart, warmTradingView } from "./tradingview";
 import { STRIKE_CHART_URL, StrikeChart } from "./dexscreener";
 
-type Panel = "agents" | "ranks" | "feed" | "markets" | "guide";
+type Panel = "agents" | "ranks" | "feed" | "markets" | "guide" | "alerts";
 
 interface Props {
   lang: Lang; setLang: (l: Lang) => void; onConnect: () => void;
@@ -77,6 +79,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   const [details, setDetails] = useState(false);
   const [chart, setChart] = useState<string | null>(null);   // the market whose full chart is open
   const [trade, setTrade] = useState<Trade | null>(null);     // the real Strike trade a pressed car is
+  const [alertToast, setAlertToast] = useState<CityAlert | null>(null);   // a new Strike alert, for a few seconds
   useEffect(() => { if (!trade) return; const id = window.setTimeout(() => setTrade(null), 9000); return () => clearTimeout(id); }, [trade]);
   const [news, setNews] = useState<string | null>(null);     // the market whose news is open
   const [tower, setTower] = useState<null | "walking" | "inside">(null);   // the News Tower: your agent on its way, or inside
@@ -109,6 +112,11 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
   const towerLink = useRef(/[?&]tower\b/.test(location.hash));   // #/city?tower: straight into the News Tower
   const arenaLink = useRef(/[?&]arena\b/.test(location.hash));   // #/city?arena: straight into the Copy Arena
   const hqLink = useRef(/[?&]strike\b/.test(location.hash));     // #/city?strike: straight into Strike Finance
+  const alertsLink = useRef(/[?&]alerts\b/.test(location.hash)); // #/city?alerts (the bot's "Open the city"): the Alerts tab
+  // Strike's alerts (the alerts bot on the agents' host): each fresh one over the building it concerns, a new one in a toast
+  const alertsDoc = useAlerts();
+  const alertMap = useRef<Record<string, { level: "info" | "warn" | "alert"; text: string }>>({});
+  const seenAlerts = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -125,6 +133,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
       getPrices: () => store.prices, getHistory: (m) => store.hist[m] ?? [],
       getHeadline: () => headline.current, getNewsTape: () => newsTape.current,
       getJobLabel: (a) => jobLabel(a, newsRef.current, store.prices, langRef.current), getWeather: () => weather.current, reducedMotion: !!reduced, getBook: () => store.book,
+      getAlerts: () => alertMap.current,
       getToken: () => store.token,
       onSelect: (s) => { setSel(s); setDetails(false); if (s && isSmall()) setPanel(null); },
       onChart: (m) => setChart(m),
@@ -161,6 +170,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
     if (!copyDoc || typeof copyDoc !== "object") return;
     const prev = new Map(leads.current.map((a) => [a.id, a]));
     leads.current = copyDoc.traders.filter((t) => t.walks).map((t) => leadView(t, prev.get(`lead:${t.id}`), leadR));
+    keepLeadSlots(new Set(leads.current.map((a) => a.id)));
     const id = leadLink.current;
     if (id && engine.current && leads.current.some((a) => a.id === `lead:${id}`)) {
       leadLink.current = null;
@@ -218,6 +228,31 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
     if (s && isSmall()) setPanel(null);
   };
   const togglePanel = (p: Panel | null) => { setMe(false); setPanel((cur) => (cur === p ? null : p)); };
+  useEffect(() => {
+    const doc = alertsDoc;
+    if (!doc) return;
+    const map = () => {
+      const now = Date.now();
+      alertMap.current = Object.fromEntries(Object.entries(byPlace(doc.alerts, now)).map(([k, a]) => [k, { level: a.level, text: a.title[langRef.current] }]));
+    };
+    map();
+    const id = window.setInterval(map, 60_000);
+    // a new alert of the last ten minutes shows in a toast; the ones already there when the city opens do not
+    const fresh = doc.alerts.filter((a) => Date.now() - a.t < 10 * 60_000 && !seenAlerts.current?.has(a.id));
+    if (seenAlerts.current && fresh.length) setAlertToast(fresh[0]);
+    seenAlerts.current = new Set([...(seenAlerts.current ?? []), ...doc.alerts.map((a) => a.id)]);
+    return () => window.clearInterval(id);
+  }, [alertsDoc, lang]);
+  useEffect(() => {
+    if (!alertToast) return;
+    const id = window.setTimeout(() => setAlertToast(null), 9000);
+    return () => window.clearTimeout(id);
+  }, [alertToast]);
+  useEffect(() => {
+    if (!ready || !alertsLink.current) return;
+    alertsLink.current = false;
+    setPanel("alerts");
+  }, [ready]);
   // without a session "My agent" starts the wallet sign-in; with one it opens the dashboard over the map
   const openMe = () => {
     if (!myAgent) { onConnect(); return; }
@@ -391,7 +426,6 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
         <a className="city-brand" href="#top" aria-label={`${T.back}: ${T.title}`}>
           <Mark size={32} /><span className="city-word"><span className="cw-pre">EdgeCraft<span className="cw-dash">-</span></span>StrikeCity</span>
         </a>
-        {store.live && <span className="city-live" title={T.liveLong}><span className="city-live-dot" aria-hidden="true" /><span className="city-live-txt">{T.live}</span><span className="sr-only">: {T.liveLong}</span></span>}
         {/* the city's figures (online, in a trade, the last 24 hours) live in Results, the map keeps the room */}
         <ul className="city-tickers" aria-label={T.markets.title}>
           {["BTC-USD", "ETH-USD", "SOL-USD"].map((m) => {
@@ -466,6 +500,8 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
               {panel === "feed" && <FeedPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "agent", id })} />}
               {panel === "markets" && <MarketsPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "building", id })} />}
               {panel === "guide" && <GuidePanel T={T} n={totals.total} copyPilot={copyPilot} />}
+              {panel === "alerts" && <AlertsPanel T={T} lang={lang} doc={alertsDoc} owner={owner?.token ? { token: owner.token } : null}
+                                                  onConnect={onConnect} onPlace={(place) => choose({ kind: "building", id: place })} />}
             </div>
           </section>
         )}
@@ -544,6 +580,14 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
           </div>
         )}
 
+        {alertToast && !trade && (   // a new Strike alert: a press shows it among the others
+          <div className={`city-toast city-alert-toast ${alertToast.level}`} role="status">
+            <p><strong>{T.alerts.toast} · {T.alerts.kinds[alertToast.kind] ?? alertToast.kind}</strong><br />{alertToast.title[lang]}</p>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setAlertToast(null); setMe(false); setPanel("alerts"); }}>{T.alerts.see}</button>
+            <button type="button" className="icon-btn" aria-label={T.card.close} onClick={() => setAlertToast(null)}><Icon.close /></button>
+          </div>
+        )}
+
         {hq === "walking" && mine && (
           <div className="city-toast" role="status">
             <p>{T.hq.entering(mine.name)}</p>
@@ -583,11 +627,12 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
       </div>
 
       <nav className="city-dock" aria-label={T.title}>
-        <DockBtn label={T.nav.map} active={!panel && !me} onClick={() => { setPanel(null); setMe(false); }} icon={<Ico.map />} />
+        <DockBtn label={T.nav.map} active={!panel && !me} onClick={() => { setPanel(null); setMe(false); }} icon={<Ico.map />} className="city-dock-map" />
         <DockBtn label={T.nav.agents} active={panel === "agents"} onClick={() => togglePanel("agents")} icon={<Ico.users />} controls />
         <DockBtn label={T.nav.ranks} active={panel === "ranks"} onClick={() => togglePanel("ranks")} icon={<Ico.trophy />} controls />
         <DockBtn label={T.nav.feed} active={panel === "feed"} onClick={() => togglePanel("feed")} icon={<Ico.pulse />} controls />
         <DockBtn label={T.nav.markets} active={panel === "markets"} onClick={() => togglePanel("markets")} icon={<Ico.bars />} controls />
+        <DockBtn label={T.nav.alerts} active={panel === "alerts"} onClick={() => togglePanel("alerts")} icon={<Ico.bell />} controls />
         <DockBtn label={T.nav.guide} active={panel === "guide"} onClick={() => togglePanel("guide")} icon={<Ico.help />} controls />
         {myAgent ? <DockBtn label={T.nav.me} active={me} onClick={openMe} icon={<Ico.user />} /> : (
           // no wallet yet: this place is where you connect one (My agent comes back once you have)
@@ -646,13 +691,14 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
 }
 
 function panelTitle(p: Panel, T: CityText) {
-  return { agents: T.agents.title, ranks: T.results.title, feed: T.feed.title, markets: T.markets.title, guide: T.guide.title }[p];
+  return { agents: T.agents.title, ranks: T.results.title, feed: T.feed.title, markets: T.markets.title, guide: T.guide.title, alerts: T.alerts.title }[p];
 }
 
 // ---------------------------------------------------------------- pieces
-function DockBtn({ label, active, onClick, icon, controls }: { label: string; active: boolean; onClick: () => void; icon: ReactNode; controls?: boolean }) {
+function DockBtn({ label, active, onClick, icon, controls, className }: { label: string; active: boolean; onClick: () => void; icon: ReactNode;
+  controls?: boolean; className?: string }) {
   return (
-    <button type="button" className="city-dock-btn" aria-pressed={active} aria-controls={controls && active ? "city-panel" : undefined} onClick={onClick}>
+    <button type="button" className={`city-dock-btn${className ? ` ${className}` : ""}`} aria-pressed={active} aria-controls={controls && active ? "city-panel" : undefined} onClick={onClick}>
       {icon}<span>{label}</span>
     </button>
   );
@@ -1445,6 +1491,7 @@ const Ico = {
   bars: () => <svg {...SI}><path d="M6 4v16M6 8h-2v7h2M12 3v18M12 6h-2v9h2M18 6v14M18 10h-2v6h2" /></svg>,
   user: () => <svg {...SI}><circle cx="12" cy="8" r="4" /><path d="M4 20.5c1-4 4-6.2 8-6.2s7 2.2 8 6.2" /></svg>,
   wallet: () => <svg {...SI}><path d="M4 7h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1z" /><path d="M4 7l12-3.5V7M16.5 13.5h.01" /></svg>,
+  bell: () => <svg {...SI}><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 0 0 4 0" /></svg>,
   help: () => <svg {...SI}><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.6 2.6 0 1 1 3.6 2.4c-.7.3-1.1.9-1.1 1.6v.5M12 17h.01" /></svg>,
   target: () => <svg {...SI} width={16} height={16}><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>,
 };

@@ -15,6 +15,28 @@
 .city-tickers .tk { font-weight: 700; color: var(--text-muted); font-size: 12px; }
 .city-top-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 .city-tickers + .city-top-actions { margin-left: 4px; }
+/* the Alerts tab (city/AlertsPanel.tsx) */
+.al { display: grid; gap: 14px; min-width: 0; }
+.al-lead { margin: 0; color: var(--text-muted); font-size: 13px; }
+.al-card { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
+.al-card h3, .al-feed-title { margin: 0; font-size: 15px; }
+.al-card p { margin: 0; }
+.al-strike { border-left: 3px solid #4efab0; }
+.al-mine { border-left: 3px solid #60a5fa; }
+.al-linked { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--radius); background: rgba(78, 250, 176, .08); }
+.al-ok { color: var(--primary); font-weight: 700; }
+.al-hint a { color: var(--primary); }
+.al-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.al-item { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--border); border-left: 3px solid #60a5fa; border-radius: var(--radius); }
+.al-item.warn { border-left-color: #fbbf24; } .al-item.alert { border-left-color: #f43f5e; }
+.al-item p { margin: 0; overflow-wrap: anywhere; }
+.al-item .btn { justify-self: start; }
+.al-item-head { display: flex; justify-content: space-between; gap: 8px; }
+.al-kind { font: 700 11px/1.2 var(--mono); letter-spacing: .04em; color: var(--text-muted); }
+.al-title { font-weight: 600; }
+.city-alert-toast { border-left: 3px solid #60a5fa; }
+.city-alert-toast.warn { border-left-color: #fbbf24; } .city-alert-toast.alert { border-left-color: #f43f5e; }
+
 /* market logos (city/MarketLogos.tsx): two overlapping, then "+n" */
 .mk-logos { display: inline-flex; align-items: center; gap: 6px; flex: none; }
 .mk-stack { display: inline-flex; }
@@ -211,8 +233,6 @@
   .city-word { font-size: 15px; line-height: 1; display: grid; gap: 3px; }
   .cw-pre { font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--text-muted); }
   .cw-dash { display: none; }
-  .city-live { padding: 6px; }
-  .city-live-txt { display: none; }
   .city-top .hide-sm { display: none; }
   .city-top-actions { margin-left: auto; gap: 6px; }
   .city-news-btn { width: 34px; padding: 0; justify-content: center; }
@@ -236,15 +256,13 @@
   .city-dialog-inner { padding: 20px 16px calc(16px + env(safe-area-inset-bottom)); }
   .city-statgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+/* phones: nine buttons would not fit; the map needs none (each panel has its close button, My agent its way back) */
+@media (max-width: 560px) { .city-dock-map { display: none !important; } }
 @media (max-width: 400px) { .city-dock-btn { font-size: 10px; padding: 4px 2px; } }
 @media (max-width: 350px) { .city-dock { padding-left: 2px; padding-right: 2px; } .city-dock-btn { font-size: 9px; padding: 4px 1px; } }
-@media (max-width: 370px) { .city-top .city-live { display: none; } }
 @media (prefers-reduced-motion: reduce) { .city-panel, .city-card, .city-dialog, .city-live-dot, .city-event-dot { animation: none; } }
 
-/* live mode: real agents from /api/city */
-.city-live { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .06em;
-  text-transform: uppercase; color: var(--primary); background: var(--primary-10); border: 1px solid var(--primary-30);
-  border-radius: 9999px; padding: 2px 9px; cursor: help; }
+/* the pulse beside live figures (the welcome's note, the News Tower) */
 .city-live-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--primary); animation: live-pulse 1.6s ease-out infinite; }
 @keyframes live-pulse { 0% { box-shadow: 0 0 0 0 rgba(78, 250, 176, .55); } 100% { box-shadow: 0 0 0 7px rgba(78, 250, 176, 0); } }
 .alert-live { background: var(--primary-10); color: var(--text); border: 1px solid var(--primary-30); }
@@ -541,7 +559,6 @@
   .city-top:has(.city-event) .nb-read { display: none; }
 }
 @media (max-width: 1100px) {
-  .city-live-txt { display: none; } .city-live { padding: 6px; }
   .city-news-btn .nb-read { display: none; }
 }
 @media (min-width: 761px) and (max-width: 940px) {

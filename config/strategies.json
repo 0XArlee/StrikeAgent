@@ -146,12 +146,12 @@
    },
    "texts": {
     "en": {
-     "tagline": "The same signals, adding up to 3 entries in the same direction while the trend goes on, each with its own stop. More trades and more return, with deeper drawdowns.",
-     "summary": "The Smart Flow signals, adding up to 3 entries in the same direction while the trend goes on.",
+     "tagline": "The same signals: each new one in the same direction adds an entry while the trend goes on, up to 3 per market, each with its own stop. More trades and more return, with deeper drawdowns.",
+     "summary": "The Smart Flow signals: each new one in the same direction adds an entry, up to 3 per market, never all at once.",
      "details": [
       [
        "How it trades",
-       "The same signals as Smart Flow, adding up to 3 entries in the same direction while the trend goes on, each with its own stop and its own exit. More trades and more return, with deeper drawdowns."
+       "The same signals as Smart Flow. A signal opens the first entry; each new signal in the same direction while the trend goes on adds another, up to 3 per market (never all at once), each with its own stop and its own exit. More trades and more return, with deeper drawdowns."
       ],
       [
        "Entry",
@@ -173,12 +173,12 @@
      "risk_note": "it stacks up to 3 entries per market, so its drawdowns are deeper"
     },
     "es": {
-     "tagline": "Las mismas señales, pero añade hasta 3 entradas en la misma dirección mientras sigue la tendencia, cada una con su stop. Más operaciones y más rentabilidad, con caídas más profundas.",
-     "summary": "Las señales de Smart Flow, sumando hasta 3 entradas en la misma dirección mientras sigue la tendencia.",
+     "tagline": "Las mismas señales: cada señal nueva en la misma dirección añade una entrada mientras sigue la tendencia, hasta 3 por mercado, cada una con su stop. Más operaciones y más rentabilidad, con caídas más profundas.",
+     "summary": "Las señales de Smart Flow: cada señal nueva en la misma dirección añade una entrada, hasta 3 por mercado, nunca todas a la vez.",
      "details": [
       [
        "Cómo opera",
-       "Las mismas señales que Smart Flow, sumando hasta 3 entradas en la misma dirección mientras sigue la tendencia, cada una con su stop y su salida. Más operaciones y más rentabilidad, con caídas más profundas."
+       "Las mismas señales que Smart Flow. Una señal abre la primera entrada; cada señal nueva en la misma dirección mientras sigue la tendencia añade otra, hasta 3 por mercado (nunca todas a la vez), cada una con su stop y su salida. Más operaciones y más rentabilidad, con caídas más profundas."
       ],
       [
        "Entrada",

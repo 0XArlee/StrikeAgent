@@ -252,6 +252,35 @@ def cmd_copypilot(a) -> int:
     return 0
 
 
+def cmd_telegram(a) -> int:
+    """The alerts bot on Telegram: Strike Finance for everyone, and each owner's agent, accounts and copies."""
+    from .alerts.bot import AlertsBot, Site, env_file
+    from .alerts.telegram import Telegram
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    sites = {}
+    for spec in a.site:
+        env, _, path = spec.partition("=")
+        if path.startswith("env:"):   # from this process's environment: <PREFIX>_URL and <PREFIX>_SECRET
+            url, secret = os.environ.get(f"{path[4:]}_URL", ""), os.environ.get(f"{path[4:]}_SECRET", "")
+        else:
+            kv = env_file(path)
+            url, secret = kv.get("SMARTFLOW_FLEET_URL", ""), kv.get("SMARTFLOW_FLEET_SECRET", "")
+        if env not in ("testnet", "mainnet") or len(secret) < 32 or not url.startswith("https://"):
+            print(f"--site {env}=...: needs SMARTFLOW_FLEET_URL and SMARTFLOW_FLEET_SECRET in {path}")
+            return 2
+        sites[env] = Site(env, url, secret)
+    log = lambda m: print(f"{dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M:%S} {m}", flush=True)
+    bot = AlertsBot(Telegram(token or ("0:dry-run" if a.once else "")), sites, Path(a.dir), Path(a.runs), Path(a.copy_dir), Path(a.news), log=log)
+    if a.once:   # one minute of Strike's alerts, printed, nothing sent
+        new = bot.watch.tick()
+        print(json.dumps({"alerts": new, "snapshot": {k: v for k, v in bot.watch.snapshot().items() if k != "near"}}, default=str)[:4000])
+        return 0
+    me = bot.tg.me()
+    log(f"telegram: @{me.get('username')} ready, {len(bot.state['chats'])} chats, sites: {', '.join(sites)}")
+    bot.run(a.every)
+    return 0
+
+
 def cmd_fleet(a) -> int:
     from .live.fleet import Fleet, Site, read_account
     from .live.keypool import KeyPool
@@ -477,6 +506,17 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--once", action="store_true", help="one pass, print it and exit")
     s.add_argument("--allow-mainnet", action="store_true")
     s.set_defaults(fn=cmd_copypilot)
+
+    s = sub.add_parser("telegram", help="the alerts bot on Telegram (token in $TELEGRAM_BOT_TOKEN)")
+    s.add_argument("--site", action="append", default=[], metavar="ENV=FILE",
+                   help="a site: ENV=<env file with SMARTFLOW_FLEET_URL/SECRET> or ENV=env:<PREFIX> for $<PREFIX>_URL/_SECRET (repeat)")
+    s.add_argument("--dir", default="/var/lib/smartflow/alerts", help="the bot's state")
+    s.add_argument("--runs", default="runs", help="the agents' journals")
+    s.add_argument("--copy-dir", default="/var/lib/smartflow/copy", help="the copy collector's database and the pilots' state")
+    s.add_argument("--news", default="/var/lib/smartflow/news/news.json", help="the News Tower's document")
+    s.add_argument("--every", type=float, default=60.0)
+    s.add_argument("--once", action="store_true", help="one minute of Strike's alerts, printed (nothing sent)")
+    s.set_defaults(fn=cmd_telegram)
 
     s = sub.add_parser("fleet", help="run the users' agents connected with the builder code (keys stay on this host)")
     s.add_argument("--env", choices=["testnet", "mainnet"], default="testnet")

@@ -58,8 +58,9 @@ which is what someone about to copy needs to know. The Copy Arena puts that in f
 - **Signed copy plans.** Choose one trader, or let your agent choose by your rules (a minimum score, the platforms you
   accept, how often it reviews its choice, how many changes a week). Add the amount, a stop-loss, the leverage, markets
   to avoid and an end date. The plan is signed with your wallet, in plain words.
-- **Carried out on Strike's own copy trading.** The copy pilot asks Strike to start a managed copy: Strike creates a
-  sub-account for it, funds it from your account, copies the trader and enforces the stop-loss on its side. Limits can
+- **Carried out on Strike's own copy trading.** The copy pilot asks Strike to start the copy in one of your
+  sub-accounts that copies nobody (or the one you chose); only when none is free does Strike create a new one, funded
+  from your account. Strike copies the trader and enforces the stop-loss on its side. Limits can
   be changed or the copy stopped; every request is idempotent; a copy Strike stopped or refused halts the plan until you
   sign again; deleting an agent turns off its Strike connection and stops its copy.
 - **Proven before it was opened.** The first real copy ran on Strike testnet (Strike created and funded the
@@ -127,6 +128,9 @@ which is what someone about to copy needs to know. The Copy Arena puts that in f
 - **A Results hub.** One button with tabs: a summary (with the city's figures, which leave the top bar to the map), the
   marketplace strategies (live results next to each backtest), the copy pilot (which agent copies whom), Strike's copy
   trading, and the ranking.
+- **Traders you can tell apart.** The 24 traders walking the city (the 14 best on Strike, the 6 best on Hyperliquid,
+  then the most copied) each keep their own spot in front of a building, in rows, so they, their copiers and their
+  positions no longer pile up into one crowd at a door.
 - **Logos, as Strike shows them.** Every agent shows the official logos of the markets it analyses and every trader
   those of what it holds (two, then "+n"), from Strike's own images; every Cardano wallet shows its official icon.
 - **Questions by topic.** The landing's questions grouped in five topics, each one a short list of answers that open in
@@ -135,7 +139,25 @@ which is what someone about to copy needs to know. The Copy Arena puts that in f
   cut off at the edge of the map, Connect wallet right in the dock (My agent once a wallet is in), a complete Guide, and
   a Suggest button that takes feedback with a screenshot.
 
-### 8. A security review before mainnet
+### 8. Alerts that matter, on Telegram and in the city
+
+- **Strike Finance, for everyone.** [@EdgeCraftStrikeCityBot](https://t.me/EdgeCraftStrikeCityBot) reads Strike every
+  minute: a market moving more than it usually does in an hour, extreme funding, a liquidation radar built on Strike's
+  own list of live positions (large ones within 3 % of liquidation), whales, crowded markets, new or halted markets, the
+  News Tower's security alarm, 30 minutes before the big US releases, the Copy Arena's top traders. In English and
+  Spanish, each said once.
+- **Shown where it happens.** In the city each fresh alert glows over its building: a move over its tower, funding at
+  the Funding Cafe, the radar over Liquidation Alley, security and macro at the News Tower. A new one appears as a
+  toast; the Alerts tab lists them, each a press away from its building.
+- **Your own, privately.** Linked from the Alerts tab with a one-time code: every position's distance to liquidation in
+  your account and sub-accounts (15 %, 7 %, 3 %), margin used, a trade your copy didn't take, a position the trader
+  already left, the trader in trouble on Strike or Hyperliquid, your agent's trades and results and anything that goes
+  wrong, your copy pilot. `/watch` does the account and copy checks for any Strike account, no wallet needed.
+- **Built to be trusted.** Urgent warnings break the mute; everything else follows the person's settings. The bot runs
+  on the agents' host with no open port, the token never reaches a log, and linking is tested end to end on staging
+  ([ALERTS.md](ALERTS.md)).
+
+### 9. A security review before mainnet
 
 The copy feature moves real money, so before opening it we reviewed authentication and signatures, builder connect,
 copy plans end to end, the host's endpoints, uploads, security headers, dependencies and the repository's history.
@@ -143,15 +165,15 @@ Result: no critical or high findings, 0 known vulnerabilities in production depe
 history, and the server's signature checks cross-checked against independent references. The review and its hardening
 backlog are published in [SECURITY.md](SECURITY.md#security-review-22-october-2026).
 
-### 9. Verification, every step of the way
+### 10. Verification, every step of the way
 
 - Every change went to staging on Strike testnet first, was checked there in a real browser, then went to production
   and was checked again.
-- `verify_city_ui.py` now walks every panel, button and dialog of the city in both languages (248 checks each), and new
+- `verify_city_ui.py` now walks every panel, button and dialog of the city in both languages (282 checks each), and new
   checks cover the cars, the Strike Finance hall and the screens, the separation of real and paper results, and every bug reported during testing, at desktop and phone
   sizes, with axe-core accessibility audits on every surface ([QUALITY.md](QUALITY.md)).
 
-### 10. Clean code and documentation
+### 11. Clean code and documentation
 
 - One checked bech32 decoder shared by the page and the server, typed agent voice moments, and no unused code.
 - Documentation in English: this folder, the README with screenshots, every Strike call explained, diagrams generated
@@ -179,7 +201,7 @@ copy it starts brings money and copiers into Strike's own copy trading, and ever
 Strike account working with an agent from the first minute.
 
 **Technical execution.** Live on mainnet, with a staging copy on testnet. One engine for backtest and live, keys that
-never leave the host, wallet signatures verified server-side, hash-chained audit logs anchored off the host, 181
+never leave the host, wallet signatures verified server-side, hash-chained audit logs anchored off the host, 195
 tests, and real-browser checks with accessibility audits on every surface in two languages
 ([QUALITY.md](QUALITY.md)).
 
@@ -198,6 +220,8 @@ around everything that trades on Strike ([ROADMAP.md](ROADMAP.md)).
 4. Click the **News Tower** and go inside; try the lift.
 5. Open **Markets** for all of Strike's markets, and the
    [strategy catalogue](https://edgecraft-strikecity.pages.dev/#strategies) on the landing page.
+6. Open **Alerts**, then the bot on Telegram: `/strike` for Strike right now, `/watch` and any Strike account to see
+   its copies checked.
 
 **With a Cardano wallet**, create an agent on your own Strike account from **Connect wallet**. On staging
 (https://qa.edgecraft-strikecity.pages.dev) the same flow runs on Strike testnet with a Preprod wallet.
@@ -218,6 +242,8 @@ around everything that trades on Strike ([ROADMAP.md](ROADMAP.md)).
 | An agent's loop and its risk engine | `src/smartflow/agent/runner.py`, `src/smartflow/agent/risk.py` |
 | The Strike client | `src/smartflow/strike/client.py` |
 | The news reading | `src/smartflow/news/score.py` |
+| Strike's public alerts, and one person's accounts and copies | `src/smartflow/alerts/strike.py`, `src/smartflow/alerts/watch.py` |
+| The Telegram bot | `src/smartflow/alerts/bot.py` |
 
 ## Submission checklist
 

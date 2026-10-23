@@ -95,14 +95,16 @@ Map · Agents (every agent with the logos of its markets, and every trader peopl
 what it holds: the ones walking the city first) · Results (tabs: a summary with the city's figures, the marketplace strategies with their live results next to each backtest, the copy pilot, Strike's copy
 trading, and the ranking with the best traders to copy) · Feed (what just happened) · Markets (every market
 Strike lists: the agents' markets first, then stocks, indices, commodities and more crypto, with price, 24-hour change,
-funding, volume and maximum leverage) · Guide (what everything means, a legend, the roadmap) · My agent · Suggest
+funding, volume and maximum leverage) · Alerts (the Telegram bot, linking your agent to it, and Strike's latest alerts,
+each a press away from its building) · Guide (what everything means, a legend, the roadmap) · My agent · Suggest. On
+phones the dock leaves Map out: each panel has its close button.
 (feedback with an optional screenshot). Until a wallet is connected, My agent's place shows **Connect wallet**; it
 turns back into My agent once one is in, and into Connect wallet again if it leaves.
 
 ## Accessibility and quality
 
 - Every surface is checked against WCAG 2.2 AA with axe-core in a real browser, in English and Spanish, at desktop and
-  phone widths (`web/scripts/verify_city_ui.py` walks every panel and button: 276 checks per language).
+  phone widths (`web/scripts/verify_city_ui.py` walks every panel and button: 282 checks per language).
 - The map has a text description, keyboard control (arrows, + and −, Escape) and a "follow" mode; dialogs trap focus
   and restore it; status updates are announced.
 - Reduced motion is honoured: characters jump to where they are going and nothing pulses.

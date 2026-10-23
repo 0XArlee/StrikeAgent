@@ -404,6 +404,46 @@ function leadPlace(t: Trader): string {
   return p ? MARKET_TOWER[p.market] ?? "exchange" : "arena";
 }
 
+/** Leads gather in front of a building in rows two tiles apart, four tiles between neighbours and the rows staggered,
+ *  so no two of them, their copiers or their position labels stand on one another (eleven at Strike Finance's door
+ *  used to look like a handful). A lead keeps its slot while it stays; the slots nearest the door fill first. */
+const LEAD_SLOTS: [number, number][] = [];
+for (let row = 0; row < 4; row++) {
+  for (let k = 0; k < 8; k++) LEAD_SLOTS.push([(k % 2 ? 1 : -1) * (Math.floor(k / 2) * 4 + 2 + (row % 2 ? 2 : 0)), 1 + row * 2]);
+}
+const leadSlots = new Map<string, Map<string, number>>();   // place -> lead id -> its slot
+
+/** The tile a lead stands on at a place, or null when every slot there is taken or out of the walkable ground. */
+function leadTile(id: string, place: string): { x: number; y: number } | null {
+  for (const [p, m] of leadSlots) if (p !== place) m.delete(id);   // it left its old place: the slot is free again
+  const b = building(place);
+  let m = leadSlots.get(place);
+  if (!m) leadSlots.set(place, (m = new Map()));
+  let i = m.get(id);
+  if (i === undefined) {
+    const used = new Set(m.values());
+    for (let j = 0; j < LEAD_SLOTS.length && i === undefined; j++) {
+      const { tx, ty } = inside(b.door.x + LEAD_SLOTS[j][0], b.door.y + LEAD_SLOTS[j][1]);
+      if (!used.has(j) && canWalk(tx, ty)) i = j;
+    }
+    if (i === undefined) return null;
+    m.set(id, i);
+  }
+  const { tx, ty } = inside(b.door.x + LEAD_SLOTS[i][0], b.door.y + LEAD_SLOTS[i][1]);
+  return { x: tx, y: ty };
+}
+
+/** The leads that no longer walk the city give their slots back. */
+export function keepLeadSlots(ids: Set<string>): void {
+  for (const m of leadSlots.values()) for (const id of [...m.keys()]) if (!ids.has(id)) m.delete(id);
+}
+
+/** Sends a lead to its own slot at a place (a random spot by the door when none is left). */
+function leadGo(a: AgentView, place: string, R: () => number): void {
+  const t = leadTile(a.id, place);
+  if (t) goToTile(a, t, place); else goTo(a, place, R);
+}
+
 /** A lead as a walker of the city (its id "lead:" + its account). Keeps its place and path when it already walks; a
  *  move newer than the last reading (it opened, closed, turned or resized a position on Strike) sends it to the exchange
  *  for a while, then it goes back to where its positions keep it. */
@@ -424,8 +464,8 @@ export function leadView(t: Trader, prev: AgentView | undefined, R: () => number
   a.position = p ? { market: p.market, side: p.side, entry: p.entry ?? 0, stop: p.entry ?? 0, trail: p.entry ?? 0, size: p.size, rOpen: 0,
     stopKnown: false, upnl: p.upnl } : null;
   a.focus = p?.market ?? "";
-  if (!prev) {   // first appearance: already at its place
-    const place = leadPlace(t), q = spot(place, R);
+  if (!prev) {   // first appearance: already at its place, on its own slot
+    const place = leadPlace(t), tile = leadTile(id, place), q = tile ? { x: tile.x * TILE + 8, y: tile.y * TILE + 12 } : spot(place, R);
     a.x = q.x; a.y = q.y; a.target = place;
   }
   return a;
@@ -435,9 +475,9 @@ export function leadView(t: Trader, prev: AgentView | undefined, R: () => number
 export function leadTick(a: AgentView, now: number, R: () => number): void {
   if (!a.lead || a.path.length) return;
   if (a.trip) {
-    if (now < a.trip.until) { if (a.target !== a.trip.to) goTo(a, a.trip.to, R); return; }
+    if (now < a.trip.until) { if (a.target !== a.trip.to) leadGo(a, a.trip.to, R); return; }
     a.trip = undefined;
   }
   const place = leadPlace(a.lead);
-  if (a.target !== place) goTo(a, place, R);
+  if (a.target !== place) leadGo(a, place, R);
 }
