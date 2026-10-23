@@ -23,6 +23,12 @@ requests.
   and Strike's public market data straight from the browser (tickers, every market, funding, the order book and the
   latest trades), so what the city shows of Strike's market is Strike's own data with nothing of ours in between. On
   production the top bar and Ranks count real accounts only; staging counts the paper agents too.
+- **Strike Finance's hall** (`web/src/city/StrikeView.tsx`, `strikestats.ts`): Strike's public statistics API, read
+  from the browser only while someone is inside (then every minute): totals, daily series, live positions, funding
+  against other exchanges and vaults.
+- **The screens' charts**: TradingView's embed on each market tower (loaded once the tower is in view) and DEX Screener's
+  embed of STRIKE, Strike Finance's token, on the Strike Finance building (`tradingview.tsx`, `dexscreener.tsx`), laid
+  over the canvas and moved with the camera.
 - **Functions** (`web/server`, routed by `web/functions/api`): every endpoint is small and explicit. Public: `info`,
   `city`, `copy`, `news`. Owners (bearer session from a wallet signature): `me`, `action/challenge` + `action` (every
   change is a fresh signature over a one-time message), `live/*` (connect, stop), `feedback`. Host only (HMAC):

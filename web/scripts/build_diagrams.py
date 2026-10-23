@@ -125,8 +125,8 @@ def architecture():
     s.arrow("M620,290 H700 V392")
     s.text(628, 282, "builder connect", size=10.5, fill=FAINT)
     s.arrow("M620,84 H860 V392", color="faint", dash=True)
-    s.text(628, 76, "public market data, read in the browser", size=10, fill=FAINT)
-    s.text(628, 100, "tickers, markets, funding, book, trades", size=10, fill=FAINT)
+    s.text(628, 76, "Strike's public data, read in the browser", size=10, fill=FAINT)
+    s.text(628, 100, "prices, book, trades and its statistics", size=10, fill=FAINT)
     for i in range(3):
         s.arrow(f"M620,{541 + i * 32} H658", color="faint", dash=True)
     s.legend(24, 650, [("signed requests", "mint", False), ("public reads", "faint", True)])
@@ -156,10 +156,10 @@ def card(s: Svg, x, y, w, h, n, title, who, rows=(), note=(), color=MINT, fill=P
 
 
 def integration():
-    s = Svg(900, 1096, "Every Strike integration in EdgeCraft-StrikeCity: 35 endpoints in five areas")
+    s = Svg(900, 1350, "Every Strike integration in EdgeCraft-StrikeCity: 46 endpoints in six areas")
     s.rect(230, 20, 440, 74, fill=STRIKE, stroke=MINT, rx=12)
     s.text(450, 50, "Strike Finance", size=19, fill="#fff", weight=700, anchor="middle")
-    s.text(450, 74, "35 endpoints in use · five integrations · mainnet and testnet", size=11.5, fill=MINT, anchor="middle")
+    s.text(450, 74, "46 endpoints in use · six integrations · mainnet and testnet", size=11.5, fill=MINT, anchor="middle")
 
     card(s, 20, 118, 420, 398, 1, "Builder connect and builder code", "called by the site's Functions, at onboarding", [
         ("POST /auth/builder/request-signature", "message"),
@@ -217,15 +217,29 @@ def integration():
         ("GET /price/v2/ticker/24hr", "towers, top bar"),
         ("GET /v2/markets", "all 33 markets"),
         ("GET /price/v2/premiumIndex", "the fountain"),
-        ("GET /price/v2/depth", "Exchange screen"),
+        ("GET /price/v2/depth", "the order book"),
         ("GET /price/v2/trades", "the cars"),
         ("GET /price/v2/klines", "news reactions"),
-    ], ["Every car in the city is a real trade on Strike, green",
-        "when the taker bought, red when they sold. If Strike",
-        "cannot be reached, the city says so and shows Binance",
-        "prices for display only; agents never trade on them."], color=SKY)
+    ], ["Every car is a real trade on Strike. The towers carry",
+        "TradingView's live chart of their market, and Strike",
+        "Finance's building STRIKE, its own token (Cardano),",
+        "through DEX Screener: TradingView has no chart of it."], color=SKY)
 
-    card(s, 20, 848, 420, 228, 5, "Into Strike's app, and our checks", "links for everyone · checks before every release", [
+    card(s, 20, 848, 420, 316, 5, "Strike's own statistics", "read inside the Strike Finance building · /stat/v1", [
+        ("GET …/dashboard/summary", "the totals"),
+        ("GET …/dashboard/volumes", "volume a day"),
+        ("GET …/dashboard/open-interest", "OI a day"),
+        ("GET …/dashboard/trades", "trades a day"),
+        ("GET …/dashboard/users", "active, new users"),
+        ("GET …/dashboard/revenue", "revenue a day"),
+        ("GET …/dashboard/liquidations", "liquidations"),
+        ("GET …/dashboard/treasury", "TVL by asset"),
+        ("GET …/stats/live-positions", "every position"),
+        ("GET …/stats/coin/funding-rate-comparison", "vs others"),
+        ("GET /v2/vaults", "Strike's vaults"),
+    ], ["Volume, users, TVL, open interest, revenue and funding,", "live, as nobody shows them on Strike today."], color=MINT)
+
+    card(s, 460, 848, 420, 316, 6, "Into Strike's app, and our checks", "links for everyone · checks before every release", [
         ("Copy on Strike", "a trader's portfolio"),
         ("Builder codes", "from the landing"),
         ("smartflow strike-check", "public formats"),
@@ -235,14 +249,16 @@ def integration():
         ("mainnet test trade", "loop with the fee"),
     ], color=ROSE)
 
-    card(s, 460, 848, 420, 228, 0, "What Strike gets back", "from every user and every agent", [], [], color=MINT, fill=STRIKE, stroke=MINT_DIM)
-    for i, l in enumerate(["Volume and fees through the builder code,", "  on every execution of every agent",
-                           "Money and copiers for Strike's copy trading", "New users from Cardano wallets, trading",
-                           "  from their first minute", "A measured way to choose whom to copy",
+    card(s, 20, 1180, 860, 150, 0, "What Strike gets back", "from every user and every agent", [], [], color=MINT, fill=STRIKE, stroke=MINT_DIM)
+    for i, l in enumerate(["Volume and fees through the builder code, on every execution",
+                           "Money and copiers for Strike's copy trading",
+                           "New users from Cardano wallets, trading from their first minute",
+                           "A measured way to choose whom to copy",
+                           "Its own numbers, shown live and in public",
                            "Open data: /api/copy and /api/city"]):
-        if not l.startswith("  "):
-            s.rect(476, 921 + i * 19, 5, 5, fill=MINT, stroke=MINT, rx=1)
-        s.text(488, 928 + i * 19, l.strip(), size=11.5, fill=TEXT)
+        x, y = (36 if i < 3 else 466), 1253 + (i % 3) * 22
+        s.rect(x, y - 7, 5, 5, fill=MINT, stroke=MINT, rx=1)
+        s.text(x + 12, y, l, size=11.5, fill=TEXT)
     s.save("integration")
 
 
@@ -318,7 +334,7 @@ def copy_flow():
 
 # ------------------------------------------------------------------ 5. what the city shows, and where it comes from
 def city_data():
-    s = Svg(900, 610, "Where everything in the city comes from: the host's snapshots and Strike's public market data")
+    s = Svg(900, 790, "Where everything in the city comes from: the host's snapshots, Strike's public data and the chart providers")
     s.text(20, 34, "Sources", size=13, fill=FAINT, weight=600)
     s.text(316, 34, "On the way", size=13, fill=FAINT, weight=600)
     s.text(600, 34, "What you see in the city", size=13, fill=FAINT, weight=600)
@@ -328,8 +344,9 @@ def city_data():
         s.box(20, 52 + i * 74, 256, 60, t, [l], color=c)
         s.arrow(f"M276,{82 + i * 74} H296 V102 H314", color="faint")
     s.text(20, 290, "on the agents' host", size=10.5, fill=FAINT)
-    s.box(20, 388, 256, 76, "Strike's public market data", ["tickers, markets, funding,", "order book, trades"], color="#fff", fill=STRIKE, stroke=MINT)
-    s.text(20, 482, "read by your browser", size=10.5, fill=FAINT)
+    s.box(20, 388, 256, 92, "Strike's public data", ["tickers, markets, funding, order", "book, trades, and Strike's own", "statistics (/stat/v1, vaults)"], color="#fff", fill=STRIKE, stroke=MINT)
+    s.box(20, 508, 256, 60, "Chart providers", ["TradingView · DEX Screener"], color=SKY)
+    s.text(20, 590, "read by your browser", size=10.5, fill=FAINT)
 
     s.box(316, 72, 244, 60, "smartflow-push", ["signed, only when something changed"])
     s.box(316, 168, 244, 60, "Cloudflare edge", ["/api/city · /api/copy · /api/news"], mono_lines=True)
@@ -337,13 +354,17 @@ def city_data():
     s.arrow("M438,132 V166")
     s.arrow("M438,228 V298")
     s.arrow("M276,426 H296 V330 H314", color="faint", dash=True)
+    s.arrow("M276,538 H296 V346 H314", color="faint", dash=True)
     s.arrow("M560,330 H594")
 
-    rows = [("Agents walk by their real state", "Signal Lab, Exchange, towers, Risk Office", MINT),
-            ("Strike's traders and their copiers", "towers, the Exchange, the Copy Arena", GOLD),
+    rows = [("Agents walk by their real state", "Signal Lab, Strike Finance, towers", MINT),
+            ("Strike's traders and their copiers", "towers, Strike Finance, the Copy Arena", GOLD),
             ("The News Tower", "agents walk in when a reading turns", SKY),
             ("Prices on the towers, the top bar", "/price/v2/ticker/24hr", TEXT),
-            ("The Exchange's big screen", "/price/v2/depth: the BTC order book", TEXT),
+            ("Strike Finance's order book", "/price/v2/depth: BTC, live", TEXT),
+            ("Strike Finance's screen", "STRIKE, its token (DEX Screener)", SKY),
+            ("A chart on every tower", "TradingView, live, its market", SKY),
+            ("Inside Strike Finance", "/stat/v1: volume, OI, users, TVL", TEXT),
             ("The fountain's colour", "/price/v2/premiumIndex: BTC funding", TEXT),
             ("Markets: all 33 of them", "/v2/markets: names, maximum leverage", TEXT),
             ("Cars: each one a real trade", "/price/v2/trades: bought green, sold red", TEXT),
@@ -355,7 +376,7 @@ def city_data():
         s.text(616, 52 + i * 60 + 21, t, size=12, fill="#fff", weight=600)
         s.text(616, 52 + i * 60 + 39, l, size=10.5, fill=FAINT, mono=l.startswith("/"))
         s.add("</g>")
-    s.add(f'<path d="M594,78 V560" stroke="{MINT_DIM}" stroke-width="1.2"/>')
+    s.add(f'<path d="M594,78 V740" stroke="{MINT_DIM}" stroke-width="1.2"/>')
     s.save("city-data")
 
 

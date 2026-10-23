@@ -129,8 +129,8 @@
 <path d="M620,290 H700 V392" fill="none" stroke="#4efab0" stroke-width="1.4" marker-end="url(#h-mint)"/>
 <text x="628" y="282" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#7e8883">builder connect</text>
 <path d="M620,84 H860 V392" fill="none" stroke="#7e8883" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#h-faint)"/>
-<text x="628" y="76" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#7e8883">public market data, read in the browser</text>
-<text x="628" y="100" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#7e8883">tickers, markets, funding, book, trades</text>
+<text x="628" y="76" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#7e8883">Strike&#x27;s public data, read in the browser</text>
+<text x="628" y="100" font-family="'Plex Sans','IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#7e8883">prices, book, trades and its statistics</text>
 <path d="M620,541 H658" fill="none" stroke="#7e8883" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#h-faint)"/>
 <path d="M620,573 H658" fill="none" stroke="#7e8883" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#h-faint)"/>
 <path d="M620,605 H658" fill="none" stroke="#7e8883" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#h-faint)"/>

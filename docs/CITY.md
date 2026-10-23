@@ -24,7 +24,7 @@ Open it at https://edgecraft-strikecity.pages.dev/#/city.
 |---|---|
 | Signal Lab | a candle closes and it analyses its markets |
 | BTC / ETH / SOL towers, Alt Row | it holds a position in that market |
-| Strike Exchange | it sends an order or a signal fires |
+| Strike Finance | it sends an order or a signal fires |
 | Risk Office | the risk engine checks or refuses a signal |
 | Liquidation Alley | a trade closed at its stop |
 | Funding Cafe | a trade closed by its exit rule |
@@ -40,7 +40,13 @@ news reading, the day's move, its day in R). The personality never changes how i
 ## Live data drawn on the map
 
 - **Market towers**: Strike's price and 24h change on each tower's sign.
-- **Strike Exchange**: a large screen with Strike's live BTC order book.
+- **Strike Finance**: its screen shows STRIKE, Strike Finance's own token on Cardano (DEX Screener's chart of the
+  STRIKE/ADA pool on SundaeSwap; TradingView has none), next to Strike's live BTC order book.
+- **Market towers' screens**: TradingView's live chart of the tower's market, on a screen across the top of each tower
+  (its sign moves under it). Each one loads only once its tower comes into view. At night every screen lights itself:
+  no window glow or darkness is ever drawn over it.
+
+![The BTC and ETH towers with TradingView's live chart of their market, and STRIKE on the Strike Finance building](images/towers.jpg)
 - **The fountain**: its colour follows BTC funding on Strike (who pays whom).
 - **News Tower facade**: an LED marquee with the latest catalysts.
 - **Cars**: every car on the streets is a real trade on Strike mainnet (`/price/v2/trades`, BTC and the busiest markets
@@ -61,6 +67,13 @@ news reading, the day's move, its day in R). The personality never changes how i
   exchanges). Your agent runs to the door, goes in, takes the lift to whatever you choose and reads it with you. Every
   screen inside is live: each market's reading and what pushes it up or down, the wire, the scoreboard of past readings,
   a world table with pins by region, the calendar.
+- **Strike Finance**: Strike's own numbers, live from its public statistics. The volume wall (each day's volume as
+  bars), users and the treasury on the side screens, the open interest and how many positions are long or short on the
+  console, Strike's funding against Binance, Bybit and OKX at the desks, and Strike's vaults. Open it from the building's
+  card, or at `#/city?strike`.
+
+![Inside Strike Finance: the volume wall, users and the 24-hour volume, the open interest on the console, and Strike's figures beside the scene](images/strike-hall.jpg)
+
 - **Copy Arena**: the leaderboard on an LED wall, the three best on a podium, the copiers' wall (the copies that went
   best) and Strike's copy-trading totals. From any trader: their profile, "Copy on Strike", and "Copy with my agent".
 
@@ -77,12 +90,13 @@ Map · Agents (every agent, and every trader people can copy on Strike: the ones
 accounts and paper agents ranked apart, and the best traders to copy) · Feed (what just happened) · Markets (every market
 Strike lists: the agents' markets first, then stocks, indices, commodities and more crypto, with price, 24-hour change,
 funding, volume and maximum leverage) · Guide (what everything means, a legend, the roadmap) · My agent · Suggest
-(feedback with an optional screenshot).
+(feedback with an optional screenshot). Until a wallet is connected, My agent's place shows **Connect wallet**; it
+turns back into My agent once one is in, and into Connect wallet again if it leaves.
 
 ## Accessibility and quality
 
 - Every surface is checked against WCAG 2.2 AA with axe-core in a real browser, in English and Spanish, at desktop and
-  phone widths (`web/scripts/verify_city_ui.py` walks every panel and button: 244 checks per language).
+  phone widths (`web/scripts/verify_city_ui.py` walks every panel and button: 246 checks per language).
 - The map has a text description, keyboard control (arrows, + and −, Escape) and a "follow" mode; dialogs trap focus
   and restore it; status updates are announced.
 - Reduced motion is honoured: characters jump to where they are going and nothing pulses.

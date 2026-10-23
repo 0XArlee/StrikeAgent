@@ -63,15 +63,17 @@ connections of its own open.
 
 | Script | Checks | Environment |
 |---|---|---|
-| `verify_city_ui.py` | Every panel, button and dialog of the city, text cut off or overflowing, the dock fitting from 320 to 412 px, axe on each surface: 244 checks per language | staging and production |
+| `verify_city_ui.py` | Every panel, button and dialog of the city, text cut off or overflowing, the dock fitting from 320 to 412 px, axe on each surface: 246 checks per language | staging and production |
 | `verify_city.py` | The map paints and animates, panels, keyboard control, deep links, reduced motion, no horizontal overflow: 56 checks | both |
 | `verify_city_live.py` | What the city shows matches the API and Strike: agents and traders counted apart, every trader people can copy listed, real accounts and paper agents ranked apart: 46 checks | both |
 | `verify_city_cars.py` | The cars are Strike's real trades: the city reads `/price/v2/trades`, a car drives in, stops under the mouse, and pressing it shows its trade; the top bar counts what each site should: 12 checks | both |
+| `verify_city_hq.py` | Strike Finance and the screens: STRIKE on the building's screen, TradingView on every tower once in view, the building's card takes you inside, Strike's figures, the daily volume as bars and the open interest are there, every spot answers, axe on the hall, nothing overflows at 390 px, the deep link and the way out: 29 checks | both |
 | `verify_onboarding_live.py` | Creates an agent with a test wallet on Strike testnet, edits it, hides it, signs in again, switches wallets and deletes it, at 1440 and 390 px: over 100 checks | staging only |
 | `verify_copy_live.py` | A signed copy plan carried out on Strike testnet, then stopped | staging only |
 
-The last full run before this submission (22 October 2026) passed everywhere: 244 of 244 checks in English and in
-Spanish, 56 of 56 and 44 of 44 on both sites, and every onboarding check on staging.
+The last full run before this submission (23 October 2026, on staging and again on production) passed everywhere: 246
+of 246 checks in English and in Spanish, 56 of 56, 46 of 46, 12 of 12 for the cars and 29 of 29 for Strike Finance and
+the screens. The last onboarding run on staging (22 October) passed every check.
 
 ## Accessibility
 

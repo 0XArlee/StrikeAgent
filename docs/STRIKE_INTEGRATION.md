@@ -15,10 +15,11 @@ code against testnet (`https://api-v2-testnet.strikefinance.org`).
 | [Trading API v2](#2-trading-the-agents) | 16 | every agent, on the host | Entries with their stop attached, exits, leverage, results that leave deposits out |
 | [Copy trading](#3-copy-trading) | 13 | the collector and the copy pilot, on the host | The Copy Arena, the Strike City score, and managed copies run by your agent |
 | [Market data](#4-strikes-market-in-the-city) | 3 more (6 in all) | the browser; the news service | Strike's market drawn live: prices, order book, funding, all its markets, every trade as a car |
-| [Checks](#6-checking-our-side-of-the-contract) | 1 more | our release checks | Proof, before every release, that Strike answers as the client expects |
-| **Total** | **35** | | Mainnet and testnet, same code |
+| [Strike's own statistics](#5-strikes-own-numbers-inside-the-strike-finance-building) | 11 | the browser, inside the Strike Finance building | The platform's totals, daily volume, open interest, users, revenue, treasury, live positions, funding against other exchanges, vaults |
+| [Checks](#7-checking-our-side-of-the-contract) | 1 more | our release checks | Proof, before every release, that Strike answers as the client expects |
+| **Total** | **46** | | Mainnet and testnet, same code |
 
-![Every Strike integration: 35 endpoints in five areas](images/diagram-integration.svg)
+![Every Strike integration: 46 endpoints in six areas](images/diagram-integration.svg)
 
 ## 1. Onboarding through builder connect
 
@@ -105,22 +106,47 @@ the owner signs again. Nothing here moves money out of Strike.
 | Prices, 24-hour change and volume on the towers, the top bar and Markets | `GET /price/v2/ticker/24hr` |
 | Every market Strike lists (33 today: crypto, stocks, indices, commodities), with its name and maximum leverage | `GET /v2/markets` |
 | The fountain's colour (BTC funding) and mark prices | `GET /price/v2/premiumIndex` |
-| The BTC order book on the Strike Exchange's big screen | `GET /price/v2/depth` |
+| The BTC order book on the Strike Finance building's screen | `GET /price/v2/depth` |
 | The cars: every car in the city is a real trade on Strike mainnet (green when the taker bought, red when they sold, a truck from 5,000 $; press one to see it) | `GET /price/v2/trades`, BTC and the busiest markets in turn, every 15 s |
 | How the price reacted after each headline | Strike's 1-minute mark-price candles, `GET /price/v2/klines` (on the host) |
 
 The browser reads these public endpoints directly, so the city shows Strike's market as it is, with no copy of ours in
-between. If Strike's public price endpoints cannot be reached, the city says so on screen and shows Binance prices
+between. Two charts come from outside Strike's API, for people to look at: each market tower carries TradingView's live
+chart of its market, and the Strike Finance building shows STRIKE, Strike Finance's own token on Cardano (the STRIKE/ADA
+pool on SundaeSwap), through DEX Screener's chart, because TradingView has no chart of it. If Strike's public price endpoints cannot be reached, the city says so on screen and shows Binance prices
 instead, for display only. The agents never trade on that fallback.
 
 ![Where everything in the city comes from](images/diagram-city-data.svg)
 
-## 5. Links into Strike's app
+## 5. Strike's own numbers, inside the Strike Finance building
+
+Go into the building at the centre of the city and Strike's own statistics are on its walls, read straight from the
+browser while you are inside (and every minute after that). Nobody shows these numbers on Strike's own pages today.
+
+| What you see inside | Endpoint (`/stat/v1` unless said) |
+|---|---|
+| The totals: volume, users, deposits, withdrawals, liquidated, revenue | `GET /dashboard/summary` |
+| Each day's trading volume, as bars, and the most traded markets | `GET /dashboard/volumes` |
+| Open interest, day by day | `GET /dashboard/open-interest` |
+| Trades a day, and every trade ever | `GET /dashboard/trades` |
+| Active and new users a day | `GET /dashboard/users` |
+| Revenue a day | `GET /dashboard/revenue` |
+| Liquidations | `GET /dashboard/liquidations` |
+| The treasury (TVL), asset by asset | `GET /dashboard/treasury` |
+| Every open position right now: the open interest by market, and how many positions are long or short (no account shown) | `GET /stats/live-positions` |
+| Strike's funding rate next to Binance's, Bybit's and OKX's, market by market | `GET /stats/coin/funding-rate-comparison` |
+| Strike's vaults: equity, share price, the leader's fee | `GET /v2/vaults` |
+
+Every long on a perpetuals exchange has a short on the other side, so the open interest shown is one side's value, and
+what tells the mood is how many positions are long. The summary's own open-interest field reads zero today, so the hall
+computes it from the live positions and the daily series instead.
+
+## 6. Links into Strike's app
 
 Every trader card and profile has **Copy on Strike**, which opens that trader's public portfolio in Strike's app, where
 anyone can copy them by hand. The landing page links to Strike's app and to its builder-codes page.
 
-## 6. Checking our side of the contract
+## 7. Checking our side of the contract
 
 - `smartflow strike-check` confirms Strike's public API answers in the formats the client expects.
 - `smartflow auth-check` runs signed reads end to end: account, positions, open orders, fills and `GET /v2/sub-accounts`.
@@ -129,7 +155,7 @@ anyone can copy them by hand. The landing page links to Strike's app and to its 
 - Every Strike request that changes something is written to the agent's hash-chained journal as it was sent and as
   Strike answered it.
 
-## 7. Confirmed with Strike's team
+## 8. Confirmed with Strike's team
 
 Before going live we put our open questions to Strike's team (19 October 2026), and the agents follow the answers:
 
@@ -141,11 +167,13 @@ Before going live we put our open questions to Strike's team (19 October 2026), 
 - `client_order_id` is not unique on Strike, so the client makes retries idempotent itself.
 - Closing a position with a separate reduce-only order cancels its pending bracket legs.
 
-## 8. What it gives back to Strike
+## 9. What it gives back to Strike
 
 - **Volume and fees** through the builder code, on every execution of every user's agent.
 - **Money and copiers for Strike's copy trading**, from the copies agents start for their owners.
 - **New users** who arrive from a Cardano wallet with their Strike account trading from the first minute.
 - **A better way to choose whom to copy**, measured on Strike's own copies, and a place where copy trading is visible
   and social.
+- **Its own numbers, live and in public**: volume, users, TVL, open interest and funding, in a building anyone can walk
+  into.
 - **Open data**: `GET /api/copy` (traders, scores, the score's evidence) and `GET /api/city` (agents) are public JSON.

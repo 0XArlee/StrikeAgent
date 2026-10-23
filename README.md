@@ -16,7 +16,7 @@
   <a href="docs/EdgeCraft-StrikeCity.pdf">Project book (PDF)</a>
 </p>
 
-![EdgeCraft-StrikeCity: agents and copy traders around the Strike Exchange, with Strike's live BTC order book on the big screen](docs/images/city.jpg)
+![EdgeCraft-StrikeCity: agents and copy traders around the Strike Finance building, with STRIKE's chart and Strike's live BTC order book on its screen](docs/images/city.jpg)
 
 ## The idea
 
@@ -24,7 +24,7 @@ Trading on Strike happens behind numbers. A trading bot is a process nobody sees
 list that tells you very little about what copying someone actually did for the people who tried it.
 
 We wanted to make all of that visible. EdgeCraft-StrikeCity is a pixel-art city where every character is driven by
-real data from Strike. Trading agents walk to the Signal Lab when a candle closes, to the Strike Exchange when they
+real data from Strike. Trading agents walk to the Signal Lab when a candle closes, to the Strike Finance building when they
 send an order, and to a market's tower while they hold a position there. The traders people copy on Strike walk the
 streets with their current copiers in a line behind them. Nothing moves for decoration.
 
@@ -32,7 +32,7 @@ Behind the city sits a complete product. You can create an agent that trades you
 wallet signature, choose whom to copy with a score that was tested on real copies, and let your agent run that copy
 for you under rules you sign.
 
-| Live | 1 | 35 | 389 | 174 | 0.20 % |
+| Live | 1 | 46 | 389 | 174 | 0.20 % |
 |:---:|:---:|:---:|:---:|:---:|:---:|
 | on Strike mainnet, with a staging copy on testnet | signature to start an agent on your own Strike account | Strike endpoints in use | real copies behind the score, re-tested hourly | automated tests, plus real-browser checks | builder fee per execution, approved by each user |
 
@@ -40,9 +40,20 @@ for you under rules you sign.
 
 ### Watch the agents and the traders, live
 Every agent and every copied trader is a character. Click one to see what it holds, what it decided at the last candle
-and why. Market towers show Strike's prices, the Exchange shows Strike's live order book, the fountain changes colour
-with BTC funding, and every car on the streets is a real trade on Strike mainnet: rest the mouse on one and press it to
+and why. Each market tower carries TradingView's live chart of its market and Strike's price on its sign; the Strike
+Finance building shows STRIKE, Strike Finance's own token, next to Strike's live order book; the fountain changes colour
+with BTC funding; and every car on the streets is a real trade on Strike mainnet: rest the mouse on one and press it to
 see the trade. → [docs/CITY.md](docs/CITY.md)
+
+<p align="center"><img src="docs/images/towers.jpg" width="85%" alt="The BTC and ETH towers with TradingView's live chart of their market, and STRIKE on the Strike Finance building"></p>
+
+### Step inside Strike Finance
+The building at the centre of the city opens its doors: inside, Strike's own numbers, live from its public statistics.
+Each day's trading volume as bars on the wall, the open interest and how many positions are long or short, every user
+and every trade, the treasury and the vaults, and Strike's funding rate next to Binance's, Bybit's and OKX's. Your
+agent walks in with you.
+
+<p align="center"><img src="docs/images/strike-hall.jpg" width="85%" alt="Inside Strike Finance: the volume wall, the side screens, the open interest on the console, and Strike's figures beside the scene"></p>
 
 ### Pick a strategy from the marketplace
 The landing page is a catalogue of strategies, each with its rules, its full backtest after every cost, and a page of
@@ -90,10 +101,10 @@ trading it walk over to read it. They never trade on news.
 
 ## Built on Strike
 
-Strike is the venue for everything here, not just a data source: **35 Strike endpoints in five areas**, on mainnet
+Strike is the venue for everything here, not just a data source: **46 Strike endpoints in six areas**, on mainnet
 and testnet. Each call, and why we make it, is in [docs/STRIKE_INTEGRATION.md](docs/STRIKE_INTEGRATION.md).
 
-![Every Strike integration: 35 endpoints in five areas](docs/images/diagram-integration.svg)
+![Every Strike integration: 46 endpoints in six areas](docs/images/diagram-integration.svg)
 
 - **Builder connect and builder code** (2 endpoints and the fee header). Onboarding runs through `request-signature`
   and `verify-signature`, and the site checks that Strike linked exactly our key, our builder code
@@ -106,8 +117,11 @@ and testnet. Each call, and why we make it, is in [docs/STRIKE_INTEGRATION.md](d
   Strike's copy-trading dashboard (its summary and six daily series), and managed copies with sub-accounts that Strike
   creates and funds (start, change, stop), with the stop-loss enforced by Strike.
 - **Market data, live in the city** (6). 24-hour tickers on the towers, every market Strike lists in Markets, funding
-  on the fountain, the order book on the Exchange's screen, Strike's live trades as the cars, and Strike's 1-minute
+  on the fountain, the order book on Strike Finance's screen, Strike's live trades as the cars, and Strike's 1-minute
   mark candles behind every news reaction.
+- **Strike's own statistics** (11). Inside the Strike Finance building: the platform's totals, each day's volume, open
+  interest, trades, users, revenue and liquidations, the treasury, every open position, Strike's funding against other
+  exchanges, and its vaults, all from Strike's public statistics API.
 - **Strike's app and our checks.** Every trader card links to that trader's public portfolio on Strike, where anyone
   can copy them by hand, and release checks prove before each release that Strike answers as the client expects.
 
@@ -123,7 +137,8 @@ version of the city and the strategy marketplace. Between 21 and 23 October, in 
 | **Strike City score** | A study of every copy Strike has published, a score built from what actually predicted a good copy, and an hourly public re-test shown inside the arena |
 | **Copy with your agent** | Signed copy plans (one trader, or the agent choosing by your rules) carried out on Strike's own copy trading, in sub-accounts Strike creates and funds, with Strike enforcing the stop-loss; proven on testnet, then opened on mainnet |
 | **News Tower** | Tiered sources, model scoring, one vote per story, reactions measured on Strike's mark price, a reading per market, and a six-floor building your agent walks through |
-| **A living city** | The map redrawn with licensed LimeZu art, a character creator, personalities and trades for every agent, every car a real Strike trade, all 33 of Strike's markets, every copyable trader, and real accounts kept apart from paper agents |
+| **Strike Finance, inside** | The exchange's building renamed and opened: Strike's own numbers live (daily volume as bars, open interest, longs and shorts, users, trades, TVL, revenue, funding against other exchanges, vaults) from Strike's statistics API (11 new endpoints), and STRIKE, Strike Finance's token, on its screen |
+| **A living city** | The map redrawn with licensed LimeZu art, a character creator, personalities and trades for every agent, TradingView's live chart on every market tower, every car a real Strike trade, all 33 of Strike's markets, every copyable trader, real accounts kept apart from paper agents, and Connect wallet right in the dock |
 | **Security review** | Authentication, builder connect, copy plans end to end, host endpoints, headers, dependencies and secrets, reviewed before mainnet: no critical or high findings |
 | **Verification** | Staging on Strike testnet first for every change, and real-browser checks with accessibility audits on every surface, in two languages, at desktop and phone sizes |
 | **Documentation** | These docs, diagrams generated from code, and the project book (PDF) |
@@ -134,7 +149,8 @@ Each area, in detail and with its evidence: [docs/HACKATHON.md](docs/HACKATHON.m
 
 1. **No wallet needed.** Open [the city](https://edgecraft-strikecity.pages.dev/#/city), click a character with a
    pink ring to see a trader people copy on Strike, then open **Ranks** and enter the **Copy Arena**.
-2. Click the **News Tower** and go inside, or open **News** in the top bar.
+2. Click the **Strike Finance** building and go inside for Strike's own numbers; then the **News Tower**, or open
+   **News** in the top bar.
 3. Browse the [strategy catalogue](https://edgecraft-strikecity.pages.dev/#strategies) and open a strategy's page.
 4. **With a Cardano wallet** (Lace, Eternl, Yoroi, Typhon, VESPR, NuFi, Begin, GeroWallet or any CIP-30 wallet),
    press **Connect wallet** to create an agent on your own Strike account. On staging the same flow runs on Strike
