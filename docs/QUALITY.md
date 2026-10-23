@@ -73,9 +73,10 @@ connections of its own open.
 | `verify_copy_live.py` | A signed copy plan carried out on Strike testnet, then stopped | staging only |
 | `verify_telegram_link.py` | A test agent links the alerts bot: a one-time code, the bot's own client on the agents' host looks it up and claims it, a used code says nothing, the owner sees and removes the chat: 11 checks | staging only |
 
-The last full run before this submission (23 October 2026, on staging) passed everywhere: 276 of 276 checks in
+The last full run before this submission (23 October 2026, on staging) passed everywhere: 282 of 282 checks in
 English and in Spanish, 56 of 56, 46 of 46, 12 of 12 for the cars, 29 of 29 for Strike Finance and the screens, 103 of
-103 for the onboarding and 15 of 15 for a copy plan carried out by the copy pilot on Strike testnet.
+103 for the onboarding, 15 of 15 for a copy plan carried out by the copy pilot on Strike testnet, and 11 of 11 for
+linking an agent to the alerts bot.
 
 ## Accessibility
 

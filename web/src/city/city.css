@@ -16,7 +16,8 @@
 .city-top-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 .city-tickers + .city-top-actions { margin-left: 4px; }
 /* the Alerts tab (city/AlertsPanel.tsx) */
-.al { display: grid; gap: 14px; min-width: 0; }
+.al { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+.al .btn { white-space: normal; height: auto; min-height: 36px; padding-top: 6px; padding-bottom: 6px; text-align: center; }
 .al-lead { margin: 0; color: var(--text-muted); font-size: 13px; }
 .al-card { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
 .al-card h3, .al-feed-title { margin: 0; font-size: 15px; }
