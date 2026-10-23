@@ -234,7 +234,7 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
             <div>
             <h2 id="agent-title">{d.title}{me?.name ? ` · ${me.name}` : link.name ? ` · ${link.name}` : ""}</h2>
             <p className="mono faint" style={{ marginTop: 4 }}>
-              {shortAddr(link.address, 14, 8)} · {link.walletName}{liveOn ? <> · <span className="tag tag-live">{fmt(L.tag, { env: envName })}</span></> : paper && <> · <span className="tag tag-paper">{P.badge}</span></>}
+              {shortAddr(link.address, 14, 8)} · {link.walletName}{liveOn ? <> · <span className="tag tag-live">{envName === "testnet" ? T.kindTestnet : fmt(L.tag, { env: envName })}</span></> : paper && <> · <span className="tag tag-paper">{P.badge}</span></>}
             </p>
             </div>
           </div>
