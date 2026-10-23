@@ -235,6 +235,11 @@ class StrikeClient:
         d = self._signed("GET", "/v2/copy/subscriptions", {"scope": "all", "status": status}) or {}
         return list(d.get("subscriptions") or [])
 
+    def sub_accounts(self) -> list[dict]:
+        """The master account's sub-accounts (pending and active): id, name, status, equity, available balance."""
+        d = self._signed("GET", "/v2/sub-accounts", {}) or {}
+        return list(d.get("sub_accounts") or [])
+
     def account_of(self, sub_account_id: str | None) -> dict:
         """The raw account reading of the master account or of one of its sub-accounts."""
         return self._signed("GET", "/v2/account", {"sub_account_id": sub_account_id}) or {}

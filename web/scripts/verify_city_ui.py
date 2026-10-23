@@ -19,10 +19,10 @@ OUT = Path(sys.argv[2]); OUT.mkdir(parents=True, exist_ok=True)
 BASE = (sys.argv[3] if len(sys.argv) > 3 else "https://edgecraft-strikecity.pages.dev").rstrip("/")
 LANG = sys.argv[4] if len(sys.argv) > 4 else "es"
 L = {
-    "es": {"enter": "Entrar en la ciudad", "panels": ["Agentes", "Ranking", "Actividad", "Mercados", "Guía"], "zoomIn": "Acercar", "zoomOut": "Alejar",
+    "es": {"enter": "Entrar en la ciudad", "panels": ["Agentes", "Resultados", "Actividad", "Mercados", "Guía"], "zoomIn": "Acercar", "zoomOut": "Alejar",
            "follow": "Seguir", "details": "Detalles", "close": "Cerrar", "map": "Mapa", "me": "Mi agente", "chart": "Ver el gráfico",
            "arena": "Entrar en la Copy Arena", "open": "Ver ficha", "back": "Volver a la lista", "exitArena": "Salir de la arena", "exitTower": "Salir de la torre"},
-    "en": {"enter": "Enter the city", "panels": ["Agents", "Ranks", "Feed", "Markets", "Guide"], "zoomIn": "Zoom in", "zoomOut": "Zoom out",
+    "en": {"enter": "Enter the city", "panels": ["Agents", "Results", "Feed", "Markets", "Guide"], "zoomIn": "Zoom in", "zoomOut": "Zoom out",
            "follow": "Follow", "details": "Details", "close": "Close", "map": "Map", "me": "My agent", "chart": "Open the chart",
            "arena": "Enter the Copy Arena", "open": "See profile", "back": "Back to the list", "exitArena": "Leave the arena", "exitTower": "Leave the tower"},
 }[LANG]
@@ -188,6 +188,14 @@ def run(p, tag, viewport, mobile):
             dock(name).click()
             pg.wait_for_selector("#city-panel", timeout=8000)
             check(f"{tag} {name}: the dock opens its panel", dock(name).get_attribute("aria-pressed") == "true")
+            tabs = pg.locator("#city-panel .rs-tabs [role=tab]")   # Results: every tab shown and audited
+            for i in range(tabs.count()):
+                tabs.nth(i).click(); pg.wait_for_timeout(250)
+                check(f"{tag} {name}: tab {i + 1} of {tabs.count()} shows its own content", tabs.nth(i).get_attribute("aria-selected") == "true"
+                      and pg.locator("#rs-panel").inner_text().strip() != "")
+                audit(pg, tag, f"{name} panel, tab {i + 1}", "#city-panel")
+            if tabs.count():
+                tabs.nth(tabs.count() - 1).click(); pg.wait_for_timeout(200)   # the ranking: the next steps start from it
             filters = pg.locator("#city-panel .city-filters button")
             for i in range(filters.count()):
                 filters.nth(i).click(); pg.wait_for_timeout(120)
@@ -261,9 +269,10 @@ def run(p, tag, viewport, mobile):
         pg.locator(".city-card .icon-btn").first.click(); pg.wait_for_timeout(300)
     step(tag, "building", building)
 
-    # ---- copy trading: Ranks' best, a lead, its profile, the arena
+    # ---- copy trading: the best to copy (Results, Ranking tab), a lead, its profile, the arena
     def copy():
         dock(L["panels"][1]).click()
+        pg.locator("#city-panel .rs-tabs [role=tab]").last.click()
         pg.wait_for_selector(".city-copy-top .city-row", timeout=15000)
         pg.locator(".city-copy-top .city-row").first.click()
         pg.wait_for_timeout(1200)

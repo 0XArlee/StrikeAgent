@@ -95,7 +95,7 @@ def run(p, name, viewport, mobile):
     check(f"{name}: keyboard pans and zooms the map", page.evaluate(CANVAS_SIG)["sum"] != s0)
 
     # every dock panel
-    for label, shot in [("Agents", "agents"), ("Ranks", "ranks"), ("Feed", "feed"), ("Markets", "markets"), ("Guide", "guide")]:
+    for label, shot in [("Agents", "agents"), ("Results", "ranks"), ("Feed", "feed"), ("Markets", "markets"), ("Guide", "guide")]:
         page.locator(".city-dock-btn", has_text=label).click()
         page.wait_for_selector(".city-panel")
         page.wait_for_timeout(350)

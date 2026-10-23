@@ -76,10 +76,9 @@ with sync_playwright() as p:
     page.expose_function("pySign", py_sign)
     ctx.add_init_script(f"({WALLET_JS})('{w.addr_bytes.hex()}', {NET})")
     # ---- a throwaway agent, connected to Strike testnet
-    page.goto(f"{BASE}/#/city", wait_until="networkidle")
+    page.goto(f"{BASE}/#/city", wait_until="load")   # not "networkidle": the screens' charts keep connections of their own open
     page.wait_for_selector(".city-dock-btn", timeout=30000)
-    page.locator(".city-dock-btn", has_text="Ranks").click()
-    page.get_by_role("button", name="Put your own agent in the city").click()
+    page.locator(".city-dock .city-dock-connect").click()   # no wallet yet: the dock offers to connect one
     page.get_by_role("button", name="TestWallet").click()
     page.wait_for_selector("text=Create your character", timeout=15000)
     page.fill("#cm-name", "QA Copy D")
@@ -102,7 +101,7 @@ with sync_playwright() as p:
 
     def go(hash_):   # a new hash in the same page is no navigation: load the page again (deep links are read on load)
         page.goto(f"{BASE}/{hash_}")
-        page.reload(wait_until="networkidle")
+        page.reload(wait_until="load")   # not "networkidle": the screens' charts keep connections of their own open
     try:
         # ---- "Copy with my agent" on a trader's card: My agent opens the plan with that trader
         go(f"#/city?lead={hl['id']}")
@@ -136,7 +135,7 @@ with sync_playwright() as p:
         page.wait_for_selector("#cp-plan-title", state="detached", timeout=30000)
         msg = signed[-1] if signed else ""
         check("the owner signs the whole plan in plain words", msg.startswith("Smart Flow · set the copy trading of my agent")
-              and "My agent chooses whom to copy" in msg and "Strike ends the copy if it loses" in msg and "sub-account of its own" in msg, msg[:200])
+              and "My agent chooses whom to copy" in msg and "Strike ends the copy if it loses" in msg and "It runs in a sub-account of mine that copies nobody" in msg, msg[:200])
         # ---- the host carries it out on Strike testnet and reports back (it passes once a minute)
         t0, state, why = time.time(), "", ""
         while time.time() - t0 < 200:

@@ -15,8 +15,12 @@ export interface CopyPlan {
   lead: string | null; platform: "strike" | "hyperliquid" | null;
   sizing: { kind: "ratio"; amount: number } | { kind: "fixed"; margin: number; funding: number };
   stopLoss: number; leverage: number; excluded: string[]; until: number | null; alarmPause: boolean;
+  macroPause?: boolean;   // also waits out the big scheduled US releases (Fed, CPI, jobs, PCE, GDP)
+  account?: string;       // where it runs: "auto" (a free sub-account of yours, else a new one), "new", or a sub-account's id
   pilot: { minScore: number; platforms: ("strike" | "hyperliquid")[]; review: number; maxSwitches: number } | null;
 }
+/** One of the owner's sub-accounts as the host read it: whom it copies now, and its equity over time. */
+export interface SubAccount { id: string; name: string; equity: number | null; available: number; busy: string | null; history?: [number, number][] }
 /** How it goes, as the agents' host reported it (smartflow/copytrade/pilot.py). */
 export interface CopyStatus {
   state: "copying" | "starting" | "halted" | "off" | "waiting"; why?: string | null; version?: number | null;
@@ -24,7 +28,8 @@ export interface CopyStatus {
   reviewAt?: number | null; error?: string | null; at?: number;
   copy?: { copy_amount: number | null; margin_per_entry_order: number | null; total_margin: number | null; total_worth: number | null;
     realized_pnl: number | null; pnl: number | null; total_volume: number | null; stop_loss_amount: number | null; orders: number | null } | null;
-  log?: { t: number; kind: string; lead?: string; reason?: string; text?: string; step?: string; status?: number; available?: number; left?: number; mode?: string }[];
+  log?: { t: number; kind: string; lead?: string; reason?: string; text?: string; step?: string; status?: number; available?: number; left?: number; mode?: string; account?: string }[];
+  accounts?: SubAccount[];
 }
 export interface CopyView { plan: CopyPlan | null; version: number | null; status: CopyStatus | null }
 

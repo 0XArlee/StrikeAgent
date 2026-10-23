@@ -155,7 +155,8 @@ def real_mode(p, name, viewport, mobile):
     live_items = page.locator(".city-feed li").count()
     check(f"{name}: feed shows the journal events", live_items > 0, f"{live_items} items")
     page.screenshot(path=str(OUT / f"l08_feed_{name}.png"))
-    page.locator(".city-dock-btn", has_text="Ranks").click()
+    page.locator(".city-dock-btn", has_text="Results").click()
+    page.locator("#city-panel .rs-tabs [role=tab]", has_text="Ranking").click()   # Results: the ranking is its last tab
     page.wait_for_timeout(300)
     # real accounts and paper agents in their own tables (real accounts without a closed trade yet: a note instead)
     real_rows = page.locator("section[aria-labelledby=ranks-real-title] tbody tr").count()

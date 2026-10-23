@@ -12,6 +12,7 @@ import { StrategyPage } from "./components/StrategyPage";
 import { Icon, Mark } from "./components/ui";
 import { dict, fmt, initialLang, saveLang, type Lang } from "./i18n";
 import { STRATEGY_IDS, type StrategyId } from "./strategies";
+import { Faq } from "./components/Faq";
 
 const CityPage = lazy(() => import("./city/CityPage"));
 const CityPreview = lazy(() => import("./city/CityPreview"));
@@ -281,16 +282,14 @@ export function App() {
         <section className="section" id="faq" aria-labelledby="faq-title">
           <div className="container">
             <div className="section-head" data-reveal><span className="kicker">{fmt(t.kicker.faq, { n: String(t.faq.items.length) })}</span><h2 id="faq-title">{t.faq.title}</h2></div>
-            <div className="faq" data-reveal-group>
-              {t.faq.items.map(([q, a]) => <details key={q}><summary>{q}</summary><div>{a}</div></details>)}
-            </div>
+            <div data-reveal><Faq t={t} /></div>
           </div>
         </section>
         </>}
 
         <footer className="site-footer">
           <div className="container foot" data-reveal>
-            <div className="foot-brand"><Mark size={32} /><span className="foot-word">EdgeCraft-StrikeCity</span><span className="foot-by">{t.footBy}</span></div>
+            <div className="foot-brand"><Mark size={32} /><span className="foot-word">EdgeCraft-StrikeCity</span></div>
             <p>{t.footer.legal}</p><p>{t.footer.by} Engine {info.engine}. <a href="https://limezu.itch.io/" target="_blank" rel="noopener noreferrer">{t.footer.art}<span className="sr-only"> (opens in a new tab)</span></a></p>
           </div>
         </footer>

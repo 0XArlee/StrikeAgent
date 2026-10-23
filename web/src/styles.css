@@ -196,6 +196,20 @@ tfoot td { font-weight: 700; background: var(--surface); }
 .faq summary::after { content: ""; width: 9px; height: 9px; border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted); transform: rotate(45deg); transition: transform .15s; flex: none; }
 .faq details[open] summary::after { transform: rotate(-135deg); }
 .faq details > div { padding: 0 20px 16px; color: var(--text-muted); }
+/* the questions by topic (components/Faq.tsx) */
+.faq2 { display: grid; gap: 14px; }
+.faq2-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.faq2-tabs button { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 16px; border: 1px solid var(--border); border-radius: 9999px;
+  background: rgba(12, 12, 12, .88); color: var(--text-muted); font: 600 14px/1.2 var(--font); cursor: pointer; transition: border-color .2s, color .2s, background .2s; }
+.faq2-tabs button:hover { color: var(--text); border-color: #3a4a43; }
+.faq2-tabs button[aria-selected="true"] { color: #04120b; background: var(--primary); border-color: var(--primary); }
+.faq2-tabs button:focus-visible { box-shadow: var(--focus); outline: none; }
+.faq2-n { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 9999px; font-size: 12px;
+  background: rgba(255, 255, 255, .08); }
+.faq2-tabs button[aria-selected="true"] .faq2-n { background: rgba(4, 18, 11, .18); }
+.faq2-tools { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.faq2-panel .faq details > div { line-height: 1.6; }
+@media (prefers-reduced-motion: reduce) { .faq2-tabs button { transition: none; } }
 
 /* ---------- status bar (Strike footer pattern) ---------- */
 .statusbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; height: var(--status-h); background: var(--bg);
@@ -218,8 +232,6 @@ footer.site-footer p + p { margin-top: 8px; }
 .foot { display: grid; gap: 10px; }
 .foot-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .foot-word { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
-.foot-by { font: 600 11px/1 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted);
-  border: 1px solid var(--border); border-radius: 6px; padding: 5px 7px; }
 .card { transition: border-color .15s; }
 .card:hover { border-color: #3a4a43; }
 .grid > .span-row { grid-column: 1 / -1; }
@@ -453,13 +465,37 @@ legend { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding:
 .pf-main > dd:first-of-type { font-size: 24px; }
 @media (max-width: 480px) { .pf-main { grid-column: 1 / -1; } }
 .pf-block h4 { font-size: 13px; font-weight: 600; color: var(--text-muted); margin: 0 0 8px; text-transform: none; }
-.pf-chart { margin: 0; position: relative; }
-.pf-chart svg { display: block; width: 100%; height: 120px; }
-.pf-line { fill: none; stroke-width: 2; }
-.pf-line.up { stroke: var(--primary); } .pf-line.down { stroke: #f43f5e; }
-.pf-area.up { fill: rgba(78, 250, 176, .10); } .pf-area.down { fill: rgba(244, 63, 94, .10); }
-.pf-axis { position: absolute; inset: 0 0 auto auto; height: 100%; display: flex; flex-direction: column; justify-content: space-between;
-  font-size: 11px; color: var(--text-muted); text-align: right; pointer-events: none; }
+/* the account over time (city/portfolio.tsx Chart): tabs per account, a gradient area, a grid with its values, dates,
+   the last value marked and any point readable with the pointer, a finger or the arrow keys */
+.pf-chartbox { display: grid; gap: 8px; }
+.pf-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf-tabs button { min-height: 32px; padding: 4px 12px; border: 1px solid var(--border); border-radius: 9999px; background: var(--surface-2);
+  color: var(--text-muted); font: 600 12.5px/1.2 var(--font); cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-tabs button[aria-selected="true"] { color: var(--text); border-color: var(--primary); background: var(--primary-10); }
+.pf-tabs button:focus-visible { box-shadow: var(--focus); outline: none; }
+.pf-chart2 { margin: 0; --c: var(--primary); --ca: rgba(78, 250, 176, .32); }
+.pf-chart2.down { --c: #f43f5e; --ca: rgba(244, 63, 94, .28); }
+.pf-plot { position: relative; height: 200px; border: 1px solid var(--border-soft); border-radius: 12px; overflow: hidden; touch-action: pan-y;
+  background: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--c) 7%, transparent), transparent 60%), var(--surface-2); cursor: crosshair; }
+.pf-plot:focus-visible { box-shadow: var(--focus); outline: none; }
+.pf-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.pf-g0 { stop-color: var(--c); stop-opacity: .34; } .pf-g1 { stop-color: var(--c); stop-opacity: 0; }
+.pf-line2 { fill: none; stroke: var(--c); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
+.pf-gridline { stroke: rgba(255, 255, 255, .07); stroke-width: 1; }
+.pf-zero { stroke: rgba(255, 255, 255, .28); stroke-width: 1; stroke-dasharray: 4 4; }
+.pf-cross { stroke: rgba(255, 255, 255, .35); stroke-width: 1; }
+.pf-yl { position: absolute; inset: 0; pointer-events: none; }
+.pf-yl span { position: absolute; left: 8px; transform: translateY(-50%); font: 500 10.5px/1 var(--mono, "IBM Plex Mono", monospace); color: var(--text-faint);
+  background: color-mix(in srgb, var(--surface-2) 80%, transparent); padding: 1px 4px; border-radius: 4px; }
+.pf-dot { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--c);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 25%, transparent); pointer-events: none; }
+.pf-tip { position: absolute; transform: translate(12px, -50%); display: flex; flex-direction: column; gap: 1px; padding: 5px 9px; border-radius: 8px;
+  background: rgba(5, 7, 10, .92); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); pointer-events: none; white-space: nowrap; }
+.pf-tip.left { transform: translate(calc(-100% - 12px), -50%); }
+.pf-tip b { font-size: 13px; color: var(--text); } .pf-tip small { font-size: 11px; color: var(--text-muted); }
+.pf-xl { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: var(--text-faint); }
+.pf-chart-note { margin: 0; font-size: 12px; }
+@media (max-width: 480px) { .pf-plot { height: 170px; } }
 .pf-list, .pf-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .pf-pos { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
 .pf-pos-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
@@ -830,6 +866,26 @@ legend { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding:
 .copy-state.starting, .copy-state.waiting { color: #fbbf24; border-color: rgba(251, 191, 36, .45); }
 .copy-state.halted { color: var(--negative, #f43f5e); border-color: rgba(244, 63, 94, .45); }
 .copy-why { margin: 10px 0 0; font-size: 14px; }
+/* the owner's sub-accounts, and where a copy runs */
+.copy-accounts { margin-top: 16px; }
+.copy-accounts ul { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 8px; }
+.copy-accounts li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 12px; border: 1px solid var(--border-soft);
+  border-radius: 10px; background: var(--surface-2); }
+.copy-accounts li .grow { flex: 1 1 180px; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.copy-accounts dl { display: flex; gap: 18px; margin: 0; }
+.copy-accounts dl div { display: flex; flex-direction: column; }
+.copy-accounts dt { font-size: 11.5px; color: var(--text-muted); }
+.copy-accounts dd { margin: 0; font-weight: 600; }
+.copy-acct-state { padding: 1px 8px; border-radius: 9999px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); }
+.copy-acct-state.free { color: var(--primary); border-color: var(--primary-30); }
+.copy-acct-state.busy { color: #fb7185; border-color: rgba(251, 113, 133, .45); }
+.copy-where { display: grid; gap: 6px; margin: 4px 0 6px; }
+.copy-where-opt { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface-2); cursor: pointer; }
+.copy-where-opt:has(input:checked) { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+.copy-where-opt:has(input:focus-visible) { box-shadow: var(--focus); }
+.copy-where-opt input { margin-top: 3px; accent-color: var(--primary); }
+.copy-where-opt.busy span { color: var(--text-muted); }
 .copy-actions { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
 .copy-log-title { margin: 14px 0 4px; font-size: 14px; }
 .copy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 12px; }

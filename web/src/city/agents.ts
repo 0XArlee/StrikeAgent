@@ -267,7 +267,7 @@ const TRIP: Partial<Record<Decision["kind"], string>> = { signal: "exchange", or
 const TRIP_MS = 75_000;
 
 /** The news reading of markets it trades just turned (neutral -> bearish...): the agent goes to the News Tower to read
- *  it, then back to its place. Only where it stands: the agents never use the news to trade. An agent at home (paused,
+ *  it, then back to its place. Only where it stands: the strategies never use the news to trade. An agent at home (paused,
  *  offline) stays there, and a trip already under way (an order, a risk check) goes first. */
 export function newsTrip(a: AgentView, turned: string[]): void {
   const m = a.markets.find((x) => turned.includes(x));

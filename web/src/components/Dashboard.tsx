@@ -17,6 +17,7 @@ import { MIN_BALANCE, TEST_MIN_AVAILABLE, strategyId, strategyName } from "../st
 import { StrategyPicker, type Plan } from "./StrategyPicker";
 import { Alert, Icon } from "./ui";
 import { CopyPlanDialog, CopySection, defaultPlan } from "./CopyPanel";
+import { traderName } from "../city/copy";
 
 /** #/city?me&copy=<trader>&pf=<platform>: "Copy with my agent" on a trader's card opens the plan with that trader. */
 const copyLink = () => {
@@ -207,7 +208,11 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
           ? <button type="button" className="link-btn" onClick={() => onOpenCity(link.cityId ?? link.accountId)}>{P.shown} · {P.seeCity}</button>
           : P.privateLbl}</dd></div>}
         {me?.createdAt && <div className="row"><dt>{P.since}</dt><dd>{when(me.createdAt)}</dd></div>}
+        {me?.copy && <div className="row"><dt>{d.copyRow}</dt><dd>{me.copy.status?.state === "copying" && me.copy.status.lead
+          ? <a href="#copy-with-agent">{d.copyOn(traderName({ id: me.copy.status.lead, platform: me.copy.status.platform === "hyperliquid" ? "hyperliquid" : "strike" }))}</a>
+          : d.copyOff}</dd></div>}
       </dl>
+      {me?.copy && <p className="field-hint">{d.independent}</p>}
     </div>
   );
   // a live agent with its account: Strike connection and status side by side, the portfolio full width below;
@@ -294,7 +299,7 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
         {me?.portfolio && (
           <div className="card" style={{ marginTop: 16 }}>
             <h3>{fmt(L.portfolio, { env: envName })}</h3>
-            <PortfolioView p={me.portfolio} lang={lang} marks={marks} idPrefix="dash-pf" />
+            <PortfolioView p={me.portfolio} lang={lang} marks={marks} idPrefix="dash-pf" subAccounts={me.copy?.status?.accounts} />
           </div>
         )}
         {me?.copy && <CopySection t={t} lang={lang} view={me.copy} liveOn={liveOn} busy={!!busy} onEdit={(x) => { setError(""); setCopyEdit(x); }}
@@ -343,7 +348,7 @@ export function Dashboard({ t, lang, info, link, onUnlinked, onSignOut, onSignIn
         </div>
       )}
       {copyEdit && me?.copy && (
-        <CopyPlanDialog t={t} lang={lang} initial={copyEdit} busy={busy === "copy"} error={error}
+        <CopyPlanDialog t={t} lang={lang} initial={copyEdit} accounts={me.copy.status?.accounts} busy={busy === "copy"} error={error}
                         onSign={(x) => act("copy", undefined, undefined, undefined, x)} onCancel={() => setCopyEdit(null)} />
       )}
       {plan && (

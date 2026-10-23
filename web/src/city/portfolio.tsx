@@ -1,7 +1,8 @@
 // A live agent's Strike account: what its owner sees in My agent (amounts) and everyone else in the city (shares of the
 // account, see web/server/agents.ts publicPortfolio). P&L follows Strike's mark prices live between account reads.
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import type { Lang } from "../i18n";
+import type { SubAccount } from "../api";
 
 import { accountResult, type PfPosition, type Portfolio } from "./portfolio-types";
 import { ticker as tick } from "./text";
@@ -12,6 +13,12 @@ const TXT = {
     equity: "Account equity", since: "since it connected", ret: "Result since it connected", upnl: "Open P&L", available: "Available",
     margin: "Margin in use", tradingFees: "Strike fees", builderFee: "Smart Flow fee (est.)", nPositions: "Open positions", nOrders: "Orders on the book",
     chart: "Account over time", chartSoon: "The chart fills in as the agent runs: one point every 5 minutes.",
+    tabs: "Which account", tResult: "Result", tAll: "All accounts", tMain: "Main account",
+    nResult: "What the agent and its copy made: deposits, withdrawals and money moved to your sub-accounts are left out.",
+    nAll: "Your main account and your sub-accounts together, since Strike City started reading the sub-accounts.",
+    nMain: "Exactly what is in the main account: money moved into a copy's sub-account shows here as a drop, not as a loss.",
+    nSub: "This sub-account's equity: the copy that runs in it.", nPublic: "The result as a share of the account: deposits and withdrawals left out.",
+    hint: "Move the pointer, a finger or the arrow keys over the chart to read any point.",
     positions: "Open positions", noPositions: "No open position.", orders: "Orders on the book", noOrders: "No pending order.",
     fills: "Latest fills", noFills: "No fill yet.", entry: "Entry", mark: "Price now", stop: "Stop", noStop: "none",
     liq: "Liquidation", none: "none", lev: "Leverage", opened: "Opened", weight: "Size vs account", move: "Price move",
@@ -30,6 +37,12 @@ const TXT = {
     equity: "Equity de la cuenta", since: "desde que se conectó", ret: "Resultado desde que se conectó", upnl: "Resultado abierto", available: "Disponible",
     margin: "Margen en uso", tradingFees: "Comisiones de Strike", builderFee: "Comisión Smart Flow (estim.)", nPositions: "Posiciones abiertas", nOrders: "Órdenes en el libro",
     chart: "Evolución de la cuenta", chartSoon: "La gráfica se va llenando mientras el agente funciona: un punto cada 5 minutos.",
+    tabs: "Qué cuenta", tResult: "Resultado", tAll: "Todas las cuentas", tMain: "Cuenta principal",
+    nResult: "Lo que ganaron el agente y su copia: quedan fuera los depósitos, los retiros y el dinero que pasas a tus subcuentas.",
+    nAll: "Tu cuenta principal y tus subcuentas juntas, desde que Strike City empezó a leer las subcuentas.",
+    nMain: "Exactamente lo que hay en la cuenta principal: el dinero que pasa a la subcuenta de una copia aparece aquí como una bajada, no como una pérdida.",
+    nSub: "El capital de esta subcuenta: la copia que va en ella.", nPublic: "El resultado en % de la cuenta: sin contar depósitos ni retiros.",
+    hint: "Pasa el puntero, el dedo o las flechas del teclado por la gráfica para leer cualquier punto.",
     positions: "Posiciones abiertas", noPositions: "Ninguna posición abierta.", orders: "Órdenes en el libro", noOrders: "Ninguna orden pendiente.",
     fills: "Últimas ejecuciones", noFills: "Todavía ninguna ejecución.", entry: "Entrada", mark: "Precio ahora", stop: "Stop", noStop: "sin stop",
     liq: "Liquidación", none: "no", lev: "Apalancamiento", opened: "Abierta", weight: "Tamaño vs cuenta", move: "Movimiento",
@@ -84,7 +97,8 @@ function agoText(lang: Lang, ms: number): string {
   return h < 48 ? `${h} h` : lang === "es" ? `${Math.round(h / 24)} d` : `${Math.round(h / 24)}d`;
 }
 
-export function PortfolioView({ p, lang, marks, idPrefix = "pf" }: { p: Portfolio; lang: Lang; marks: Record<string, number>; idPrefix?: string }) {
+export function PortfolioView({ p, lang, marks, idPrefix = "pf", subAccounts }: { p: Portfolio; lang: Lang; marks: Record<string, number>; idPrefix?: string;
+  subAccounts?: SubAccount[] }) {
   const L = TXT[lang];
   const loc = lang === "es" ? "es-ES" : "en-US";
   const owner = !p.public;
@@ -115,9 +129,11 @@ export function PortfolioView({ p, lang, marks, idPrefix = "pf" }: { p: Portfoli
   const other = Math.abs(otherRaw) < 5e-5 ? 0 : otherRaw;
   const hasTests = p.fills.some((f) => f.test) || sp.test !== 0;
 
-  const hist: [number, number][] = p.history.map((pt) => [pt[0], pt[1]]);   // the owner: equity; the public: growth
-  if (owner && equity != null) hist.push([Date.now(), equity]);
-  if (!owner && ret != null) hist.push([Date.now(), 1 + ret]);
+  // the chart's series: the public sees the result as a share; the owner the result in money (flows left out), every
+  // account together, the main account as it is, and each sub-account
+  const series = useMemo(() => buildSeries(p, owner, equity, ret, total, subAccounts ?? [], L, usd, pct),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [p, owner, equity, ret, total, subAccounts, lang]);
 
   return (
     <div className="pf">
@@ -159,7 +175,7 @@ export function PortfolioView({ p, lang, marks, idPrefix = "pf" }: { p: Portfoli
 
       <section className="pf-block" aria-labelledby={`${idPrefix}-chart`}>
         <h4 id={`${idPrefix}-chart`}>{L.chart}</h4>
-        <Chart pts={hist} label={(v) => (owner ? usd(v) : pct(v - 1))} lang={lang} />
+        <ChartTabs series={series} lang={lang} idPrefix={idPrefix} />
       </section>
 
       <section className="pf-block" aria-labelledby={`${idPrefix}-pos`}>
@@ -238,27 +254,147 @@ export function PortfolioView({ p, lang, marks, idPrefix = "pf" }: { p: Portfoli
   );
 }
 
-/** Equity line: SVG, no library. */
-function Chart({ pts, label, lang }: { pts: [number, number][]; label: (v: number) => string; lang: Lang }) {
+interface Series { id: string; label: string; note: string; pts: [number, number][]; fmt: (v: number) => string; zero?: boolean }
+type Txt = (typeof TXT)["en"];
+
+/** The value of a [time, value] series at time t: its last point at or before t. */
+const at = (pts: [number, number][], t: number) => {
+  let v: number | null = null;
+  for (const [x, y] of pts) { if (x > t) break; v = y; }
+  return v;
+};
+
+function buildSeries(p: Portfolio, owner: boolean, equity: number | null, ret: number | null, total: number | null, subs: SubAccount[], L: Txt,
+  usd: (v: number | null | undefined, signed?: boolean) => string, pct: (v: number | null | undefined, signed?: boolean) => string): Series[] {
+  const now = Date.now();
+  if (!owner) {
+    const pts: [number, number][] = p.history.map((pt) => [pt[0], pt[1]]);
+    if (ret != null) pts.push([now, 1 + ret]);
+    return [{ id: "public", label: L.tResult, note: L.nPublic, pts, fmt: (v) => pct(v - 1), zero: false }];
+  }
+  const out: Series[] = [];
+  const main: [number, number][] = p.history.map((pt) => [pt[0], pt[1]]);
+  if (equity != null) main.push([now, equity]);
+  if (p.start != null) {   // the result: equity less where it started and every flow (deposits, withdrawals, moves to sub-accounts)
+    const res: [number, number][] = p.history.map((pt) => [pt[0], pt[1] - p.start! - ((pt as number[])[2] ?? 0)]);
+    if (total != null) res.push([now, total]);
+    out.push({ id: "result", label: L.tResult, note: L.nResult, pts: res, fmt: (v) => usd(v, true), zero: true });
+  }
+  const live = subs.filter((a) => a.history?.length || a.equity != null);
+  if (live.length) {
+    const subPts = live.map((a) => [...(a.history ?? []), ...(a.equity != null ? [[now, a.equity] as [number, number]] : [])]);
+    const from = Math.max(...subPts.map((x) => x[0]?.[0] ?? now));
+    const all: [number, number][] = main.filter(([t]) => t >= from)
+      .map(([t, v]) => [t, v + subPts.reduce((sum, x) => sum + (at(x, t) ?? 0), 0)] as [number, number]);
+    out.push({ id: "all", label: L.tAll, note: L.nAll, pts: all, fmt: (v) => usd(v) });
+    out.push({ id: "main", label: L.tMain, note: L.nMain, pts: main, fmt: (v) => usd(v) });
+    live.forEach((a, i) => out.push({ id: `sub-${i}`, label: a.name || `${a.id.slice(0, 8)}…`, note: L.nSub, pts: subPts[i], fmt: (v) => usd(v) }));
+  } else out.push({ id: "main", label: L.tMain, note: L.nMain, pts: main, fmt: (v) => usd(v) });
+  return out;
+}
+
+/** The chart and, with more than one series, a tab per account. */
+function ChartTabs({ series, lang, idPrefix }: { series: Series[]; lang: Lang; idPrefix: string }) {
   const L = TXT[lang];
-  if (pts.length < 2) return <p className="faint">{L.chartSoon}</p>;
-  const W = 600, H = 120, pad = 6;
-  const t0 = pts[0][0], t1 = pts[pts.length - 1][0] || t0 + 1;
-  const vs = pts.map((p) => p[1]);
-  let lo = Math.min(...vs), hi = Math.max(...vs);
-  if (hi - lo < Math.abs(hi) * 1e-4 || hi === lo) { const m = Math.abs(hi) * 5e-4 || 1; lo -= m; hi += m; }
-  const x = (t: number) => pad + ((t - t0) / Math.max(1, t1 - t0)) * (W - 2 * pad);
-  const y = (v: number) => H - pad - ((v - lo) / (hi - lo)) * (H - 2 * pad);
-  const line = pts.map(([t, v], i) => `${i ? "L" : "M"}${x(t).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-  const up = vs[vs.length - 1] >= vs[0];
+  const [sel, setSel] = useState(series[0]?.id);
+  const cur = series.find((x) => x.id === sel) ?? series[0];
+  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  if (!cur) return <p className="faint">{L.chartSoon}</p>;
+  const key = (e: KeyboardEvent<HTMLDivElement>) => {   // arrows move between the tabs (WAI-ARIA tabs)
+    const i = series.findIndex((x) => x.id === cur.id);
+    const j = e.key === "ArrowRight" ? (i + 1) % series.length : e.key === "ArrowLeft" ? (i - 1 + series.length) % series.length : -1;
+    if (j < 0) return;
+    e.preventDefault();
+    setSel(series[j].id);
+    tabs.current[j]?.focus();
+  };
   return (
-    <figure className="pf-chart">
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img"
-           aria-label={`${L.chart}: ${label(vs[0])} → ${label(vs[vs.length - 1])}`}>
-        <path d={`${line} L${x(t1).toFixed(1)},${H - pad} L${x(t0).toFixed(1)},${H - pad} Z`} className={`pf-area ${up ? "up" : "down"}`} />
-        <path d={line} className={`pf-line ${up ? "up" : "down"}`} vectorEffect="non-scaling-stroke" />
-      </svg>
-      <figcaption className="pf-axis num"><span>{label(hi)}</span><span>{label(lo)}</span></figcaption>
+    <div className="pf-chartbox">
+      {series.length > 1 && (
+        <div className="pf-tabs" role="tablist" aria-label={L.tabs} onKeyDown={key}>
+          {series.map((x, i) => (
+            <button key={x.id} ref={(el) => { tabs.current[i] = el; }} type="button" role="tab" id={`${idPrefix}-tab-${x.id}`}
+                    aria-selected={x.id === cur.id} aria-controls={`${idPrefix}-panel`} tabIndex={x.id === cur.id ? 0 : -1}
+                    onClick={() => setSel(x.id)}>{x.label}</button>
+          ))}
+        </div>
+      )}
+      <div id={`${idPrefix}-panel`} role={series.length > 1 ? "tabpanel" : undefined} aria-labelledby={series.length > 1 ? `${idPrefix}-tab-${cur.id}` : undefined}>
+        <Chart key={cur.id} s={cur} lang={lang} />
+        <p className="pf-chart-note faint">{cur.note}</p>
+      </div>
+    </div>
+  );
+}
+
+/** A value over time: a gradient area, a grid with its values, dates under it, the last value marked, and any point read
+ *  with the pointer, a finger or the arrow keys. SVG, no library. */
+function Chart({ s, lang }: { s: Series; lang: Lang }) {
+  const L = TXT[lang];
+  const loc = lang === "es" ? "es-ES" : "en-US";
+  const [hover, setHover] = useState<number | null>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const pts = s.pts;
+  if (pts.length < 2) return <p className="faint">{L.chartSoon}</p>;
+  const W = 640, H = 200;
+  const t0 = pts[0][0], t1 = Math.max(pts[pts.length - 1][0], t0 + 1);
+  const vs = pts.map((p) => p[1]);
+  let lo = Math.min(...vs, ...(s.zero ? [0] : [])), hi = Math.max(...vs, ...(s.zero ? [0] : []));
+  if (hi - lo < Math.max(Math.abs(hi), 1) * 1e-4) { const m = Math.max(Math.abs(hi) * 5e-3, 0.5); lo -= m; hi += m; }
+  const padV = (hi - lo) * 0.08; lo -= padV; hi += padV;
+  const x = (t: number) => ((t - t0) / (t1 - t0)) * W;
+  const y = (v: number) => H - ((v - lo) / (hi - lo)) * H;
+  const line = pts.map(([t, v], i) => `${i ? "L" : "M"}${x(t).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const last = vs[vs.length - 1];
+  const up = s.zero ? last >= 0 : last >= vs[0];
+  const grad = `pfg-${s.id}-${up ? "u" : "d"}`;
+  const grid = [0, 1, 2, 3].map((k) => hi - ((hi - lo) * (k + 0.5)) / 4);
+  const date = (t: number, time = false) => new Date(t).toLocaleString(loc, { day: "numeric", month: "short", ...(time ? { hour: "2-digit", minute: "2-digit" } : {}) });
+  const idx = hover ?? pts.length - 1;
+  const [ht, hv] = pts[idx];
+  const pick = (e: PointerEvent<HTMLDivElement>) => {
+    const r = box.current?.getBoundingClientRect();
+    if (!r) return;
+    const t = t0 + ((e.clientX - r.left) / r.width) * (t1 - t0);
+    let best = 0;
+    for (let i = 1; i < pts.length; i++) if (Math.abs(pts[i][0] - t) < Math.abs(pts[best][0] - t)) best = i;
+    setHover(best);
+  };
+  const key = (e: KeyboardEvent<HTMLDivElement>) => {
+    const i = hover ?? pts.length - 1;
+    const step = e.shiftKey ? 10 : 1;
+    if (e.key === "ArrowLeft") setHover(Math.max(0, i - step));
+    else if (e.key === "ArrowRight") setHover(Math.min(pts.length - 1, i + step));
+    else if (e.key === "Home") setHover(0);
+    else if (e.key === "End") setHover(pts.length - 1);
+    else return;
+    e.preventDefault();
+  };
+  const leftPct = (x(ht) / W) * 100, topPct = (y(hv) / H) * 100;
+  return (
+    <figure className={`pf-chart2 ${up ? "up" : "down"}`}>
+      <div ref={box} className="pf-plot" tabIndex={0} role="img" onPointerMove={pick} onPointerDown={pick} onPointerLeave={() => setHover(null)} onKeyDown={key}
+           aria-label={`${s.label}: ${s.fmt(vs[0])} (${date(t0)}) → ${s.fmt(last)} (${date(t1)}). ${L.hint}`}>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id={grad} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" className="pf-g0" /><stop offset="100%" className="pf-g1" />
+            </linearGradient>
+          </defs>
+          {grid.map((v, k) => <line key={k} x1="0" x2={W} y1={y(v)} y2={y(v)} className="pf-gridline" vectorEffect="non-scaling-stroke" />)}
+          {s.zero && lo < 0 && hi > 0 && <line x1="0" x2={W} y1={y(0)} y2={y(0)} className="pf-zero" vectorEffect="non-scaling-stroke" />}
+          <path d={`${line} L${x(t1).toFixed(1)},${H} L${x(t0).toFixed(1)},${H} Z`} fill={`url(#${grad})`} />
+          <path d={line} className="pf-line2" vectorEffect="non-scaling-stroke" />
+          {hover != null && <line x1={x(ht)} x2={x(ht)} y1="0" y2={H} className="pf-cross" vectorEffect="non-scaling-stroke" />}
+        </svg>
+        <div className="pf-yl" aria-hidden="true">{grid.map((v, k) => <span key={k} style={{ top: `${(y(v) / H) * 100}%` }}>{s.fmt(v)}</span>)}</div>
+        <span className="pf-dot" style={{ left: `${leftPct}%`, top: `${topPct}%` }} aria-hidden="true" />
+        <span className={`pf-tip${leftPct > 70 ? " left" : ""}`} style={{ left: `${leftPct}%`, top: `${Math.min(80, Math.max(20, topPct))}%` }} aria-hidden="true">
+          <b className="num">{s.fmt(hv)}</b><small>{date(ht, true)}</small>
+        </span>
+      </div>
+      <figcaption className="pf-xl num"><span>{date(t0)}</span><span>{date(t0 + (t1 - t0) / 2)}</span><span>{date(t1)}</span></figcaption>
+      <p className="sr-only" aria-live="polite">{hover != null ? `${date(ht, true)}: ${s.fmt(hv)}` : ""}</p>
     </figure>
   );
 }

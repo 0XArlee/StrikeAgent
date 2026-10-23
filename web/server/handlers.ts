@@ -78,8 +78,11 @@ export async function city(c: Ctx): Promise<Response> {
     if (linked.has(u.id)) return { ...startingAgent(u, liveEnv(c.env), evs, now), portfolio: undefined };
     return forAll ? stoppedAgent(u, liveEnv(c.env), evs, now) : userAgent(u, refOf(official, u), evs, now);
   });
+  // production shows real accounts only: the official paper agents that test the strategies (and their results) live on
+  // staging, where paper and testnet trading belong (Edgar, 2026-10-23); they still run on the host for strategy health
+  const shown = liveEnv(c.env) === "mainnet" ? [] : official;
   // browsers always ask again (an owner who hides their agent must see it gone); the edge copy is purged on changes
-  const res = json({ ...doc, agents: [...official, ...mine] }, 200, "public, max-age=0, s-maxage=30");
+  const res = json({ ...doc, agents: [...shown, ...mine] }, 200, "public, max-age=0, s-maxage=30");
   c.waitUntil(cache.put(key, res.clone()).catch(() => undefined));
   return res;
 }
@@ -264,7 +267,8 @@ export async function me({ request, env }: Ctx): Promise<Response> {
   return meFor(env, id, now);
 }
 
-const ACTIONS: Record<string, string> = { pause: "pause", resume: "resume", revoke: "delete", show: "show in EdgeCraft-StrikeCity", hide: "hide from EdgeCraft-StrikeCity",
+// pause and resume touch the strategy only: a copy the agent runs goes on (and stopping a copy leaves the strategy trading)
+const ACTIONS: Record<string, string> = { pause: "pause the strategy of", resume: "resume the strategy of", revoke: "delete", show: "show in EdgeCraft-StrikeCity", hide: "hide from EdgeCraft-StrikeCity",
   look: "change the character of", settings: "change the strategy, markets and risk of", test: "run a test trade with",
   copy: "set the copy trading of" };
 

@@ -1,6 +1,6 @@
 // EdgeCraft-StrikeCity: the agents of Smart Flow users living on a map, driven by the same lifecycle as the real agent.
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
-import { DEFAULT_STRATEGY, strategyDef } from "../strategies";
+import { CATALOG, DEFAULT_STRATEGY, STRATEGY_DATA, strategyDef } from "../strategies";
 import "@fontsource/ibm-plex-mono/600.css";
 import "@fontsource/ibm-plex-mono/700.css";
 import "./city.css";
@@ -21,7 +21,7 @@ import { voiceLine } from "../components/PersonaPicker";
 import { TEMPER_COLOR } from "./persona";
 import { useNews } from "./news";
 import { mainPosition, traderName, useCopy, type CopyState, type Trader } from "./copy";
-import { CopyChooser, LeadCard } from "./CopyView";
+import { CopyChooser, Evidence, LeadCard, StrikeStats } from "./CopyView";
 import { cityText, describe, fmtPct, fmtPrice, fmtR, money as cents, pctSigned, ticker, type CityText } from "./text";
 import { ART2, BUILDINGS, artReady } from "./world";
 import { PortfolioView, livePosition } from "./portfolio";
@@ -470,7 +470,8 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
               {panel === "agents" && <AgentsPanel T={T} lang={lang} store={store} leads={leads.current} selected={agent?.id ?? lead?.id}
                                                   traders={copyDoc && typeof copyDoc === "object" ? copyDoc.traders : []}
                                                   onPick={(id) => choose({ kind: "agent", id })} onTrader={openTrader} />}
-              {panel === "ranks" && <RanksPanel T={T} lang={lang} store={store} testSite={testSite} onPick={(id) => choose({ kind: "agent", id })} onConnect={onConnect}
+              {panel === "ranks" && <ResultsPanel T={T} lang={lang} store={store} testSite={testSite} onPick={(id) => choose({ kind: "agent", id })} onConnect={onConnect}
+                                               leads={leads.current.length}
                                                 copy={copyDoc} onArena={enterArena} onTrader={openTrader} />}
               {panel === "feed" && <FeedPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "agent", id })} />}
               {panel === "markets" && <MarketsPanel T={T} lang={lang} store={store} onPick={(id) => choose({ kind: "building", id })} />}
@@ -655,7 +656,7 @@ export default function CityPage({ lang, setLang, onConnect, onFeedback, myAgent
 }
 
 function panelTitle(p: Panel, T: CityText) {
-  return { agents: T.agents.title, ranks: T.ranks.title, feed: T.feed.title, markets: T.markets.title, guide: T.guide.title }[p];
+  return { agents: T.agents.title, ranks: T.results.title, feed: T.feed.title, markets: T.markets.title, guide: T.guide.title }[p];
 }
 
 // ---------------------------------------------------------------- pieces
@@ -930,6 +931,138 @@ function AgentsPanel({ T, lang, store, leads, traders, selected, onPick, onTrade
         </section>
       )}
     </>
+  );
+}
+
+type RTab = "overview" | "strategies" | "copilot" | "strike" | "ranking";
+const RTABS: RTab[] = ["overview", "strategies", "copilot", "strike", "ranking"];
+
+/** Results: the agents on the marketplace's strategies, the copies agents run, Strike's copy trading and the ranking,
+ *  each in a tab (WAI-ARIA tabs: arrows move between them). Production counts real accounts only; staging all. */
+function ResultsPanel({ T, lang, store, testSite, onPick, onConnect, copy, onArena, onTrader, leads }: { T: CityText; lang: Lang; store: CityStore;
+  testSite?: boolean; onPick: (id: string) => void; onConnect: () => void; copy: CopyState; onArena: () => void; onTrader: (id: string) => void; leads: number }) {
+  const R = T.results, loc = lang === "es" ? "es-ES" : "en-US";
+  const [tab, setTab] = useState<RTab>("overview");
+  const btns = useRef<(HTMLButtonElement | null)[]>([]);
+  const doc = copy && typeof copy === "object" ? copy : null;
+  const agents = store.agents;
+  const all = agents.map((a) => stats(a));
+  const n = all.reduce((s, x) => s + x.n, 0);
+  const wins = all.reduce((s, x) => s + x.winRate * x.n, 0);
+  const totalR = all.reduce((s, x) => s + x.totalR, 0);
+  const copying = agents.filter((a) => a.copying);
+  const pct = (v: number) => `${(v * 100).toLocaleString(loc, { maximumFractionDigits: 0 })} %`;
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const i = RTABS.indexOf(tab), j = e.key === "ArrowRight" ? (i + 1) % RTABS.length : e.key === "ArrowLeft" ? (i - 1 + RTABS.length) % RTABS.length
+      : e.key === "Home" ? 0 : e.key === "End" ? RTABS.length - 1 : -1;
+    if (j < 0) return;
+    e.preventDefault(); setTab(RTABS[j]); btns.current[j]?.focus();
+  };
+  const tile = (label: string, value: string, tone = "") => <div className="rs-tile"><span>{label}</span><b className={`num ${tone}`}>{value}</b></div>;
+  return (
+    <div className="rs">
+      <div className="rs-tabs" role="tablist" aria-label={R.tabs} onKeyDown={onKey}>
+        {RTABS.map((x, i) => (
+          <button key={x} ref={(el) => { btns.current[i] = el; }} type="button" role="tab" id={`rs-tab-${x}`} aria-selected={tab === x}
+                  aria-controls="rs-panel" tabIndex={tab === x ? 0 : -1} onClick={() => setTab(x)}>{R.t[x]}</button>
+        ))}
+      </div>
+      <div id="rs-panel" role="tabpanel" aria-labelledby={`rs-tab-${tab}`} className="rs-panel">
+        {tab === "overview" && (
+          <>
+            <p className="small faint">{testSite ? R.allHere : R.realOnly}</p>
+            <div className="rs-tiles">
+              {tile(R.k.agents, String(agents.length))}
+              {tile(R.k.inTrade, String(agents.filter((a) => a.position).length))}
+              {tile(R.k.trades, n.toLocaleString(loc))}
+              {tile(R.k.win, n ? pct(wins / n) : "—")}
+              {tile(R.k.total, n ? fmtR(totalR, lang) : "—", n ? (totalR >= 0 ? "pos" : "neg") : "")}
+              {tile(R.k.copying, String(copying.length))}
+              {tile(R.k.leads, String(leads))}
+              {tile(R.k.copiesWon, doc && doc.counts.subs ? pct(doc.counts.inProfit / doc.counts.subs) : "—")}
+            </div>
+          </>
+        )}
+        {tab === "strategies" && (
+          <>
+            <p className="small faint">{R.strategiesNote} {testSite ? R.allHere : R.realOnly}</p>
+            <ul className="rs-cards">
+              {CATALOG.filter((s) => s.status === "live").map((s) => {
+                const mine = agents.filter((a) => (a.strategy ?? DEFAULT_STRATEGY) === s.id), st = mine.map((a) => stats(a));
+                const sn = st.reduce((q, x) => q + x.n, 0), sr = st.reduce((q, x) => q + x.totalR, 0), sw = st.reduce((q, x) => q + x.winRate * x.n, 0);
+                const f = STRATEGY_DATA[s.id];
+                return (
+                  <li key={s.id} className="rs-card">
+                    <div className="rs-card-head"><h4>{s.name}</h4><span className="faint small">{R.agents(mine.length)}</span></div>
+                    <p className="rs-sub">{R.live}</p>
+                    {mine.length ? (
+                      <dl className="rs-kv">
+                        <div><dt>{R.k.inTrade}</dt><dd className="num">{mine.filter((a) => a.position).length}</dd></div>
+                        <div><dt>{R.k.trades}</dt><dd className="num">{sn}</dd></div>
+                        <div><dt>{R.k.win}</dt><dd className="num">{sn ? pct(sw / sn) : "—"}</dd></div>
+                        <div><dt>{R.k.total}</dt><dd className={`num ${sn ? (sr >= 0 ? "pos" : "neg") : ""}`}>{sn ? fmtR(sr, lang) : "—"}</dd></div>
+                      </dl>
+                    ) : <p className="small muted">{R.noAgents}</p>}
+                    {f && <>
+                      <p className="rs-sub">{R.backtest}</p>
+                      <dl className="rs-kv">
+                        <div><dt>{R.annual}</dt><dd className="num pos">+{f.cagr_pct.toLocaleString(loc, { maximumFractionDigits: 1 })} %</dd></div>
+                        <div><dt>{R.pf}</dt><dd className="num">{f.profit_factor.toLocaleString(loc, { maximumFractionDigits: 2 })}</dd></div>
+                        <div><dt>{R.avgR}</dt><dd className="num">+{f.avg_r.toLocaleString(loc, { maximumFractionDigits: 2 })} R</dd></div>
+                        <div><dt>{R.k.win}</dt><dd className="num">{pct(f.win_rate > 1 ? f.win_rate / 100 : f.win_rate)}</dd></div>
+                      </dl>
+                    </>}
+                    <a className="btn btn-ghost btn-block" href={`#/strategy/${s.id}`}>{R.open}</a>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
+        {tab === "copilot" && (
+          <>
+            <p className="small faint">{R.copilotNote}</p>
+            <div className="rs-tiles two">{tile(R.k.copying, String(copying.length))}{tile(R.k.agents, String(agents.length))}</div>
+            {!copying.length ? <p className="small muted">{R.copilotNone}</p> : (
+              <ul className="rs-list">
+                {copying.map((a) => {
+                  const t = doc?.traders.find((x) => x.id.toLowerCase() === a.copying!.lead.toLowerCase());
+                  return (
+                    <li key={a.id}>
+                      <button type="button" className="city-link" onClick={() => onPick(a.id)}>{a.name}</button>
+                      <span className="faint"> {R.copies} </span>
+                      <button type="button" className="city-link mono" onClick={() => onTrader(a.copying!.lead)}>
+                        {traderName({ id: a.copying!.lead, platform: a.copying!.platform === "hyperliquid" ? "hyperliquid" : "strike" })}</button>
+                      {t?.city != null && <span className="faint small"> · {R.score} {Math.round(t.city)}</span>}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <button type="button" className="btn btn-primary btn-block" onClick={onArena}>{R.copyCta}</button>
+          </>
+        )}
+        {tab === "strike" && (
+          <>
+            <p className="small faint">{R.strikeNote}</p>
+            {doc ? <>
+              <StrikeStats T={T} lang={lang} doc={doc} />
+              {doc.evidence && <Evidence T={T} lang={lang} ev={doc.evidence} />}
+              <h4 className="rs-h">{R.top}</h4>
+              <ol className="rs-list">
+                {doc.traders.slice(0, 3).map((t) => (
+                  <li key={t.id}><button type="button" className="city-link mono" onClick={() => onTrader(t.id)}>{traderName(t)}</button>
+                    <span className="faint small"> · {t.platform === "strike" ? "Strike" : "Hyperliquid"} · {R.score} {Math.round(t.city ?? 0)}</span></li>
+                ))}
+              </ol>
+            </> : <p className="small muted">{T.copy.loading}</p>}
+            <button type="button" className="btn btn-primary btn-block" onClick={onArena}>{R.enter}</button>
+          </>
+        )}
+        {tab === "ranking" && <RanksPanel T={T} lang={lang} store={store} testSite={testSite} onPick={onPick} onConnect={onConnect} copy={copy}
+                                          onArena={onArena} onTrader={onTrader} />}
+      </div>
+    </div>
   );
 }
 

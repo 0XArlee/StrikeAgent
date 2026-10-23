@@ -1,5 +1,5 @@
 // Copy with your agent: the copy plan an owner signs with their wallet (whom to copy or let the agent choose, when, how),
-// kept here for the agents' host, which carries it out on Strike's own copy trading from a sub-account of its own
+// kept here for the agents' host, which carries it out on Strike's own copy trading in a sub-account of the owner's
 // (smartflow/copytrade/pilot.py) and reports how it goes. Strike City never holds money: Strike moves it from the
 // owner's account into the copy's sub-account, and the stop-loss ends the copy on Strike's side.
 /// <reference path="./env.d.ts" />
@@ -14,11 +14,14 @@ export interface CopyPlan {
   leverage: number;                 // the copy's sub-account (isolated margin)
   excluded: string[];               // markets it never opens
   until: number | null;             // the agent stops the copy then
-  alarmPause: boolean;              // stopped while the News Tower's security alarm is on
+  alarmPause: boolean;              // stopped while the News Tower's security alarm is on (a hack, an exchange going down)
+  macroPause: boolean;              // and from 30 min before to an hour after the big US releases (Fed, CPI, jobs, PCE, GDP)
+  account: string;                  // "auto": a free sub-account of the owner's, else a new one; "new"; or a sub-account's id
   pilot: { minScore: number; platforms: ("strike" | "hyperliquid")[]; review: number; maxSwitches: number } | null;
 }
 
 const LEAD = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|0x[0-9a-f]{40})$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SYMBOL = /^[A-Z0-9:]{1,20}-USD$/;
 const REVIEWS = [6, 12, 24, 72, 168];
 const MIN_COPY = 20;   // Strike's minimum copy amount and margin per entry (GET /v2/copy/lead-traders)
@@ -63,7 +66,11 @@ export function normalizePlan(v: unknown, now: number): CopyPlan | string {
     if (minScore == null || maxSwitches == null || !Number.isInteger(maxSwitches) || !platforms.length || review == null) return "invalid pilot rules";
     pilot = { minScore, platforms, review, maxSwitches };
   }
-  return { mode, lead, platform, sizing, stopLoss, leverage, excluded: [...new Set(excluded as string[])], until, alarmPause: !!p.alarmPause, pilot };
+  const account = p.account == null || p.account === "auto" ? "auto" : p.account === "new" ? "new"
+    : typeof p.account === "string" && UUID.test(p.account) ? p.account.toLowerCase() : null;
+  if (account == null) return "choose where the copy runs";
+  return { mode, lead, platform, sizing, stopLoss, leverage, excluded: [...new Set(excluded as string[])], until, alarmPause: !!p.alarmPause,
+    macroPause: !!p.macroPause, account, pilot };
 }
 
 const usd = (v: number) => `${v.toLocaleString("en-US", { maximumFractionDigits: 2 })} $`;
@@ -80,13 +87,17 @@ export function planLines(p: CopyPlan): string[] {
   const how = p.sizing.kind === "ratio"
     ? `Fixed ratio: ${usd(p.sizing.amount)} (every order of the trader scaled to it).`
     : `Fixed margin: ${usd(p.sizing.margin)} per entry, ${usd(p.sizing.funding)} in all.`;
+  const where = p.account === "new" ? "It runs in a new sub-account that Strike creates and funds from my main account."
+    : p.account === "auto" ? "It runs in a sub-account of mine that copies nobody and has the money; only if none does, Strike creates a new one funded from my main account."
+    : `It runs in my sub-account ${p.account}, with the money that is in it.`;
   return [who,
-    `It runs in a sub-account of its own that Strike creates and funds from my account the first time. ${how}`,
+    `${where} ${how}`,
     `Strike ends the copy if it loses ${usd(p.stopLoss)}. Leverage in the copy's sub-account: ${p.leverage}x, isolated margin.`,
     p.excluded.length ? `It never opens: ${p.excluded.join(", ")}.` : "It may open every market the trader trades on Strike.",
     p.until ? `It stops on ${iso(p.until)}.` : "No end date.",
-    p.alarmPause ? "It stops while the News Tower's security alarm is on and starts again after it." : "The News Tower's security alarm does not stop it.",
-    "What is left in the copy's sub-account goes back to my main account from Strike's app."];
+    p.alarmPause ? "It stops while the News Tower's security alarm is on (a hack, an exchange going down) and starts again after it." : "The News Tower's security alarm does not stop it.",
+    ...(p.macroPause ? ["It also stops from 30 minutes before to an hour after the big US releases (Fed decisions, CPI, jobs, PCE, GDP)."] : []),
+    "Money moves between my main account and my sub-accounts in Strike's app."];
 }
 
 /** The upsert of a signed plan: each change is a new version the host carries out once. */
@@ -149,14 +160,15 @@ export async function hostCopyPlans({ request, env }: { request: Request; env: E
 /** POST /api/internal/copystatus (HMAC): how each plan goes, as the host saw it. */
 export async function hostCopyStatus({ request, env }: { request: Request; env: Env }): Promise<Response> {
   const raw = await request.text();
-  if (raw.length > 600_000) return fail(413, "too large");
+  if (raw.length > 2_000_000) return fail(413, "too large");
   if (!(await fromHost(env, request, raw))) return fail(401, "bad signature");
   let b: { env?: unknown; status?: unknown };
   try { b = JSON.parse(raw); } catch { return fail(400, "not JSON"); }
   const e = liveEnv(env);
   if (b.env !== e || !Array.isArray(b.status) || b.status.length > 500) return fail(400, "not a copy status");
   const now = Date.now();
-  const rows = (b.status as Record<string, unknown>[]).filter((s) => typeof s?.userId === "string" && JSON.stringify(s).length < 16_000);
+  // each owner's status, with their sub-accounts' equity over time (a week of points each): up to 40 kB
+  const rows = (b.status as Record<string, unknown>[]).filter((s) => typeof s?.userId === "string" && JSON.stringify(s).length < 40_000);
   if (rows.length) {
     await env.DB.batch(rows.map((s) => env.DB.prepare("INSERT INTO copy_status (user_id, body, updated_at) VALUES (?1, ?2, ?3) "
       + "ON CONFLICT(user_id) DO UPDATE SET body = excluded.body, updated_at = excluded.updated_at")

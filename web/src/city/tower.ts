@@ -1,5 +1,6 @@
 // The News Tower's floors (tower.json, drawn by web/scripts/build_tower.py) and what each one shows from the news
-// document: one floor per kind of news, each spot a view of it. Only reading: nothing here reaches the agents.
+// document: one floor per kind of news, each spot a view of it. Only reading: the strategies never trade on it (the copy
+// pilot reads the security alarm and the calendar itself, smartflow/copytrade/pilot.py).
 import tower from "./tower.json";
 import { forMarket, type Category, type NewsDoc, type NewsItem } from "./news";
 

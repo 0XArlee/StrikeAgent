@@ -66,7 +66,9 @@ def run(p, tag, viewport, mobile):
     page = ctx.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.on("console", lambda m: errors.append(m.text) if m.type == "error" and "telemetry.tradingview.com" not in m.text else None)   # TradingView's own telemetry is not ours
+    # TradingView's own telemetry and DEX Screener's own analytics (inside their charts' frames) are not ours
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" and "telemetry.tradingview.com" not in m.text
+            and "dexscreener.com" not in m.text and "dexscreener.com" not in (m.location or {}).get("url", "") else None)
     signed = []
 
     def py_sign(payload_hex):
@@ -76,15 +78,14 @@ def run(p, tag, viewport, mobile):
 
     page.expose_function("pySign", py_sign)
     page.add_init_script(f"({WALLET_JS})('{w.addr_bytes.hex()}', {NET})")
-    page.goto(f"{BASE}/#/city", wait_until="networkidle")
+    page.goto(f"{BASE}/#/city", wait_until="load")   # not "networkidle": the screens' charts keep connections of their own open
     page.wait_for_selector(".city-dock-btn", timeout=30000)
     page.wait_for_timeout(1200)
     page.screenshot(path=str(OUT / f"o01_city_{tag}.png"))
     n0 = page.evaluate("() => fetch('/api/city').then(r => r.json()).then(d => d.agents.length)")
     check(f"{tag}: city loads its agents from the site API", n0 >= 1, f"{n0} agents")
 
-    page.locator(".city-dock-btn", has_text="Ranks").click()
-    page.get_by_role("button", name="Put your own agent in the city").click()
+    page.locator(".city-dock .city-dock-connect").click()   # no wallet yet: the dock offers to connect one
     page.wait_for_selector("[role=dialog]")
     page.get_by_role("button", name="TestWallet").click()
     page.wait_for_selector("text=Create your character", timeout=10000)
@@ -208,7 +209,7 @@ def run(p, tag, viewport, mobile):
           and "?me" in page.evaluate("() => location.hash"))
     page.wait_for_timeout(500)
     page.screenshot(path=str(OUT / f"o05a_city_me_{tag}.png"))
-    page.goto(f"{BASE}/#top", wait_until="networkidle")
+    page.goto(f"{BASE}/#top", wait_until="load")   # not "networkidle": the screens' charts keep connections of their own open
     page.wait_for_selector("#hero-title", timeout=20000)
     check(f"{tag}: the landing no longer carries the dashboard", page.locator("#agent-title").count() == 0)
     page.get_by_role("button", name="My agent").first.click()
@@ -248,11 +249,11 @@ def run(p, tag, viewport, mobile):
     check(f"{tag}: My agent shows its strategy", names[want] in page.locator("#agent").inner_text())
     # back after closing the browser or on another device: no session, the same wallet -> it only signs in
     page.evaluate("() => { localStorage.removeItem('sf-link'); sessionStorage.removeItem('sf-link') }")
-    page.goto(f"{BASE}/#/city", wait_until="networkidle")
-    page.reload(wait_until="networkidle")
+    page.goto(f"{BASE}/#/city", wait_until="load")   # not "networkidle": the screens' charts keep connections of their own open
+    page.reload(wait_until="load")   # not "networkidle": the screens' charts keep connections of their own open
     page.wait_for_selector(".city-dock-btn", timeout=30000)
     n_signed = len(signed)
-    page.locator(".city-dock-btn", has_text="My agent").click()
+    page.locator(".city-dock .city-dock-connect").click()   # no session: Connect wallet in My agent's place
     page.wait_for_selector("[role=dialog]")
     page.get_by_role("button", name="TestWallet").click()
     page.wait_for_selector("text=You already have an agent", timeout=15000)
@@ -276,7 +277,7 @@ def run(p, tag, viewport, mobile):
           and name in again and names[want] in again, signed[-1][:60] + " | " + again[:80].replace(chr(10), " | "))
 
     def sign_in_again():
-        page.locator(".city-dock-btn", has_text="My agent").click()
+        page.locator(".city-dock .city-dock-connect").click()
         page.wait_for_selector("[role=dialog]")
         page.get_by_role("button", name="TestWallet").click()
         page.wait_for_selector("text=You already have an agent", timeout=15000)
@@ -297,9 +298,11 @@ def run(p, tag, viewport, mobile):
     page.screenshot(path=str(OUT / f"o10_signed_out_{tag}.png"))
     check(f"{tag}: Disconnect wallet ends the session and says the agent keeps running", gone
           and "agent keeps running" in page.locator(".toast").inner_text(), page.locator(".toast").inner_text()[:80])
-    page.locator(".city-dock-btn", has_text="My agent").click()
+    check(f"{tag}: after disconnecting, the dock offers Connect wallet again instead of My agent",
+          page.locator(".city-dock .city-dock-connect").count() == 1 and page.locator(".city-dock-btn", has_text="My agent").count() == 0)
+    page.locator(".city-dock .city-dock-connect").click()
     page.wait_for_selector("[role=dialog]")
-    check(f"{tag}: after disconnecting, My agent asks for a wallet again", page.get_by_role("button", name="TestWallet").count() == 1)
+    check(f"{tag}: Connect wallet asks for a wallet", page.get_by_role("button", name="TestWallet").count() == 1)
     page.keyboard.press("Escape")
     page.wait_for_timeout(300)
     sign_in_again()
@@ -373,8 +376,7 @@ def review_es(p):
     page.add_init_script(f"({WALLET_JS})('{w.addr_bytes.hex()}', {NET})")
     page.goto(f"{BASE}/#/city", wait_until="load")   # not "networkidle": TradingView keeps requests of its own open
     page.wait_for_selector(".city-dock-btn", timeout=30000)
-    page.locator(".city-dock-btn", has_text="Ranking").click()
-    page.get_by_role("button", name="Pon tu propio agente en la ciudad").click()
+    page.locator(".city-dock .city-dock-connect").click()   # no wallet yet: "Conectar" in the dock
     page.get_by_role("button", name="TestWallet").click()
     page.get_by_role("button", name="Continuar").click()                 # character -> personality
     page.wait_for_selector("text=Su carácter", timeout=10000)

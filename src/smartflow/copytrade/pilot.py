@@ -8,13 +8,16 @@ the copy at the owner's stop-loss. The plan says:
 
 - whom: one trader (manual), or let the agent choose (pilot): the best by Strike City's score among the traders the
   owner's rules allow, kept while it still meets them, reviewed every few hours, changed at most a few times a week;
-- when: until a date, and paused while the News Tower's security alarm is on (a hack, an exchange halt);
+- when: until a date, paused while the News Tower's security alarm is on (a hack, an exchange's halt or insolvency),
+  and, if the owner wants, around the big scheduled US releases (Fed decisions, CPI, jobs, PCE, GDP);
 - how: fixed ratio (an amount, every lead order scaled to it) or fixed margin per entry, the stop-loss, the leverage
-  of the copy's sub-account and the markets never to open.
+  of the copy's sub-account and the markets never to open;
+- where: a sub-account the owner chose, or automatically one of theirs that copies nobody and has the money (the last
+  one used first), and only when none does, a new one that Strike creates and funds from the main account. A
+  sub-account runs one copy at a time, so a new copy reuses a free one instead of piling up sub-accounts.
 
-Strike ties a managed copy's sub-account to that copy, so every new copy (another trader, another amount) gets its own,
-funded from the last copy's sub-account while that has enough (the money moves on with the copies) or else from the
-owner's main account. Balances are read before asking, so the owner is told plainly when the money is not there.
+Balances are read before asking, so the owner is told plainly when the money is not there. Money only moves between an
+owner's accounts in Strike's own app (Strike keeps those transfers to it), so a sub-account is topped up there.
 
 A stop-loss Strike applied, or a copy Strike refused, halts the plan until its owner signs it again. Nothing here
 moves money out of Strike: what is left in the copy's sub-account goes back to the main account from Strike's app.
@@ -39,6 +42,11 @@ ALARM_MS = DAY              # a security alarm counts for a day (the News Tower'
 MIN_COPY = 20.0             # $: Strike's minimum copy amount and margin per entry (GET /v2/copy/lead-traders)
 MAX_COPIERS = 40            # Strike's limit of copiers per trader
 LOG_KEEP = 30
+ALARM_CATS = ("security", "exchange")   # a hack; an exchange's halt or insolvency
+MACRO_KINDS = ("fomc", "cpi", "nfp", "pce", "gdp")
+MACRO_BEFORE, MACRO_AFTER = 30 * 60_000, HOUR   # the copy waits from 30 min before a release to an hour after it
+HIST_EVERY, HIST_KEEP = 2 * HOUR, 84            # each sub-account's equity: a point every 2 hours, a week of them
+ACCOUNTS_KEEP = 6
 
 
 def _num(v) -> float | None:
@@ -49,10 +57,20 @@ def _num(v) -> float | None:
 
 
 def security_alarm(news: dict | None, now: int) -> dict | None:
-    """The News Tower's security alarm (any market): a security story scored -30 or worse in the last day."""
+    """The News Tower's security alarm (any market): a hack, or an exchange's halt or insolvency, scored -30 or worse
+    in the last day."""
     for h in (news or {}).get("headlines") or []:
-        if h.get("cat") == "security" and h.get("catalyst") and (h.get("score") or 0) <= -30 and now - int(h.get("t") or 0) <= ALARM_MS:
+        if h.get("cat") in ALARM_CATS and h.get("catalyst") and (h.get("score") or 0) <= -30 and now - int(h.get("t") or 0) <= ALARM_MS:
             return h
+    return None
+
+
+def macro_window(news: dict | None, now: int) -> dict | None:
+    """A big scheduled US release on the News Tower's calendar, from 30 minutes before it to an hour after."""
+    ev = (news or {}).get("events") or {}
+    for e in list(ev.get("next") or []) + list(ev.get("just") or []):
+        if e.get("kind") in MACRO_KINDS and -MACRO_AFTER <= int(e.get("t") or 0) - now <= MACRO_BEFORE:
+            return e
     return None
 
 
@@ -150,6 +168,7 @@ class CopyPilot:
         if fresh:   # a plan its owner just signed: whatever halted the last one is cleared
             st.update(version=version, halted=None, error=None)
             self._note(st, now, "plan", mode=plan["mode"])
+        self._accounts(c, p, st, now)   # the owner's sub-accounts, which copy whom, and their equity over time
         # where the copy really is: Strike's own reading
         live = None
         if st.get("sub"):
@@ -198,6 +217,8 @@ class CopyPilot:
             return None, "until"
         if plan.get("alarmPause") and security_alarm(news, now):
             return None, "alarm"
+        if plan.get("macroPause") and macro_window(news, now):
+            return None, "macro"
         if plan["mode"] == "manual":
             return {"id": plan["lead"], "platform": plan["platform"]}, "manual"
         # the pilot: keep its trader while it still qualifies, review every few hours, change at most a few times a week
@@ -229,35 +250,84 @@ class CopyPilot:
             out["max_margin_total"] = f"{float(plan['sizing']['funding']):.2f}"
         return out
 
+    def _accounts(self, c, p: dict, st: dict, now: int) -> list[dict]:
+        """The owner's active sub-accounts: name, equity, available money, whom each one copies now (a sub-account runs
+        one copy at a time), and each one's equity over time for its owner's chart."""
+        try:
+            rows = c.sub_accounts()
+            busy = {r.get("account_id"): r.get("lead_account_id") for r in c.copy_subscriptions()
+                    if r.get("status") == "active" and r.get("account_id") and r.get("account_id") != p["accountId"]}
+        except HttpError:
+            return st.get("accounts") or []
+        out = [{"id": r["account_id"], "name": str(r.get("name") or "")[:40], "equity": _num(r.get("equity")),
+                "available": _num(r.get("available_balance")) or 0.0, "busy": busy.get(r["account_id"])}
+               for r in rows if r.get("account_id") and r.get("status") == "active"]
+        hist = st.setdefault("hist", {})
+        for a in out:
+            pts = hist.setdefault(a["id"], [])
+            if a["equity"] is not None and (not pts or now - pts[-1][0] >= HIST_EVERY):
+                pts.append([now, round(a["equity"], 2)])
+                del pts[:-HIST_KEEP]
+        for gone in [k for k in hist if k not in {a["id"] for a in out}]:
+            del hist[gone]
+        st["accounts"] = out
+        return out
+
     def _subscribe(self, c, p: dict, st: dict, want: dict | None, why: str | None, now: int) -> str | None:
-        """Asks Strike for the copy (or for how its setup goes); "funds" when the money is not there yet."""
+        """Asks Strike for the copy (or for how its setup goes): in a sub-account of the owner's that copies nobody, or
+        in a new one Strike creates. "funds" when the money is not there yet, "account_busy" while the chosen sub-account
+        still runs another copy."""
         plan = p["plan"]
+        use = None   # an existing sub-account the copy runs in
         if st.get("pending"):
             body = st["pending"]
         else:
             s = plan["sizing"]
             body = {"lead_account_id": want["id"].lower() if want["platform"] == "hyperliquid" else want["id"],
                     "platform": want["platform"], **self._limits(plan)}
-            # every copy gets a sub-account of its own (Strike ties a managed copy's account to it): the money comes from
-            # the last copy's sub-account while it has enough, else from the owner's main account
             total = float(s["amount"] if s["kind"] == "ratio" else s["funding"])
-            last = (_num(c.account_of(st["subAcct"]).get("available_balance")) or 0.0) if st.get("subAcct") else 0.0
+            enough = lambda v: v >= MIN_COPY and (s["kind"] != "fixed" or v >= float(s["margin"]))   # noqa: E731
+            subs = st.get("accounts") if st.get("accounts") is not None else self._accounts(c, p, st, now)
+            free = sorted((a for a in subs if not a["busy"]), key=lambda a: (a["id"] != st.get("subAcct"), -a["available"]))
             main = _num(c.account_of(None).get("available_balance")) or 0.0
-            if last >= total:
-                source, put = st["subAcct"], total
-            elif main >= total:
-                source, put = p["accountId"], total
-            else:   # neither covers it: the one with more, if that is enough for a copy at all
-                source, put = (st["subAcct"], last) if last > main else (p["accountId"], main)
-            if put < MIN_COPY or (s["kind"] == "fixed" and put < float(s["margin"])):
-                # not stopped for good: it tries again each pass, so a deposit is all it takes
-                if (st.get("log") or [{}])[-1].get("kind") != "no_funds":
-                    self._note(st, now, "no_funds", available=round(main, 2), left=round(last, 2) if st.get("subAcct") else None)
-                return "funds"
+            pick, source, put = plan.get("account") or "auto", None, 0.0
+            if pick not in ("auto", "new"):   # the sub-account its owner chose
+                a = next((x for x in subs if x["id"] == pick), None)
+                if a is None or a["busy"]:
+                    kind = "account_gone" if a is None else "account_busy"
+                    if (st.get("log") or [{}])[-1].get("kind") != kind:
+                        self._note(st, now, kind, lead=a["busy"] if a else None)
+                    return kind
+                use, put = a, min(total, a["available"])
+            else:
+                full = [a for a in free if a["available"] >= total]
+                if pick == "auto" and full:              # a free sub-account that has the money: no new one
+                    use, put = full[0], total
+                elif main >= total:                      # a new one, funded from the main account
+                    source, put = p["accountId"], total
+                elif full:                               # or from a free sub-account that has it
+                    source, put = full[0]["id"], total
+                else:   # nothing covers it: the most there is, if that is enough for a copy at all
+                    best = free[0] if free and free[0]["available"] > main else None
+                    if best and pick == "auto":
+                        use, put = best, best["available"]
+                    else:
+                        source, put = (best["id"], best["available"]) if best else (p["accountId"], main)
+            if not enough(put):
+                # not stopped for good: it tries again each pass, so a deposit (or a transfer in Strike's app) is all it takes
+                kind = "no_funds_sub" if use else "no_funds"
+                if (st.get("log") or [{}])[-1].get("kind") != kind:
+                    self._note(st, now, kind, available=round(use["available"] if use else main, 2), account=use["name"] if use else None)
+                return "funds_sub" if use else "funds"
             if s["kind"] == "ratio":
                 body.update(copy_mode="fixed_ratio", copy_amount=f"{put:.2f}")
             else:
-                body.update(copy_mode="fixed_amount", margin_per_entry_order=f"{float(s['margin']):.2f}", funding_amount=f"{put:.2f}")
+                body.update(copy_mode="fixed_amount", margin_per_entry_order=f"{float(s['margin']):.2f}")
+                if not use:
+                    body["funding_amount"] = f"{put:.2f}"
+            if use:   # an existing sub-account: Strike copies from it (its own margin settings stay as they are)
+                body["sub_account_id"] = use["id"]
+                return self._subscribe_in(c, st, body, use, why, now, plan["sizing"])
             body.update(auto_create_sub_account=True, request_id=str(uuid.uuid4()), source_account_id=source,
                         margin_settings={"default_margin_mode": "isolated", "default_leverage": int(plan.get("leverage") or 3)})
             st["pending"] = body   # kept before sending: a timeout is resumed with the same request
@@ -277,12 +347,41 @@ class CopyPilot:
         if status == "active" and r.get("subscription_id"):
             st.update(pending=None, sub=r["subscription_id"], lead=body["lead_account_id"], platform=body["platform"], since=now,
                       sizing=plan["sizing"], row=None)
+            st.pop("accounts", None)   # a new sub-account: read them again on the next pass
             self._note(st, now, "start", lead=body["lead_account_id"], reason=st.pop("wantWhy", None))
         elif status in ("refunded", "refund_failed", "failed"):
             st.update(pending=None, halted="refused")
             self._note(st, now, "refused", lead=body["lead_account_id"], text=r.get("error"))
         elif (st.get("log") or [{}])[-1].get("step") != status:   # still being set up: each step once in its log
             self._note(st, now, "setup", step=status)
+
+    def _subscribe_in(self, c, st: dict, body: dict, use: dict, why: str | None, now: int, sizing: dict) -> str | None:
+        """The copy in one of the owner's sub-accounts. Strike answers at once (no setup); a 409 means that account
+        still runs a copy (one just stopped can take a moment): the next pass asks again."""
+        lead = body["lead_account_id"]
+        try:
+            r = c.copy_subscribe(body)
+        except HttpError as e:
+            if e.status == 409:   # maybe it is already copying this trader there: take that copy as it is
+                row = next((x for x in c.copy_subscriptions() if x.get("account_id") == use["id"] and x.get("status") == "active"
+                            and str(x.get("lead_account_id") or "").lower() == lead.lower()), None)
+                if row is None:
+                    if (st.get("log") or [{}])[-1].get("kind") != "account_busy":
+                        self._note(st, now, "account_busy", text=str(e.body)[:200])
+                    return "account_busy"
+                r = {"status": "active", "subscription_id": row.get("subscription_id")}
+            elif 400 <= e.status < 500 and e.status != 429:   # Strike refused it: its owner decides what next
+                st.update(halted="refused")
+                self._note(st, now, "refused", lead=lead, status=e.status, text=str(e.body)[:200])
+                return None
+            else:
+                raise
+        if r.get("status") == "active" and r.get("subscription_id"):
+            st.update(subAcct=use["id"], sub=r["subscription_id"], lead=lead, platform=body["platform"], since=now,
+                      sizing=sizing, row=None)
+            use["busy"] = lead   # what this pass reports: that sub-account copies this trader now
+            self._note(st, now, "start", lead=lead, reason=why, account=use["name"] or None)
+        return None
 
     # ------------------------------------------------------------------ what the owner sees
     def _status(self, uid: str, p: dict, st: dict, now: int) -> dict:
@@ -297,6 +396,7 @@ class CopyPilot:
                                                      "pnl", "total_volume", "stop_loss_amount")} | {"orders": row.get("filled_order_count")})
                     if row else None,
             "log": (st.get("log") or [])[-15:], "at": now,
+            "accounts": [a | {"history": (st.get("hist") or {}).get(a["id"], [])} for a in (st.get("accounts") or [])[:ACCOUNTS_KEEP]],
         }
 
     def run(self, every: float = 60) -> None:

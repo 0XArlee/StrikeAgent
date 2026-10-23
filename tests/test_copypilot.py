@@ -1,6 +1,6 @@
 """Copy with your agent: the plan its owner signed, carried out on Strike's copy trading (a fake Strike here)."""
 
-from smartflow.copytrade.pilot import HOUR, CopyPilot, candidates, security_alarm
+from smartflow.copytrade.pilot import HOUR, CopyPilot, candidates, macro_window, security_alarm
 from smartflow.net import HttpError
 
 NOW = 1_792_700_000_000
@@ -9,7 +9,8 @@ ACCOUNT = "01a156ba-0000-0000-0000-000000000000"
 
 class FakeStrike:
     def __init__(self):
-        self.subs: dict[str, dict] = {}
+        self.subs: dict[str, dict] = {}          # copies, by subscription id
+        self.accounts: list[str] = []            # the owner's sub-accounts
         self.calls: list[tuple] = []
         self.setup_steps = ["creating_account"]   # a managed copy answers 202 this many times before it is active
         self.balances = {None: 100.0}             # available $ per account (None: the main account)
@@ -19,13 +20,23 @@ class FakeStrike:
         self.calls.append(("subscribe", dict(body)))
         if self.refuse:
             raise HttpError(400, self.refuse, "x")
-        sub = f"sub-{len(self.subs) + 1}"   # every managed copy gets a sub-account of its own
-        if body.get("auto_create_sub_account") and self.setup_steps:
-            return {"subscription_id": "", "status": self.setup_steps.pop(0), "sub_account_id": sub}
+        if body.get("sub_account_id"):          # a copy from an existing sub-account: one copy at a time there
+            acct = body["sub_account_id"]
+            if any(r["status"] == "active" and r["account_id"] == acct for r in self.subs.values()):
+                raise HttpError(409, '{"error":"the account belongs to another active copy"}', "x")
+        else:                                   # a managed copy: Strike creates its sub-account
+            acct = f"sub-{len(self.accounts) + 1}"
+            if body.get("auto_create_sub_account") and self.setup_steps:
+                return {"subscription_id": "", "status": self.setup_steps.pop(0), "sub_account_id": acct}
+            self.accounts.append(acct)
         sid = f"s{len(self.subs) + 1}"
         self.subs[sid] = {"subscription_id": sid, "lead_account_id": body["lead_account_id"], "status": "active", "pnl": "1.5",
-                          "copy_amount": body.get("copy_amount"), "account_id": sub}
-        return {"subscription_id": sid, "status": "active", "sub_account_id": sub}
+                          "copy_amount": body.get("copy_amount"), "account_id": acct}
+        return {"subscription_id": sid, "status": "active", "sub_account_id": acct}
+
+    def sub_accounts(self):
+        return [{"account_id": a, "name": f"Copy {a}", "status": "active", "equity": str(self.balances.get(a, 0.0)),
+                 "available_balance": str(self.balances.get(a, 0.0))} for a in self.accounts]
 
     def copy_stop(self, sid, sub_account_id=None):
         self.calls.append(("stop", sid, sub_account_id))
@@ -104,11 +115,11 @@ def test_a_stop_loss_halts_the_plan_until_its_owner_signs_again(tmp_path):
     pilot.tick(NOW + 120_000)
     assert len(strike.calls) == n                # never back on its own after a stop-loss
     strike.balances = {None: 5.0, "sub-1": 38.0}
-    site.version = 2                             # signed again: a new copy, funded with what the last one left
+    site.version = 2                             # signed again: the copy goes on in the same sub-account, with what it has
     pilot.tick(NOW + 180_000)
     body = strike.calls[-1][1]
-    assert body["auto_create_sub_account"] and body["source_account_id"] == "sub-1" and body["copy_amount"] == "38.00"
-    assert site.reports[-1][0]["state"] == "copying" and site.reports[-1][0]["subAccount"] == "sub-2"
+    assert body["sub_account_id"] == "sub-1" and not body.get("auto_create_sub_account") and body["copy_amount"] == "38.00"
+    assert site.reports[-1][0]["state"] == "copying" and site.reports[-1][0]["subAccount"] == "sub-1" and strike.accounts == ["sub-1"]
 
 
 def test_without_money_it_says_so_and_starts_once_there_is(tmp_path):
@@ -184,3 +195,64 @@ def test_candidates_and_alarm_rules():
     assert [t["id"] for t in candidates(doc, p)] == ["b"]
     assert security_alarm({"headlines": [{"cat": "security", "catalyst": True, "score": -20, "t": NOW}]}, NOW) is None
     assert security_alarm({"headlines": [{"cat": "security", "catalyst": True, "score": -40, "t": NOW - 30 * HOUR}]}, NOW) is None
+
+
+def test_a_new_copy_reuses_a_free_sub_account_instead_of_making_another(tmp_path):
+    pilot, strike, site = make(tmp_path, plan())
+    strike.accounts, strike.balances = ["old"], {None: 100.0, "old": 120.0}
+    pilot.tick(NOW)
+    body = strike.calls[-1][1]
+    assert body["sub_account_id"] == "old" and body["copy_amount"] == "50.00" and "margin_settings" not in body
+    s = site.reports[-1][0]
+    assert s["state"] == "copying" and s["subAccount"] == "old" and strike.accounts == ["old"]
+    a = s["accounts"][0]
+    assert a["id"] == "old" and a["available"] == 120.0 and a["busy"] == "lead-a" and a["history"] == [[NOW, 120.0]]
+    pilot.tick(NOW + HOUR)                       # a point every two hours
+    assert len(site.reports[-1][0]["accounts"][0]["history"]) == 1
+    pilot.tick(NOW + 2 * HOUR)
+    assert len(site.reports[-1][0]["accounts"][0]["history"]) == 2
+
+
+def test_the_sub_account_its_owner_chose_waits_while_it_copies_someone_else(tmp_path):
+    pilot, strike, site = make(tmp_path, plan(account="busy"))
+    strike.accounts, strike.balances = ["busy"], {None: 100.0, "busy": 90.0}
+    strike.subs["s0"] = {"subscription_id": "s0", "lead_account_id": "other", "status": "active", "account_id": "busy"}
+    pilot.tick(NOW)
+    s = site.reports[-1][0]
+    assert not strike.calls and s["why"] == "account_busy" and s["log"][-1]["kind"] == "account_busy"
+    strike.subs["s0"]["status"] = "stopped"      # that copy ends: this one starts there
+    pilot.tick(NOW + 60_000)
+    assert strike.calls[-1][1]["sub_account_id"] == "busy" and site.reports[-1][0]["state"] == "copying"
+
+
+def test_a_chosen_sub_account_without_the_money_says_so(tmp_path):
+    pilot, strike, site = make(tmp_path, plan(account="poor"))
+    strike.accounts, strike.balances = ["poor"], {None: 500.0, "poor": 8.0}
+    pilot.tick(NOW)
+    s = site.reports[-1][0]
+    assert not strike.calls and s["why"] == "funds_sub" and s["log"][-1]["kind"] == "no_funds_sub"
+
+
+def test_new_always_makes_a_sub_account(tmp_path):
+    pilot, strike, site = make(tmp_path, plan(account="new"))
+    strike.setup_steps, strike.accounts, strike.balances = [], ["old"], {None: 100.0, "old": 120.0}
+    pilot.tick(NOW)
+    body = strike.calls[-1][1]
+    assert body["auto_create_sub_account"] and body["source_account_id"] == ACCOUNT and strike.accounts == ["old", "sub-2"]
+
+
+def test_the_macro_pause_waits_out_the_big_us_releases(tmp_path):
+    news = {"events": {"next": [{"t": NOW + 20 * 60_000, "kind": "fomc", "name": "Fed rate decision"}], "just": []}}
+    pilot, strike, site = make(tmp_path, plan(macroPause=True), news=news)
+    strike.setup_steps = []
+    pilot.tick(NOW)
+    assert not strike.calls and site.reports[-1][0]["why"] == "macro"
+    pilot.tick(NOW + 2 * HOUR)                   # an hour after the release: it copies
+    assert strike.calls[-1][0] == "subscribe"
+    assert macro_window(news, NOW - HOUR) is None and macro_window(news, NOW + 80 * 60_000)["kind"] == "fomc"
+    assert macro_window({"events": {"next": [{"t": NOW, "kind": "minutes"}]}}, NOW) is None
+
+
+def test_the_security_alarm_counts_an_exchange_going_down():
+    assert security_alarm({"headlines": [{"cat": "exchange", "catalyst": True, "score": -45, "t": NOW - HOUR}]}, NOW)
+    assert security_alarm({"headlines": [{"cat": "macro", "catalyst": True, "score": -60, "t": NOW - HOUR}]}, NOW) is None

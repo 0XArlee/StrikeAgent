@@ -1,9 +1,10 @@
 // Copy with your agent, in My agent: how the copy goes (whom it copies, since when, its result, why, what the agent did)
 // and the plan its owner signs with their wallet: one trader or the agent's choice by the owner's rules (pilot), how
-// much, the stop-loss, the leverage, markets never opened, until when, and the pause on the News Tower's security alarm.
+// much, the stop-loss, the leverage, markets never opened, until when, the pauses (the News Tower's security alarm, the big
+// US releases) and the sub-account it runs in (one of the owner's that copies nobody, or a new one).
 // The agents' host carries it out on Strike's copy trading (smartflow/copytrade/pilot.py); Strike City never holds money.
 import { useMemo, useState } from "react";
-import type { CopyPlan, CopyStatus, CopyView } from "../api";
+import type { CopyPlan, CopyStatus, CopyView, SubAccount } from "../api";
 import { traderName, useCopy, type CopyDoc, type Trader } from "../city/copy";
 import { fmt, type Dict, type Lang } from "../i18n";
 import { Alert } from "./ui";
@@ -16,7 +17,7 @@ export const defaultPlan = (mode: "manual" | "pilot", lead?: Trader | null): Cop
   const amount = Math.max(50, Math.ceil((lead?.recommended ?? 0) / 10) * 10);
   return {
     mode, lead: lead?.id ?? null, platform: lead?.platform ?? null, sizing: { kind: "ratio", amount },
-    stopLoss: Math.round(amount * 0.2), leverage: 3, excluded: [], until: null, alarmPause: true,
+    stopLoss: Math.round(amount * 0.2), leverage: 3, excluded: [], until: null, alarmPause: true, macroPause: false, account: "auto",
     pilot: mode === "pilot" ? { minScore: 70, platforms: ["strike", "hyperliquid"], review: 24, maxSwitches: 2 } : null,
   };
 };
@@ -56,7 +57,7 @@ export function CopySection({ t, lang, view, liveOn, busy, onEdit, onStop }: { t
   const state = applying ? "starting" : st?.state ?? (on ? "waiting" : "off");
   const lead = st?.lead && d ? d.traders.find((x) => x.id.toLowerCase() === st.lead!.toLowerCase()) : undefined;
   return (
-    <div className="card copy-card" style={{ marginTop: 16 }}>
+    <div className="card copy-card" id="copy-with-agent" style={{ marginTop: 16 }}>
       <div className="copy-head">
         <h3>{C.title}</h3>
         {on && <span className={`copy-state ${state}`}>{C.states[state]}</span>}
@@ -82,6 +83,7 @@ export function CopySection({ t, lang, view, liveOn, busy, onEdit, onStop }: { t
             {plan!.mode === "pilot" && st?.reviewAt && <div className="row"><dt>{C.nextReview}</dt><dd>{when(st.reviewAt)}</dd></div>}
           </dl>
           {st?.error && <Alert kind="warn">{st.error}</Alert>}
+          <Accounts t={t} lang={lang} accounts={st?.accounts} name={name} />
           {!!st?.log?.length && (
             <>
               <h4 className="copy-log-title">{C.log}</h4>
@@ -107,13 +109,37 @@ export function CopySection({ t, lang, view, liveOn, busy, onEdit, onStop }: { t
   );
 }
 
+/** The owner's sub-accounts: whom each one copies, its equity and what is available, and where to top one up. */
+function Accounts({ t, lang, accounts, name }: { t: Dict; lang: Lang; accounts?: SubAccount[]; name: (id?: string | null, platform?: string | null) => string }) {
+  const C = t.copyPlan, loc = lang === "es" ? "es-ES" : "en-US";
+  if (!accounts?.length) return null;
+  const usd = (v: number | null) => v == null ? "—" : v.toLocaleString(loc, { style: "currency", currency: "USD" });
+  return (
+    <section className="copy-accounts" aria-labelledby="copy-accounts-title">
+      <h4 id="copy-accounts-title" className="copy-log-title">{C.accounts}</h4>
+      <p className="field-hint">{C.accountsHint}</p>
+      <ul>
+        {accounts.map((a) => (
+          <li key={a.id}>
+            <div className="grow"><b>{a.name || `${a.id.slice(0, 8)}…`}</b>
+              <span className={`copy-acct-state ${a.busy ? "busy" : "free"}`}>{a.busy ? C.acctCopying(name(a.busy, a.busy.startsWith("0x") ? "hyperliquid" : "strike")) : C.acctFree}</span></div>
+            <dl><div><dt>{C.acctEquity}</dt><dd className="num">{usd(a.equity)}</dd></div>
+              <div><dt>{C.acctAvailable}</dt><dd className="num">{usd(a.available)}</dd></div></dl>
+          </li>
+        ))}
+      </ul>
+      <p className="field-hint"><a href="https://app.strikefinance.org" target="_blank" rel="noopener noreferrer">{C.topUp}<span className="sr-only"> ({lang === "es" ? "se abre en otra pestaña" : "opens in a new tab"})</span></a>. {C.topUpNote}</p>
+    </section>
+  );
+}
+
 // ------------------------------------------------------------------ the plan
-export function CopyPlanDialog({ t, lang, initial, busy, error, onSign, onCancel }: { t: Dict; lang: Lang; initial: CopyPlan; busy: boolean;
-  error: string; onSign: (p: CopyPlan) => void; onCancel: () => void }) {
+export function CopyPlanDialog({ t, lang, initial, accounts, busy, error, onSign, onCancel }: { t: Dict; lang: Lang; initial: CopyPlan;
+  accounts?: SubAccount[]; busy: boolean; error: string; onSign: (p: CopyPlan) => void; onCancel: () => void }) {
   const C = t.copyPlan, D = C.dialog, loc = lang === "es" ? "es-ES" : "en-US";
   const doc = useCopy(true);
   const d = doc && typeof doc === "object" ? doc : null;
-  const [p, setP] = useState<CopyPlan>(initial);
+  const [p, setP] = useState<CopyPlan>({ ...initial, account: initial.account ?? "auto", macroPause: initial.macroPause ?? false });
   const [ack, setAck] = useState(false);
   const set = (x: Partial<CopyPlan>) => setP((v) => ({ ...v, ...x }));
   const lead = d && p.lead ? d.traders.find((x) => x.id.toLowerCase() === p.lead!.toLowerCase()) : undefined;
@@ -227,6 +253,23 @@ export function CopyPlanDialog({ t, lang, initial, busy, error, onSign, onCancel
           </div>
         </fieldset>
         <fieldset>
+          <legend>{D.where}</legend>
+          <div className="copy-where" role="radiogroup" aria-describedby="cp-where-hint">
+            <label className="copy-where-opt"><input type="radio" name="cp-where" checked={p.account === "auto"} onChange={() => set({ account: "auto" })} />
+              <span>{D.whereAuto}</span></label>
+            {(accounts ?? []).map((a) => (
+              <label key={a.id} className={`copy-where-opt${a.busy ? " busy" : ""}`}>
+                <input type="radio" name="cp-where" checked={p.account === a.id} onChange={() => set({ account: a.id })} />
+                <span>{D.whereOne(a.name || `${a.id.slice(0, 8)}…`, money(a.available))}
+                  {a.busy && <small className="faint"> · {D.whereBusy(traderName({ id: a.busy, platform: a.busy.startsWith("0x") ? "hyperliquid" : "strike" }))}</small>}</span>
+              </label>
+            ))}
+            <label className="copy-where-opt"><input type="radio" name="cp-where" checked={p.account === "new"} onChange={() => set({ account: "new" })} />
+              <span>{D.whereNew}</span></label>
+          </div>
+          <p id="cp-where-hint" className="field-hint">{accounts?.length ? C.topUpNote : D.whereHint}</p>
+        </fieldset>
+        <fieldset>
           <legend>{D.when}</legend>
           <div className="field">
             <label htmlFor="cp-until">{D.until}</label>
@@ -242,6 +285,10 @@ export function CopyPlanDialog({ t, lang, initial, busy, error, onSign, onCancel
           <label className="check">
             <input type="checkbox" checked={p.alarmPause} onChange={(e) => set({ alarmPause: e.target.checked })} />
             <span>{D.alarm}</span>
+          </label>
+          <label className="check">
+            <input type="checkbox" checked={!!p.macroPause} onChange={(e) => set({ macroPause: e.target.checked })} />
+            <span>{D.macroPause}</span>
           </label>
         </fieldset>
         <label className="check check-ack">
